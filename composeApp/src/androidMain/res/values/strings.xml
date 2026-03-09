@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Roasti</string>
+    <string name="recipe_not_found">Not found</string>
+    <string name="recipe_start_brewing">Start Brewing</string>
+    <string name="recipe_beans">Beans</string>
+    <string name="recipe_brewing_steps">Brewing Steps</string>
+    <string name="recipe_roast_level">Roast Level</string>
+    <string name="recipe_missing_value">N/A</string>
+    <string name="recipe_brew_method">Brew Method</string>
+    <string name="recipe_time">Time</string>
+    <string name="recipe_roaster">Roaster</string>
+    <string name="recipe_difficulty">Difficulty</string>
+    <string name="recipe_time_minutes">%1$d mins</string>
+</resources>

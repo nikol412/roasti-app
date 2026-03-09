@@ -1,0 +1,147 @@
+package org.nikol.roasti.ui.features.recipelist
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import org.koin.compose.viewmodel.koinViewModel
+import org.nikol.roasti.recipe.model.BrewMethod
+import org.nikol.roasti.recipe.model.Difficulty
+import org.nikol.roasti.recipe.model.Recipe
+import org.nikol.roasti.recipe.model.RoastLevel
+import org.nikol.roasti.ui.theme.RoastiTheme
+import org.nikol.roasti.ui.theme.RoastiTypography
+import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
+import kotlin.time.Duration.Companion.seconds
+
+@Composable
+internal fun RecipesListScreen(onRecipeClick: (Recipe) -> Unit = {}) {
+    val viewModel: RecipesListViewModel = koinViewModel()
+
+    val state by viewModel.recipes.collectAsStateWithLifecycle()
+
+    when (state) {
+        RecipesListState.Loading -> Loading(Modifier.fillMaxSize())
+        is RecipesListState.Content -> Content(state as RecipesListState.Content, onRecipeClick)
+    }
+}
+
+@Composable
+private fun Loading(modifier: Modifier = Modifier) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(
+            modifier = Modifier.width(64.dp),
+            color = MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun Content(
+    state: RecipesListState.Content,
+    onClick: (Recipe) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier) {
+        items(state.recipes) { RecipeItem(it, Modifier.clickable { onClick(it) }) }
+    }
+}
+
+@Composable
+private fun RecipeItem(item: Recipe, modifier: Modifier = Modifier) {
+    Row(
+        modifier.clip(RoundedCornerShape(8.dp)),
+    ) {
+        RecipeImage(item.imageUrl)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Text(
+                item.title,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = RoastiTypography.titleMedium
+            )
+            Text(
+                item.description,
+                maxLines = 5,
+                overflow = TextOverflow.Ellipsis,
+                style = RoastiTypography.bodyMedium
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(item.brewMethod.displayName, style = RoastiTypography.bodyMedium)
+                Text(item.difficulty.displayName, style = RoastiTypography.bodyMedium)
+                Text(
+                    "${item.totalBrewTimeSeconds.seconds.inWholeMinutes} min",
+                    style = RoastiTypography.bodyMedium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecipeImage(url: String?, modifier: Modifier = Modifier) {
+    AsyncImage(
+        model = url,
+        contentDescription = null,
+        placeholder = null,
+        modifier = modifier.size(120.dp),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecipeItemPreview() {
+    RoastiTheme {
+        AsyncImagePreviewProvider {
+            RecipeItem(
+                Recipe(
+                    id = "erat",
+                    title = "reformidans reformidans reformidans",
+                    description = "eos",
+                    imageUrl = "https://search.yahoo.com/search?p=singulis",
+                    brewMethod = BrewMethod.V60,
+                    difficulty = Difficulty.Easy,
+                    totalBrewTimeSeconds = 2895,
+                    roastLevel = RoastLevel.Light,
+                    beans = "vocibus",
+                    steps = listOf()
+                )
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun ImagePreview() {
+    RoastiTheme {
+        AsyncImagePreviewProvider {
+            RecipeImage("", Modifier.size(20.dp))
+        }
+    }
+}
