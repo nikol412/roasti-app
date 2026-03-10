@@ -1,6 +1,8 @@
 package org.nikol.roasti.ui.features.recipepage
 
-import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,6 +59,7 @@ import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 import kotlin.time.Duration.Companion.seconds
 
+private const val RecipeScreenKeyPrefix = "recipe_screen_"
 private val HeaderHeight = 300.dp
 private val HeaderOverlap = 36.dp
 private val MetaCardHeight = 88.dp
@@ -69,10 +72,15 @@ private val MetaCardShape = RoundedCornerShape(14.dp)
 private const val BackLabel = "<"
 private const val StartArrow = ">"
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun RecipeContentScreen(id: String, onBackClick: () -> Unit = {}) {
-
-    BackHandler { onBackClick() }
+fun RecipeContentRoute(
+    id: String,
+    onBackClick: () -> Unit = {},
+    onStartBrewing: (startStep: Int) -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+) {
 
     val viewModel: RecipeContentViewModel = koinViewModel(parameters = { parametersOf(id) })
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -80,22 +88,53 @@ fun RecipeContentScreen(id: String, onBackClick: () -> Unit = {}) {
     when (state) {
         RecipeContentState.Loading -> LoadingStub()
         RecipeContentState.NotFound -> ErrorStub(stringResource(R.string.recipe_not_found))
-        is RecipeContentState.Content -> Content(state as RecipeContentState.Content, onBackClick)
+        is RecipeContentState.Content -> RecipeContentScreen(
+            state = state as RecipeContentState.Content,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+            onBackClick = onBackClick,
+            onStepClick = onStartBrewing,
+        )
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun Content(state: RecipeContentState.Content, onBackClick: () -> Unit = {}) {
+private fun RecipeContentScreen(
+    state: RecipeContentState.Content,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    onBackClick: () -> Unit = {},
+    onStepClick: (stepIndex: Int) -> Unit = {},
+) {
     val recipe = state.recipe
+    val recipeScreenModifier = recipeScreenSharedBoundsModifier(
+        recipeId = recipe.id,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
+    )
+
+    val stepModifiers = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+        recipe.steps.indices.map { index ->
+            with(sharedTransitionScope) {
+                Modifier.sharedBounds(
+                    sharedContentState = rememberSharedContentState(key = "brew_step_$index"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
+            }
+        }
+    } else emptyList()
 
     Box(
-        modifier = Modifier
+        modifier = recipeScreenModifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        RecipeHeaderImage(recipe.imageUrl)
+        RecipeHeaderImage(imageUrl = recipe.imageUrl)
         RecipeContentList(
             recipe = recipe,
+            stepModifiers = stepModifiers,
+            onStepClick = onStepClick,
             modifier = Modifier.fillMaxSize(),
         )
         BackButton(
@@ -109,9 +148,12 @@ private fun Content(state: RecipeContentState.Content, onBackClick: () -> Unit =
 }
 
 @Composable
-private fun RecipeHeaderImage(imageUrl: String?) {
+private fun RecipeHeaderImage(
+    imageUrl: String?,
+    modifier: Modifier = Modifier,
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(HeaderHeight)
     ) {
@@ -140,6 +182,8 @@ private fun RecipeHeaderImage(imageUrl: String?) {
 @Composable
 private fun RecipeContentList(
     recipe: Recipe,
+    stepModifiers: List<Modifier> = emptyList(),
+    onStepClick: (stepIndex: Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -151,13 +195,21 @@ private fun RecipeContentList(
             Spacer(modifier = Modifier.height(HeaderHeight - HeaderOverlap))
         }
         item {
-            RecipeMainContent(recipe = recipe)
+            RecipeMainContent(
+                recipe = recipe,
+                stepModifiers = stepModifiers,
+                onStepClick = onStepClick,
+            )
         }
     }
 }
 
 @Composable
-private fun RecipeMainContent(recipe: Recipe) {
+private fun RecipeMainContent(
+    recipe: Recipe,
+    stepModifiers: List<Modifier> = emptyList(),
+    onStepClick: (stepIndex: Int) -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -189,8 +241,13 @@ private fun RecipeMainContent(recipe: Recipe) {
                 value = roastLevel.displayName,
             )
         }
-        RecipeStepsSection(steps = recipe.steps)
+        RecipeStepsSection(
+            steps = recipe.steps,
+            stepModifiers = stepModifiers,
+            onStepClick = onStepClick,
+        )
         StartBrewingButton(
+            onClick = { onStepClick(0) },
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
@@ -199,7 +256,9 @@ private fun RecipeMainContent(recipe: Recipe) {
 }
 
 @Composable
-private fun RecipeMetaGrid(recipe: Recipe) {
+private fun RecipeMetaGrid(
+    recipe: Recipe,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
@@ -280,6 +339,25 @@ private fun MetaCard(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun recipeScreenSharedBoundsModifier(
+    recipeId: String,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+): Modifier {
+    if (sharedTransitionScope == null || animatedVisibilityScope == null) {
+        return Modifier
+    }
+
+    return with(sharedTransitionScope) {
+        Modifier.sharedBounds(
+            sharedContentState = rememberSharedContentState(key = "$RecipeScreenKeyPrefix$recipeId"),
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
+    }
+}
+
 @Composable
 private fun RecipeTextSection(
     title: String,
@@ -300,27 +378,40 @@ private fun RecipeTextSection(
 }
 
 @Composable
-private fun RecipeStepsSection(steps: List<BrewStep>) {
+private fun RecipeStepsSection(
+    steps: List<BrewStep>,
+    stepModifiers: List<Modifier> = emptyList(),
+    onStepClick: (stepIndex: Int) -> Unit = {},
+) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
         Text(
             text = stringResource(R.string.recipe_brewing_steps),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        steps.forEach { step ->
-            BrewStepCard(step = step)
+        steps.forEachIndexed { index, step ->
+            BrewStepCard(
+                step = step,
+                modifier = stepModifiers.getOrElse(index) { Modifier },
+                onClick = { onStepClick(index) },
+            )
         }
     }
 }
 
 @Composable
-private fun BrewStepCard(step: BrewStep) {
+private fun BrewStepCard(
+    step: BrewStep,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(StepShape)
             .background(MaterialTheme.colorScheme.background)
             .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = StepShape)
+            .clickable(onClick = onClick)
             .padding(Spacing.lg),
         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         verticalAlignment = Alignment.Top,
@@ -365,9 +456,12 @@ private fun BrewStepCard(step: BrewStep) {
 }
 
 @Composable
-private fun StartBrewingButton(modifier: Modifier = Modifier) {
+private fun StartBrewingButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Button(
-        onClick = {},
+        onClick = onClick,
         modifier = modifier.height(PrimaryButtonHeight),
         colors = ButtonDefaults.buttonColors(
             containerColor = Orange600,
@@ -422,7 +516,7 @@ private fun formatStepDuration(totalSeconds: Int): String {
 private fun RecipeContentScreenPreview() {
     RoastiTheme {
         AsyncImagePreviewProvider {
-            Content(
+            RecipeContentScreen(
                 RecipeContentState.Content(
                     recipe = Recipe(
                         id = "classic-pour-over",
@@ -452,30 +546,6 @@ private fun RecipeContentScreenPreview() {
                                 title = "Bloom",
                                 description = "Pour 40g of water in a circular motion. Let bloom for 30 seconds.",
                                 durationSeconds = 30,
-                            ),
-                            BrewStep(
-                                order = 4,
-                                title = "First Pour",
-                                description = "Pour water up to 120g in a slow circular motion.",
-                                durationSeconds = 45,
-                            ),
-                            BrewStep(
-                                order = 5,
-                                title = "Second Pour",
-                                description = "Pour water up to 220g. Maintain steady pace.",
-                                durationSeconds = 45,
-                            ),
-                            BrewStep(
-                                order = 6,
-                                title = "Final Pour",
-                                description = "Pour remaining water to reach 320g total. Let drain completely.",
-                                durationSeconds = 90,
-                            ),
-                            BrewStep(
-                                order = 7,
-                                title = "Enjoy",
-                                description = "Remove V60, swirl carafe gently, and pour into your favorite cup.",
-                                durationSeconds = null,
                             ),
                         ),
                     )

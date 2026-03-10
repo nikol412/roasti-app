@@ -1,12 +1,11 @@
 package org.nikol.roasti.ui.components
 
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.ui.Modifier
 import org.nikol.roasti.navigation.Screen
 import org.nikol.roasti.navigation.bottomNavScreens
 
@@ -18,22 +17,20 @@ private val labels = mapOf(
 )
 
 @Composable
-fun BottomBar(navController: NavController) {
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
-
-    NavigationBar {
+fun BottomBar(
+    modifier: Modifier = Modifier,
+    currentRoute: String?,
+    onNavigate: (String) -> Unit,
+) {
+    NavigationBar(
+        modifier = modifier.navigationBarsPadding(),
+    ) {
         bottomNavScreens.forEach { screen ->
             NavigationBarItem(
                 selected = currentRoute == screen.route,
                 onClick = {
                     if (currentRoute != screen.route) {
-                        navController.navigate(screen.route) {
-                            // Pop up to Feed so back stack doesn't grow
-                            popUpTo(Screen.Feed.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        onNavigate(screen.route)
                     }
                 },
                 // TODO: replace with icons when material-icons dependency is added

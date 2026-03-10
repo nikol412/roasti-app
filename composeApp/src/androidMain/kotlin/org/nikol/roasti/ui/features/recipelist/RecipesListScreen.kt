@@ -1,5 +1,8 @@
 package org.nikol.roasti.ui.features.recipelist
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,15 +38,27 @@ import org.nikol.roasti.ui.theme.RoastiTypography
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import kotlin.time.Duration.Companion.seconds
 
+private const val RecipeScreenKeyPrefix = "recipe_screen_"
+
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-internal fun RecipesListScreen(onRecipeClick: (Recipe) -> Unit = {}) {
+internal fun RecipesListScreen(
+    onRecipeClick: (Recipe) -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+) {
     val viewModel: RecipesListViewModel = koinViewModel()
 
     val state by viewModel.recipes.collectAsStateWithLifecycle()
 
     when (state) {
         RecipesListState.Loading -> Loading(Modifier.fillMaxSize())
-        is RecipesListState.Content -> Content(state as RecipesListState.Content, onRecipeClick)
+        is RecipesListState.Content -> Content(
+            state = state as RecipesListState.Content,
+            onClick = onRecipeClick,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 }
 
@@ -58,23 +73,47 @@ private fun Loading(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Content(
     state: RecipesListState.Content,
     onClick: (Recipe) -> Unit,
-    modifier: Modifier = Modifier
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier) {
-        items(state.recipes) { RecipeItem(it, Modifier.clickable { onClick(it) }) }
+        items(state.recipes, key = { it.id }) { recipe ->
+            RecipeItem(
+                item = recipe,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+                modifier = Modifier.clickable { onClick(recipe) },
+            )
+        }
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun RecipeItem(item: Recipe, modifier: Modifier = Modifier) {
+private fun RecipeItem(
+    item: Recipe,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    modifier: Modifier = Modifier,
+) {
+    val sharedBoundsModifier = recipeScreenSharedBoundsModifier(
+        recipeId = item.id,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
+    )
+
     Row(
-        modifier.clip(RoundedCornerShape(8.dp)),
+        modifier = modifier
+            .then(sharedBoundsModifier)
+            .clip(RoundedCornerShape(8.dp)),
     ) {
-        RecipeImage(item.imageUrl)
+        RecipeImage(url = item.imageUrl)
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.padding(12.dp)
@@ -92,14 +131,39 @@ private fun RecipeItem(item: Recipe, modifier: Modifier = Modifier) {
                 style = RoastiTypography.bodyMedium
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(item.brewMethod.displayName, style = RoastiTypography.bodyMedium)
-                Text(item.difficulty.displayName, style = RoastiTypography.bodyMedium)
+                Text(
+                    item.brewMethod.displayName,
+                    style = RoastiTypography.bodyMedium,
+                )
+                Text(
+                    item.difficulty.displayName,
+                    style = RoastiTypography.bodyMedium,
+                )
                 Text(
                     "${item.totalBrewTimeSeconds.seconds.inWholeMinutes} min",
                     style = RoastiTypography.bodyMedium
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun recipeScreenSharedBoundsModifier(
+    recipeId: String,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+): Modifier {
+    if (sharedTransitionScope == null || animatedVisibilityScope == null) {
+        return Modifier
+    }
+
+    return with(sharedTransitionScope) {
+        Modifier.sharedBounds(
+            sharedContentState = rememberSharedContentState(key = "$RecipeScreenKeyPrefix$recipeId"),
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 }
 

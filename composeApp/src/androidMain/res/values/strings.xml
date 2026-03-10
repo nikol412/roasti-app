@@ -11,4 +11,7 @@
     <string name="recipe_roaster">Roaster</string>
     <string name="recipe_difficulty">Difficulty</string>
     <string name="recipe_time_minutes">%1$d mins</string>
+    <string name="steps_step_counter">Step %1$d of %2$d</string>
+    <string name="steps_brew_ready">Your brew is ready!</string>
+    <string name="steps_finish">Finish</string>
 </resources>
