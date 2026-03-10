@@ -61,7 +61,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
 private val HeaderHeight = 300.dp
-private val HeaderOverlap = 36.dp
+private val HeaderOverlap = 56.dp
 private val MetaCardHeight = 88.dp
 private val StepNumberSize = 32.dp
 private val BackButtonSize = 40.dp

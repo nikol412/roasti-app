@@ -3,19 +3,25 @@ package org.nikol.roasti.recipe.session
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
+import kotlin.coroutines.coroutineContext
+import kotlin.time.TimeSource
 
 interface BrewingTimer {
-    fun countdown(durationSeconds: Int): Flow<Int>
+    fun nowMillis(): Long
+    fun ticker(periodMillis: Long): Flow<Long>
 }
 
 class BrewingTimerImpl : BrewingTimer {
-    override fun countdown(durationSeconds: Int): Flow<Int> = flow {
-        var remaining = durationSeconds
-        emit(remaining)
-        while (remaining > 0) {
-            delay(1000L)
-            remaining--
-            emit(remaining)
+    private val originMark = TimeSource.Monotonic.markNow()
+
+    override fun nowMillis(): Long = originMark.elapsedNow().inWholeMilliseconds
+
+    override fun ticker(periodMillis: Long): Flow<Long> = flow {
+        emit(nowMillis())
+        while (coroutineContext.isActive) {
+            delay(periodMillis)
+            emit(nowMillis())
         }
     }
 }

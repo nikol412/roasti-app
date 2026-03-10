@@ -56,6 +56,8 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 
+private const val TimerAnimationDurationMillis = 100
+
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun RecipeStepsRoute(
@@ -273,7 +275,7 @@ private fun CircularTimer(
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = timerProgress,
-        animationSpec = tween(durationMillis = 1000, easing = LinearEasing),
+        animationSpec = tween(durationMillis = TimerAnimationDurationMillis, easing = LinearEasing),
         label = "timer_arc",
     )
     val arcColor = Orange600
