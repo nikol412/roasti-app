@@ -4,12 +4,16 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -24,9 +28,8 @@ import org.nikol.roasti.ui.screens.FeedRoute
 import org.nikol.roasti.ui.screens.LoginScreen
 import org.nikol.roasti.ui.screens.ProfileRoute
 import org.nikol.roasti.ui.screens.RecipesRoute
-import org.nikol.roasti.ui.theme.Spacing
 
-private val BottomBarContentPadding = Spacing.xxxl + Spacing.xxxl
+private val BottomBarHeight = 80.dp
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -36,7 +39,10 @@ fun AppNavHost(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomNavScreens.map { it.route }
-    val mainScreenContentPadding = PaddingValues(bottom = BottomBarContentPadding)
+    val navigationBarBottomInset = WindowInsets.navigationBars
+        .asPaddingValues()
+        .calculateBottomPadding()
+    val mainScreenContentPadding = PaddingValues(bottom = BottomBarHeight + navigationBarBottomInset)
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {

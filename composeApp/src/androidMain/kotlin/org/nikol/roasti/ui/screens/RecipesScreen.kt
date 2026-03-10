@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +41,7 @@ private fun RecipesScreenContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding)
+            .statusBarsPadding()
             .consumeWindowInsets(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -48,6 +49,7 @@ private fun RecipesScreenContent(
             onRecipeClick = { onRecipeClick(it.id) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
+            contentPadding = contentPadding,
         )
     }
 }

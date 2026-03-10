@@ -32,9 +32,17 @@ internal class RecipeStepsViewModel(
 
     init {
         viewModelScope.launch {
-            val recipe = repository.getById(recipeId)
-            if (recipe == null) _state.value = RecipeStepsUiState.Error
-            else startSession(recipe)
+            runCatching { repository.getById(recipeId) }
+                .onSuccess { recipe ->
+                    if (recipe == null) {
+                        _state.value = RecipeStepsUiState.Error
+                    } else {
+                        startSession(recipe)
+                    }
+                }
+                .onFailure {
+                    _state.value = RecipeStepsUiState.Error
+                }
         }
     }
 

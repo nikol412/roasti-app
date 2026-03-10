@@ -87,6 +87,7 @@ fun RecipeContentRoute(
 
     when (state) {
         RecipeContentState.Loading -> LoadingStub()
+        RecipeContentState.Error -> ErrorStub(stringResource(R.string.error_generic))
         RecipeContentState.NotFound -> ErrorStub(stringResource(R.string.recipe_not_found))
         is RecipeContentState.Content -> RecipeContentScreen(
             state = state as RecipeContentState.Content,

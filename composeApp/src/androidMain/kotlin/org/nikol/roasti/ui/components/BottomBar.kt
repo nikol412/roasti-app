@@ -1,7 +1,7 @@
 package org.nikol.roasti.ui.components
 
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +23,8 @@ fun BottomBar(
     onNavigate: (String) -> Unit,
 ) {
     NavigationBar(
-        modifier = modifier.navigationBarsPadding(),
+        modifier = modifier,
+        windowInsets = NavigationBarDefaults.windowInsets,
     ) {
         bottomNavScreens.forEach { screen ->
             NavigationBarItem(

@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Roasti</string>
+    <string name="error_generic">Something went wrong</string>
+    <string name="recipes_load_error">Failed to load recipes</string>
     <string name="recipe_not_found">Not found</string>
     <string name="recipe_start_brewing">Start Brewing</string>
     <string name="recipe_beans">Beans</string>

@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -23,12 +24,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
+import org.nikol.roasti.R
 import org.nikol.roasti.recipe.model.BrewMethod
 import org.nikol.roasti.recipe.model.Difficulty
 import org.nikol.roasti.recipe.model.Recipe
@@ -36,6 +39,7 @@ import org.nikol.roasti.recipe.model.RoastLevel
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.RoastiTypography
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
+import org.nikol.roasti.ui.uikit.ErrorStub
 import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
@@ -46,18 +50,27 @@ internal fun RecipesListScreen(
     onRecipeClick: (Recipe) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    contentPadding: PaddingValues,
 ) {
     val viewModel: RecipesListViewModel = koinViewModel()
 
     val state by viewModel.recipes.collectAsStateWithLifecycle()
 
     when (state) {
-        RecipesListState.Loading -> Loading(Modifier.fillMaxSize())
+        RecipesListState.Loading -> Loading(Modifier
+            .fillMaxSize()
+            .padding(contentPadding))
+        RecipesListState.Error -> ErrorStub(
+            stringResource(R.string.recipes_load_error),
+            modifier = Modifier.padding(contentPadding)
+        )
+
         is RecipesListState.Content -> Content(
             state = state as RecipesListState.Content,
             onClick = onRecipeClick,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
+            contentPadding = contentPadding,
         )
     }
 }
@@ -80,9 +93,13 @@ private fun Content(
     onClick: (Recipe) -> Unit,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
+    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier) {
+    LazyColumn(
+        modifier,
+        contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 16.dp)
+    ) {
         items(state.recipes, key = { it.id }) { recipe ->
             RecipeItem(
                 item = recipe,
