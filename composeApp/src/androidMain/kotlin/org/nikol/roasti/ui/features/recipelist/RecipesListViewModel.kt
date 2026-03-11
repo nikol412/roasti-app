@@ -13,8 +13,10 @@ class RecipesListViewModel(
     private val recipeRepository: RecipeRepository
 ) : ViewModel() {
     val recipes: StateFlow<RecipesListState> = flow<RecipesListState> {
-        val list = recipeRepository.getAll()
-        emit(RecipesListState.Content(list))
+        val list = recipeRepository.getRecipes().getOrNull()
+        if (list != null) {
+            emit(RecipesListState.Content(list.items))
+        }
     }
         .catch { emit(RecipesListState.Error) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipesListState.Loading)

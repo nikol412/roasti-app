@@ -12,3 +12,10 @@ data class Recipe(
     val beans: String?,
     val steps: List<BrewStep>,
 )
+
+data class RecipesPaginated(
+    val items: List<Recipe>,
+    val page: Int,
+    val limit: Int,
+    val totalCount: Int,
+)

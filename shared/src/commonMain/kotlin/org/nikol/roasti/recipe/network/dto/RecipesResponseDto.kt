@@ -2,6 +2,8 @@ package org.nikol.roasti.recipe.network.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.nikol.roasti.recipe.model.RecipesPaginated
+import org.nikol.roasti.recipe.network.toDomain
 
 @Serializable
 data class RecipesResponseDto(
@@ -13,4 +15,11 @@ data class RecipesResponseDto(
     val limit: Int,
     @SerialName("total_count")
     val totalCount: Int,
+)
+
+fun RecipesResponseDto.toDomain() = RecipesPaginated(
+    items = items.map { it.toDomain() },
+    page = page,
+    limit = limit,
+    totalCount = totalCount
 )
