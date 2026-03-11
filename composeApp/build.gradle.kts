@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -5,6 +6,22 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use(::load)
+    }
+}
+
+fun signingProperty(name: String): String? =
+    providers.environmentVariable(name).orNull
+        ?: localProperties.getProperty(name)
+
+val releaseStoreFile = signingProperty("RELEASE_STORE_FILE")
+val releaseStorePassword = signingProperty("RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = signingProperty("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = signingProperty("RELEASE_KEY_PASSWORD")
 
 kotlin {
     androidTarget {
@@ -40,6 +57,18 @@ android {
     namespace = "org.nikol.roasti"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
+    signingConfigs {
+        create("release") {
+            val storeFilePath = releaseStoreFile
+            if (!storeFilePath.isNullOrBlank()) {
+                storeFile = file(storeFilePath)
+            }
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+        }
+    }
+
     defaultConfig {
         applicationId = "org.nikol.roasti"
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -53,8 +82,14 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

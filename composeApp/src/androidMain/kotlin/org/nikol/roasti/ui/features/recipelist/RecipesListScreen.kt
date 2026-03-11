@@ -79,7 +79,7 @@ internal fun RecipesListScreen(
 private fun Loading(modifier: Modifier = Modifier) {
     Box(modifier, contentAlignment = Alignment.Center) {
         CircularProgressIndicator(
-            modifier = Modifier.width(64.dp),
+            modifier = Modifier.size(64.dp),
             color = MaterialTheme.colorScheme.secondary,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
