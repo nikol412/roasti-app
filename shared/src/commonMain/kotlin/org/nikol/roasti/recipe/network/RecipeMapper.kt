@@ -31,7 +31,7 @@ private fun BrewStepDto.toDomain(): BrewStep = BrewStep(
     durationSeconds = durationSeconds,
 )
 
-private fun BrewMethodDto.toDomain(): BrewMethod = when (this) {
+private fun BrewMethodDto.toDomain(): BrewMethod? = when (this) {
     BrewMethodDto.V60 -> BrewMethod.V60
     BrewMethodDto.FRENCH_PRESS -> BrewMethod.FrenchPress
     BrewMethodDto.AEROPRESS -> BrewMethod.Aeropress
@@ -39,18 +39,21 @@ private fun BrewMethodDto.toDomain(): BrewMethod = when (this) {
     BrewMethodDto.COLD_BREW -> BrewMethod.ColdBrew
     BrewMethodDto.EXPRESSO_MACHINE -> BrewMethod.EspressoMachine
     BrewMethodDto.MOKA_POT -> BrewMethod.MokaPot
+    BrewMethodDto.NONE -> null
 }
 
-private fun DifficultyDto.toDomain(): Difficulty = when (this) {
+private fun DifficultyDto.toDomain(): Difficulty? = when (this) {
     DifficultyDto.EASY -> Difficulty.Easy
     DifficultyDto.MEDIUM -> Difficulty.Medium
     DifficultyDto.HARD -> Difficulty.Hard
+    DifficultyDto.NONE -> null
 }
 
-private fun RoastLevelDto.toDomain(): RoastLevel = when (this) {
+private fun RoastLevelDto.toDomain(): RoastLevel? = when (this) {
     RoastLevelDto.LIGHT -> RoastLevel.Light
     RoastLevelDto.MEDIUM_LIGHT -> RoastLevel.MediumLight
     RoastLevelDto.MEDIUM -> RoastLevel.Medium
     RoastLevelDto.MEDIUM_DARK -> RoastLevel.MediumDark
     RoastLevelDto.DARK -> RoastLevel.Dark
+    RoastLevelDto.NONE -> null
 }

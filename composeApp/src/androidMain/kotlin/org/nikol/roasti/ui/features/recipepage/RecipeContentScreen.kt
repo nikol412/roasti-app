@@ -60,6 +60,7 @@ import org.nikol.roasti.ui.uikit.LoadingStub
 import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
+private const val UnknownBrewMethodLabel = "Unknown"
 private val HeaderHeight = 300.dp
 private val HeaderOverlap = 56.dp
 private val MetaCardHeight = 88.dp
@@ -267,7 +268,7 @@ private fun RecipeMetaGrid(
         ) {
             MetaCard(
                 title = stringResource(R.string.recipe_brew_method),
-                value = recipe.brewMethod.displayName,
+                value = recipe.brewMethod?.displayName ?: UnknownBrewMethodLabel,
                 highlight = true,
                 modifier = Modifier.weight(1f),
             )
@@ -288,7 +289,7 @@ private fun RecipeMetaGrid(
             )
             MetaCard(
                 title = stringResource(R.string.recipe_difficulty),
-                value = recipe.difficulty.displayName,
+                value = recipe.difficulty?.displayName ?: UnknownBrewMethodLabel,
                 modifier = Modifier.weight(1f),
             )
         }

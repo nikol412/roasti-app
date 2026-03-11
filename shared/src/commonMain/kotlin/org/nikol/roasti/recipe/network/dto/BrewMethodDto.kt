@@ -25,4 +25,7 @@ enum class BrewMethodDto {
 
     @SerialName("moka_pot")
     MOKA_POT,
+
+    @SerialName("none")
+    NONE,
 }

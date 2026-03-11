@@ -19,4 +19,7 @@ enum class RoastLevelDto {
 
     @SerialName("dark")
     DARK,
+
+    @SerialName("none")
+    NONE,
 }

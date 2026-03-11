@@ -3,6 +3,7 @@ package org.nikol.roasti.di
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import org.nikol.roasti.recipe.filters.FilterStateHandler
 import org.nikol.roasti.recipe.network.RecipesApiClient
 import org.nikol.roasti.recipe.network.RecipesApiClientImpl
 import org.nikol.roasti.recipe.network.createHttpClient
@@ -17,4 +18,5 @@ val sharedModule = module {
     single { NetworkRecipeRepository(get()) } bind RecipeRepository::class
     single { RecipesApiClientImpl(get()) } bind RecipesApiClient::class
     factoryOf(::BrewingTimerImpl) bind BrewingTimer::class
+    factory<FilterStateHandler> { FilterStateHandler() }
 }

@@ -1,5 +1,6 @@
 package org.nikol.roasti.recipe.network
 
+import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -13,6 +14,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 private const val BaseUrl = "155.212.158.252:9090"
+private const val KtorLogTag = "KtorHttp"
 
 actual fun createHttpClient(): HttpClient = HttpClient(OkHttp) {
     expectSuccess = true
@@ -32,7 +34,11 @@ actual fun createHttpClient(): HttpClient = HttpClient(OkHttp) {
         )
     }
     install(Logging) {
-        logger = Logger.DEFAULT
+        logger = object : Logger {
+            override fun log(message: String) {
+                Log.d(KtorLogTag, message)
+            }
+        }
         level = LogLevel.BODY
     }
 }

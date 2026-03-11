@@ -13,4 +13,7 @@ enum class DifficultyDto {
 
     @SerialName("hard")
     HARD,
+
+    @SerialName("none")
+    NONE,
 }

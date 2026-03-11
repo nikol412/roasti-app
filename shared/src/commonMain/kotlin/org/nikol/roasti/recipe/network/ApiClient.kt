@@ -5,6 +5,8 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.HttpMessageBuilder
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.serializer
 import org.nikol.roasti.recipe.network.dto.BrewMethodDto
 import org.nikol.roasti.recipe.network.dto.DifficultyDto
 import org.nikol.roasti.recipe.network.dto.RecipesResponseDto
@@ -39,6 +41,18 @@ class RecipesApiClientImpl(
         return try {
             val result = httpClient.get(RecipesPath) {
                 userIdHeader(UserId)
+                url {
+                    if (brewMethod != null) parameters.append(
+                        "brew_method",
+                        getSerialName(brewMethod)
+                    )
+                    if (difficulty != null) parameters.append(
+                        "difficulty",
+                        getSerialName(difficulty)
+                    )
+                    parameters.append("limit", limit.toString())
+                    parameters.append("page", page.toString())
+                }
             }.body<RecipesResponseDto>()
             Result.success(result)
 
@@ -49,3 +63,8 @@ class RecipesApiClientImpl(
 }
 
 private fun HttpMessageBuilder.userIdHeader(id: String) = header(UserIdHeader, id)
+
+@OptIn(ExperimentalSerializationApi::class)
+inline fun <reified T : Enum<T>> getSerialName(value: T): String {
+    return serializer<T>().descriptor.getElementName(value.ordinal)
+}
