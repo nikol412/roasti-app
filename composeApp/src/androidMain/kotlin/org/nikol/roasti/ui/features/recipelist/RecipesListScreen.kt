@@ -27,20 +27,27 @@ import androidx.compose.material3.ChipColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,8 +64,10 @@ import org.nikol.roasti.recipe.model.BrewMethod
 import org.nikol.roasti.recipe.model.Difficulty
 import org.nikol.roasti.recipe.model.Recipe
 import org.nikol.roasti.recipe.model.RoastLevel
+import org.nikol.roasti.ui.features.createrecipe.CreateRecipeSheet
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.RoastiTypography
+import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.ErrorStub
 import kotlin.time.Duration.Companion.seconds
@@ -79,26 +88,69 @@ internal fun RecipesListScreen(
     val filtersState by viewModel.filtersState.collectAsStateWithLifecycle()
     val state by viewModel.recipes.collectAsStateWithLifecycle()
 
-    when (state) {
-        RecipesListState.Loading -> Loading(Modifier
-            .fillMaxSize()
-            .padding(contentPadding))
-        RecipesListState.Error -> ErrorStub(
-            stringResource(R.string.recipes_load_error),
-            modifier = Modifier.padding(contentPadding)
-        )
+    var showCreateSheet by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
-        is RecipesListState.Content -> Content(
-            filtersState = filtersState,
-            state = state as RecipesListState.Content,
-            onClick = onRecipeClick,
-            onLoadMore = viewModel::loadNextPage,
-            onBrewMethodSelected = { viewModel.filterByBrewMethod(it) },
-            onDifficultySelected = { viewModel.filterByDifficulty(it) },
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope,
-            contentPadding = contentPadding,
-            modifier = Modifier.fillMaxSize(),
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (state) {
+            RecipesListState.Loading -> Loading(
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            )
+
+            RecipesListState.Error -> ErrorStub(
+                stringResource(R.string.recipes_load_error),
+                modifier = Modifier.padding(contentPadding)
+            )
+
+            is RecipesListState.Content -> Content(
+                filtersState = filtersState,
+                state = state as RecipesListState.Content,
+                onClick = onRecipeClick,
+                onLoadMore = viewModel::loadNextPage,
+                onRefresh = { viewModel.reload() },
+                onBrewMethodSelected = { viewModel.filterByBrewMethod(it) },
+                onDifficultySelected = { viewModel.filterByDifficulty(it) },
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+                contentPadding = contentPadding,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        FloatingActionButton(
+            onClick = { showCreateSheet = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(
+                    end = Spacing.lg,
+                    bottom = contentPadding.calculateBottomPadding() + Spacing.lg,
+                ),
+            containerColor = MaterialTheme.colorScheme.primary,
+        ) {
+            Text("+", style = MaterialTheme.typography.headlineMedium)
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = contentPadding.calculateBottomPadding()),
+        )
+    }
+
+    if (showCreateSheet) {
+        CreateRecipeSheet(
+            onDismiss = { showCreateSheet = false },
+            onPublished = {
+                showCreateSheet = false
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(if(it) "Recipe created" else "something went wrong, try again")
+                }
+                viewModel.reload()
+            },
         )
     }
 }
@@ -121,6 +173,7 @@ private fun Content(
     state: RecipesListState.Content,
     onClick: (Recipe) -> Unit,
     onLoadMore: () -> Unit,
+    onRefresh: () -> Unit,
     onBrewMethodSelected: (BrewMethod?) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
     sharedTransitionScope: SharedTransitionScope?,
@@ -141,41 +194,47 @@ private fun Content(
             .collect { onLoadMore() }
     }
 
-    LazyColumn(
-        state = listState,
-        modifier = modifier,
-        contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 16.dp)
-    ) {
+    PullToRefreshBox(isRefreshing = state.isRefreshing, onRefresh = onRefresh, modifier) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 16.dp)
+        ) {
 
-        stickyHeader {
-            Surface(Modifier.fillMaxWidth()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(16.dp)) {
-                    BrewMethodSelector(filtersState.brewMethod, onBrewMethodSelected)
-                    DifficultySelector(filtersState.difficulty,onDifficultySelected)
+            stickyHeader {
+                Surface(Modifier.fillMaxWidth()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        BrewMethodSelector(filtersState.brewMethod, onBrewMethodSelected)
+                        DifficultySelector(filtersState.difficulty, onDifficultySelected)
+                    }
                 }
             }
-        }
-        items(state.recipes, key = { it.id }) { recipe ->
-            RecipeItem(
-                item = recipe,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
-                modifier = Modifier.fillMaxWidth().clickable { onClick(recipe) },
-            )
-        }
-        if (state.isLoadingMore) {
-            item {
-                Box(
+            items(state.recipes, key = { it.id }) { recipe ->
+                RecipeItem(
+                    item = recipe,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
                     modifier = Modifier
-                        .fillParentMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(32.dp),
-                        color = MaterialTheme.colorScheme.secondary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
+                        .fillMaxWidth()
+                        .clickable { onClick(recipe) },
+                )
+            }
+            if (state.isLoadingMore) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = MaterialTheme.colorScheme.secondary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                    }
                 }
             }
         }

@@ -24,5 +24,5 @@ data class RecipeDto(
     @SerialName("beans")
     val beans: String? = null,
     @SerialName("steps")
-    val steps: List<BrewStepDto>,
+    val steps: List<BrewStepDto>? = null,
 )

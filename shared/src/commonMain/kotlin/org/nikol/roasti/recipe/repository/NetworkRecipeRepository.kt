@@ -1,13 +1,19 @@
 package org.nikol.roasti.recipe.repository
 
 import org.nikol.roasti.recipe.model.BrewMethod
+import org.nikol.roasti.recipe.model.BrewStep
 import org.nikol.roasti.recipe.model.Difficulty
 import org.nikol.roasti.recipe.model.Recipe
 import org.nikol.roasti.recipe.model.RecipesPaginated
+import org.nikol.roasti.recipe.model.RoastLevel
 import org.nikol.roasti.recipe.network.RecipesApiClient
 import org.nikol.roasti.recipe.network.dto.BrewMethodDto
+import org.nikol.roasti.recipe.network.dto.BrewStepDto
 import org.nikol.roasti.recipe.network.dto.DifficultyDto
+import org.nikol.roasti.recipe.network.dto.RecipeDto
+import org.nikol.roasti.recipe.network.dto.RoastLevelDto
 import org.nikol.roasti.recipe.network.dto.toDomain
+import org.nikol.roasti.recipe.network.toDomain
 
 class NetworkRecipeRepository(
     private val apiClient: RecipesApiClient,
@@ -39,6 +45,38 @@ class NetworkRecipeRepository(
 
     override suspend fun getById(id: String): Recipe? =
         getRecipesOrNull()?.items?.find { recipe -> recipe.id == id }
+
+    override suspend fun addRecipe(recipe: Recipe): Result<Recipe> {
+        return apiClient.addRecipe(recipe.toDto()).map { it.toDomain() }
+    }
+}
+
+private fun Recipe.toDto() = RecipeDto(
+    id = id,
+    authorId = "",
+    title = title,
+    description = description,
+    imageUrl = imageUrl,
+    brewMethod = brewMethod?.toDto() ?: BrewMethodDto.NONE,
+    difficulty = difficulty?.toDto() ?: DifficultyDto.NONE,
+    roastLevel = roastLevel.toDto(),
+    beans = beans,
+    steps = steps.map { it.toDto() })
+
+private fun BrewStep.toDto() = BrewStepDto(
+    order = order,
+    title = title,
+    description = description,
+    durationSeconds = durationSeconds,
+)
+
+fun RoastLevel?.toDto() = when (this) {
+    RoastLevel.Dark -> RoastLevelDto.DARK
+    RoastLevel.MediumDark -> RoastLevelDto.MEDIUM_DARK
+    RoastLevel.Medium -> RoastLevelDto.MEDIUM
+    RoastLevel.MediumLight -> RoastLevelDto.MEDIUM_LIGHT
+    RoastLevel.Light -> RoastLevelDto.LIGHT
+    else -> RoastLevelDto.NONE
 }
 
 private fun BrewMethod.toDto(): BrewMethodDto = when (this) {

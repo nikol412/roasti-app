@@ -15,4 +15,6 @@ interface RecipeRepository {
     ): Result<RecipesPaginated>
 
     suspend fun getById(id: String): Recipe?
+
+    suspend fun addRecipe(recipe: Recipe): Result<Recipe>
 }

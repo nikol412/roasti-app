@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.nikol.roasti.recipe.filters.FilterStateHandler
 import org.nikol.roasti.recipe.filters.FiltersState
@@ -71,6 +72,23 @@ class RecipesListViewModel(
                     isLoadingMore = false,
                     hasMore = false,
                 )
+            }
+        }
+    }
+
+    fun reload() {
+        viewModelScope.launch {
+            val isContentState = recipes.value is RecipesListState.Content
+
+            if (isContentState) {
+                _recipes.update {
+                    if (it is RecipesListState.Content) {
+                        it.copy(isRefreshing = true)
+                    } else {
+                        RecipesListState.Loading
+                    }
+                }
+                loadPage(page = FirstPage, filters = filtersState.value)
             }
         }
     }

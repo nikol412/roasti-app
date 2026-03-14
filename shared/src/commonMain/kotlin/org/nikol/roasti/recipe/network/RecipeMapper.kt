@@ -18,10 +18,10 @@ fun RecipeDto.toDomain(): Recipe = Recipe(
     imageUrl = imageUrl,
     brewMethod = brewMethod.toDomain(),
     difficulty = difficulty.toDomain(),
-    totalBrewTimeSeconds = steps.sumOf { step -> step.durationSeconds ?: 0 },
+    totalBrewTimeSeconds = steps.orEmpty().sumOf { step -> step.durationSeconds ?: 0 },
     roastLevel = roastLevel?.toDomain(),
     beans = beans,
-    steps = steps.map(BrewStepDto::toDomain),
+    steps = steps.orEmpty().map(BrewStepDto::toDomain),
 )
 
 private fun BrewStepDto.toDomain(): BrewStep = BrewStep(
