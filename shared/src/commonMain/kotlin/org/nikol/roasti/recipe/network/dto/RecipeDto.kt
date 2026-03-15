@@ -13,8 +13,8 @@ data class RecipeDto(
     val title: String,
     @SerialName("description")
     val description: String,
-    @SerialName("image_url")
-    val imageUrl: String? = null,
+    @SerialName("image_id")
+    val imageId: String? = null,
     @SerialName("brew_method")
     val brewMethod: BrewMethodDto,
     @SerialName("difficulty")

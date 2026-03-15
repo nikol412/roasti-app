@@ -79,7 +79,7 @@ internal class RecipeStepsViewModel(
     }
 
     private fun startSession(recipe: Recipe) {
-        val brew = BrewingSession(recipe, currentStepIndex = startStepIndex.coerceIn(0, recipe.steps.lastIndex))
+        val brew = BrewingSession(recipe, currentStepIndex = if (recipe.steps.lastIndex > 0) startStepIndex.coerceIn(0, recipe.steps.lastIndex) else 0)
         startSession(brew)
     }
 

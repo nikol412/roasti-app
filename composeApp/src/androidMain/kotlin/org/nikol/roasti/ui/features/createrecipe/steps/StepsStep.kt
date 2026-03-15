@@ -1,5 +1,9 @@
 package org.nikol.roasti.ui.features.createrecipe.steps
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,10 +18,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -32,17 +38,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormBrewStepItem
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormState
 import org.nikol.roasti.ui.theme.Spacing
+import org.nikol.roasti.upload.imageUrl
+import org.nikol.roasti.utils.compressImage
+import java.util.UUID
 
 @Composable
 internal fun StepsStep(
     state: CreateRecipeFormState,
     onAddStep: (CreateRecipeFormBrewStepItem) -> Unit,
     onRemoveStep: (Int) -> Unit,
+    onUploadStepImage: (String, ByteArray) -> Unit,
     onBack: () -> Unit,
     onContinue: () -> Unit,
 ) {
@@ -59,7 +73,7 @@ internal fun StepsStep(
             return
         }
         val totalSeconds = (stepMinutes.toIntOrNull() ?: 0) * 60 + (stepSeconds.toIntOrNull() ?: 0)
-        onAddStep(CreateRecipeFormBrewStepItem(stepTitle.trim(), stepDescription.trim(), totalSeconds))
+        onAddStep(CreateRecipeFormBrewStepItem(stepTitle.trim(), stepDescription.trim(), totalSeconds, imageId = state.pendingStepImageId))
         stepTitle = ""
         stepDescription = ""
         stepMinutes = ""
@@ -119,10 +133,13 @@ internal fun StepsStep(
                         minutes = stepMinutes,
                         seconds = stepSeconds,
                         showTitleError = showTitleError,
+                        stepImageId = state.pendingStepImageId,
+                        isUploadingStepImage = state.isUploadingStepImage,
                         onTitleChange = { stepTitle = it; if (showTitleError) showTitleError = false },
                         onDescriptionChange = { stepDescription = it },
                         onMinutesChange = { if (it.length <= 2 && it.all(Char::isDigit)) stepMinutes = it },
                         onSecondsChange = { if (it.length <= 2 && it.all(Char::isDigit)) stepSeconds = it },
+                        onUploadImage = onUploadStepImage,
                         onSubmit = ::submitStep,
                         onCancel = { isAdding = false; showTitleError = false },
                     )
@@ -237,13 +254,23 @@ private fun AddStepForm(
     minutes: String,
     seconds: String,
     showTitleError: Boolean,
+    stepImageId: String?,
+    isUploadingStepImage: Boolean,
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onMinutesChange: (String) -> Unit,
     onSecondsChange: (String) -> Unit,
+    onUploadImage: (String, ByteArray) -> Unit,
     onSubmit: () -> Unit,
     onCancel: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val imageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            val bytes = compressImage(context.contentResolver, it)
+            onUploadImage("${UUID.randomUUID()}.jpg", bytes)
+        }
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -254,7 +281,31 @@ private fun AddStepForm(
                 .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Text("New Step", style = MaterialTheme.typography.labelLarge)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                Text("New Step", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable(enabled = !isUploadingStepImage) { imageLauncher.launch("image/*") },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when {
+                        isUploadingStepImage -> CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        stepImageId != null -> AsyncImage(
+                            model = imageUrl(stepImageId),
+                            contentDescription = "Step image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        else -> Text("📷", style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = title,

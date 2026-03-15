@@ -4,7 +4,7 @@ data class Recipe(
     val id: String,
     val title: String,
     val description: String,
-    val imageUrl: String?,
+    val imageId: String?,
     val brewMethod: BrewMethod?,
     val difficulty: Difficulty?,
     val totalBrewTimeSeconds: Int,

@@ -13,4 +13,6 @@ data class BrewStepDto(
     val description: String,
     @SerialName("duration_seconds")
     val durationSeconds: Int? = null,
+    @SerialName("image_id")
+    val imageId: String? = null,
 )

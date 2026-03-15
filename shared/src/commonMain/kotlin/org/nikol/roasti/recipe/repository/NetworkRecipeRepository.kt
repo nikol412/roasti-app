@@ -56,7 +56,7 @@ private fun Recipe.toDto() = RecipeDto(
     authorId = "",
     title = title,
     description = description,
-    imageUrl = imageUrl,
+    imageId = imageId,
     brewMethod = brewMethod?.toDto() ?: BrewMethodDto.NONE,
     difficulty = difficulty?.toDto() ?: DifficultyDto.NONE,
     roastLevel = roastLevel.toDto(),
@@ -68,6 +68,7 @@ private fun BrewStep.toDto() = BrewStepDto(
     title = title,
     description = description,
     durationSeconds = durationSeconds,
+    imageId = imageId,
 )
 
 fun RoastLevel?.toDto() = when (this) {

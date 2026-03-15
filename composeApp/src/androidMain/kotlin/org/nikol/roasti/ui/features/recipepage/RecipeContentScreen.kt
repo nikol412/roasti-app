@@ -49,6 +49,7 @@ import org.nikol.roasti.recipe.model.BrewStep
 import org.nikol.roasti.recipe.model.Difficulty
 import org.nikol.roasti.recipe.model.Recipe
 import org.nikol.roasti.recipe.model.RoastLevel
+import org.nikol.roasti.upload.imageUrl
 import org.nikol.roasti.ui.theme.Orange600
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.ShapeXxl
@@ -132,7 +133,7 @@ private fun RecipeContentScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        RecipeHeaderImage(imageUrl = recipe.imageUrl)
+        RecipeHeaderImage(imageUrl = recipe.imageId?.let { imageUrl(it) })
         RecipeContentList(
             recipe = recipe,
             stepModifiers = stepModifiers,
@@ -524,7 +525,7 @@ private fun RecipeContentScreenPreview() {
                         id = "classic-pour-over",
                         title = "Classic Pour Over",
                         description = "A bright and floral pour over with notes of blueberry and citrus.",
-                        imageUrl = "https://example.com/coffee.jpg",
+                        imageId = null,
                         brewMethod = BrewMethod.V60,
                         difficulty = Difficulty.Medium,
                         totalBrewTimeSeconds = 240,

@@ -11,5 +11,5 @@ val viewModelsModule = module {
     viewModel { RecipesListViewModel(get(), get()) }
     viewModel { params -> RecipeContentViewModel(params.get(), get()) }
     viewModel { params -> RecipeStepsViewModel(params.get(), params.get(), get(), get()) }
-    viewModel { CreateRecipeViewModel(get()) }
+    viewModel { CreateRecipeViewModel(get(), get()) }
 }

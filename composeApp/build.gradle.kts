@@ -45,7 +45,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(projects.shared)
             implementation(libs.coil.compose)
-            implementation(libs.coil.network.okhttp)
+            implementation(libs.coil.network.ktor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

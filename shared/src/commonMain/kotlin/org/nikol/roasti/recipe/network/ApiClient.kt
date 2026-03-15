@@ -43,7 +43,7 @@ class UploadRecipeRequestBody(
     @SerialName("brew_method") val brewMethod: BrewMethodDto? = null,
     @SerialName("description") val description: String,
     @SerialName("difficulty") val difficulty: DifficultyDto,
-    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("image_id") val imageId: String? = null,
     @SerialName("roast_level") val roastLevel: RoastLevelDto? = null,
     @SerialName("steps") val steps: List<UploadRecipeStepRequestBody>,
 )
@@ -52,12 +52,13 @@ class UploadRecipeRequestBody(
 class UploadRecipeStepRequestBody(
     @SerialName("description") val description: String,
     @SerialName("duration_seconds") val durationSeconds: Int? = null,
+    @SerialName("image_id") val imageId: String? = null,
     @SerialName("order") val order: Int,
     @SerialName("title") val title: String,
 )
 
-fun RecipeDto.toRequest() = UploadRecipeRequestBody(title, beans, brewMethod, description, difficulty, imageUrl, roastLevel, steps.orEmpty().map { it.toRequest() })
-fun BrewStepDto.toRequest() = UploadRecipeStepRequestBody(description, durationSeconds, order, title)
+fun RecipeDto.toRequest() = UploadRecipeRequestBody(title, beans, brewMethod, description, difficulty, imageId, roastLevel, steps.orEmpty().map { it.toRequest() })
+fun BrewStepDto.toRequest() = UploadRecipeStepRequestBody(description, durationSeconds, imageId, order, title)
 
 class RecipesApiClientImpl(
     private val httpClient: HttpClient,
@@ -72,6 +73,7 @@ class RecipesApiClientImpl(
     ): Result<RecipesResponseDto> = runCatching {
             httpClient.get(RecipesPath) {
                 userIdHeader(UserId)
+                contentType(ContentType.Application.Json)
                 url {
                     if (brewMethod != null) parameters.append(
                         "brew_method",

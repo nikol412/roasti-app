@@ -15,7 +15,7 @@ fun RecipeDto.toDomain(): Recipe = Recipe(
     id = id,
     title = title,
     description = description,
-    imageUrl = imageUrl,
+    imageId = imageId,
     brewMethod = brewMethod.toDomain(),
     difficulty = difficulty.toDomain(),
     totalBrewTimeSeconds = steps.orEmpty().sumOf { step -> step.durationSeconds ?: 0 },
@@ -29,6 +29,7 @@ private fun BrewStepDto.toDomain(): BrewStep = BrewStep(
     title = title,
     description = description,
     durationSeconds = durationSeconds,
+    imageId = imageId,
 )
 
 private fun BrewMethodDto.toDomain(): BrewMethod? = when (this) {

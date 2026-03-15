@@ -26,20 +26,9 @@ import org.nikol.roasti.ui.theme.Spacing
 @Composable
 internal fun PreviewStep(
     state: CreateRecipeFormState,
-    eventsFlow: Flow<CreateRecipeEvent>,
     onBack: () -> Unit,
-    onPublish: (success: Boolean) -> Unit,
     onUpload: () -> Unit
 ) {
-    LaunchedEffect(Unit) {
-        eventsFlow.collectLatest {
-            when (it) {
-                is CreateRecipeEvent.OnRequestFinished -> {
-                    onPublish(it.recipe != null)
-                }
-            }
-        }
-    }
     Column(
         modifier = Modifier
             .fillMaxWidth()

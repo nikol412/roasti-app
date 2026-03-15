@@ -22,10 +22,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,7 +58,21 @@ fun CreateRecipeSheet(
     val formState by viewModel.state.collectAsStateWithLifecycle()
     val sheetNavController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showDiscardDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { event ->
+            when(event) {
+                is CreateRecipeEvent.OnRequestFinished -> {
+                    onPublished(event .recipe != null)
+                }
+                is CreateRecipeEvent.OnImageUploadFailed -> {
+                    snackbarHostState.showSnackbar("Failed to upload image. Please try again.")
+                }
+            }
+        }
+    }
 
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = false,
@@ -125,6 +142,8 @@ fun CreateRecipeSheet(
 
         HorizontalDivider()
 
+        SnackbarHost(snackbarHostState)
+
         // NavHost with steps + expand overlay
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             NavHost(
@@ -146,6 +165,7 @@ fun CreateRecipeSheet(
                         onBeansChange = viewModel::updateBeans,
                         onDifficultyChange = viewModel::updateDifficulty,
                         onDescriptionChange = viewModel::updateDescription,
+                        onUploadImage = viewModel::uploadImage,
                         onContinue = { sheetNavController.navigate(SheetStep.Steps) },
                         onDiscardRequest = { showDiscardDialog = true },
                         onDismiss = dismissSheet,
@@ -156,6 +176,7 @@ fun CreateRecipeSheet(
                         state = formState,
                         onAddStep = viewModel::addBrewStep,
                         onRemoveStep = viewModel::removeBrewStepByIndex,
+                        onUploadStepImage = viewModel::uploadBrewStepImage,
                         onBack = { sheetNavController.popBackStack() },
                         onContinue = { sheetNavController.navigate(SheetStep.Preview) },
                     )
@@ -163,9 +184,7 @@ fun CreateRecipeSheet(
                 composable(SheetStep.Preview) {
                     PreviewStep(
                         state = formState,
-                        eventsFlow = viewModel.events,
                         onBack = { sheetNavController.popBackStack() },
-                        onPublish = { onPublished(it) },
                         onUpload = { viewModel.publishRecipe() }
                     )
                 }

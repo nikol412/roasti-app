@@ -16,12 +16,14 @@ import org.nikol.roasti.recipe.model.Difficulty
 import org.nikol.roasti.recipe.model.Recipe
 import org.nikol.roasti.recipe.model.RoastLevel
 import org.nikol.roasti.recipe.repository.RecipeRepository
+import org.nikol.roasti.upload.repository.UploadRepository
 
 
 data class CreateRecipeFormBrewStepItem(
     val title: String,
     val description: String,
     val durationInSeconds: Int = 0,
+    val imageId: String? = null,
 )
 
 data class CreateRecipeFormState(
@@ -30,6 +32,9 @@ data class CreateRecipeFormState(
     val description: String = "",
     val difficulty: Difficulty = Difficulty.Medium,
     val imageId: String? = null,
+    val isUploadingImage: Boolean = false,
+    val pendingStepImageId: String? = null,
+    val isUploadingStepImage: Boolean = false,
     val roastLevel: RoastLevel? = null,
     val beans: String = "",
     val brewSteps: List<CreateRecipeFormBrewStepItem> = emptyList(),
@@ -44,9 +49,13 @@ data class CreateRecipeFormState(
 
 sealed interface CreateRecipeEvent {
     data class OnRequestFinished(val recipe: Recipe?) : CreateRecipeEvent
+    data object OnImageUploadFailed : CreateRecipeEvent
 }
 
-class CreateRecipeViewModel(private val repository: RecipeRepository) : ViewModel() {
+class CreateRecipeViewModel(
+    private val repository: RecipeRepository,
+    private val uploadRepository: UploadRepository,
+) : ViewModel() {
     private val _state = MutableStateFlow(CreateRecipeFormState())
     val state: StateFlow<CreateRecipeFormState> = _state.asStateFlow()
 
@@ -60,7 +69,7 @@ class CreateRecipeViewModel(private val repository: RecipeRepository) : ViewMode
     fun updateDifficulty(value: Difficulty) = _state.update { it.copy(difficulty = value) }
     fun updateDescription(value: String) = _state.update { it.copy(description = value) }
     fun addBrewStep(step: CreateRecipeFormBrewStepItem) {
-        _state.update { it.copy(brewSteps = it.brewSteps + step) }
+        _state.update { it.copy(brewSteps = it.brewSteps + step, pendingStepImageId = null) }
     }
 
     fun removeBrewStepByIndex(index: Int) {
@@ -68,6 +77,24 @@ class CreateRecipeViewModel(private val repository: RecipeRepository) : ViewMode
             val updatedList = it.brewSteps.toMutableList()
             updatedList.removeAt(index)
             it.copy(brewSteps = updatedList)
+        }
+    }
+
+    fun uploadImage(fileName: String, bytes: ByteArray) {
+        viewModelScope.launch {
+            _state.update { it.copy(isUploadingImage = true) }
+            val result = uploadRepository.uploadImage(fileName, bytes)
+            if (result.isFailure) _events.emit(CreateRecipeEvent.OnImageUploadFailed)
+            _state.update { it.copy(imageId = result.getOrNull()?.id, isUploadingImage = false) }
+        }
+    }
+
+    fun uploadBrewStepImage(fileName: String, bytes: ByteArray) {
+        viewModelScope.launch {
+            _state.update { it.copy(isUploadingStepImage = true) }
+            val result = uploadRepository.uploadImage(fileName, bytes)
+            if (result.isFailure) _events.emit(CreateRecipeEvent.OnImageUploadFailed)
+            _state.update { it.copy(pendingStepImageId = result.getOrNull()?.id, isUploadingStepImage = false) }
         }
     }
 
@@ -87,7 +114,7 @@ private fun CreateRecipeFormState.toRecipe() = Recipe(
     "",
     title = this.name,
     description = description,
-    imageUrl = null,
+    imageId = imageId,
     brewMethod = brewMethod,
     difficulty = difficulty,
     totalBrewTimeSeconds = 0,
@@ -97,4 +124,4 @@ private fun CreateRecipeFormState.toRecipe() = Recipe(
 )
 
 private fun CreateRecipeFormBrewStepItem.toBrewStep(index: Int) =
-    BrewStep(index, title, description, durationInSeconds)
+    BrewStep(index, title, description, durationInSeconds, imageId)

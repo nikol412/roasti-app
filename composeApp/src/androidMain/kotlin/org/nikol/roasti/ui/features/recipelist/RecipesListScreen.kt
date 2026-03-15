@@ -64,6 +64,7 @@ import org.nikol.roasti.recipe.model.BrewMethod
 import org.nikol.roasti.recipe.model.Difficulty
 import org.nikol.roasti.recipe.model.Recipe
 import org.nikol.roasti.recipe.model.RoastLevel
+import org.nikol.roasti.upload.imageUrl
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeSheet
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.RoastiTypography
@@ -260,7 +261,7 @@ private fun RecipeItem(
             .then(sharedBoundsModifier)
             .clip(RoundedCornerShape(8.dp)),
     ) {
-        RecipeImage(url = item.imageUrl)
+        RecipeImage(url = item.imageId?.let { imageUrl(it) })
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.padding(12.dp)
@@ -424,7 +425,7 @@ private fun RecipeItemPreview() {
                     id = "erat",
                     title = "reformidans reformidans reformidans",
                     description = "eos",
-                    imageUrl = "https://search.yahoo.com/search?p=singulis",
+                    imageId = null,
                     brewMethod = BrewMethod.V60,
                     difficulty = Difficulty.Easy,
                     totalBrewTimeSeconds = 2895,
