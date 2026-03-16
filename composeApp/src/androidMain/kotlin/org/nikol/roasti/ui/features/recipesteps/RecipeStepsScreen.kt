@@ -40,7 +40,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
@@ -50,7 +49,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.nikol.roasti.R
-import org.nikol.roasti.ui.theme.Orange600
 import org.nikol.roasti.ui.theme.ShapeXxl
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
@@ -200,7 +198,7 @@ private fun StepContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg),
-            color = Orange600,
+            color = MaterialTheme.colorScheme.tertiary,
             trackColor = MaterialTheme.colorScheme.outlineVariant,
         )
 
@@ -247,16 +245,21 @@ private fun StepContent(
             }
         }
 
-        CircularTimer(
-            timerProgress = session.timerProgress,
-            remainingSeconds = session.remainingSeconds,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(Spacing.xl),
-        )
+        if (session.hasTimer) {
+            CircularTimer(
+                timerProgress = session.timerProgress,
+                remainingSeconds = session.remainingSeconds,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(Spacing.xl),
+            )
+        } else {
+            Spacer(modifier = Modifier.height(Spacing.xl))
+        }
 
         BottomControls(
             isFirstStep = session.isFirstStep,
+            hasTimer = session.hasTimer,
             isTimerRunning = session.isTimerRunning,
             onPreviousStep = onPreviousStep,
             onPauseResume = {
@@ -278,7 +281,7 @@ private fun CircularTimer(
         animationSpec = tween(durationMillis = TimerAnimationDurationMillis, easing = LinearEasing),
         label = "timer_arc",
     )
-    val arcColor = Orange600
+    val arcColor = MaterialTheme.colorScheme.tertiary
     val trackColor = MaterialTheme.colorScheme.outlineVariant
 
     Box(
@@ -313,6 +316,7 @@ private fun CircularTimer(
 @Composable
 private fun BottomControls(
     isFirstStep: Boolean,
+    hasTimer: Boolean,
     isTimerRunning: Boolean,
     onPreviousStep: () -> Unit,
     onPauseResume: () -> Unit,
@@ -338,27 +342,31 @@ private fun BottomControls(
             )
         }
 
-        FilledIconButton(
-            onClick = onPauseResume,
-            modifier = Modifier.size(72.dp),
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = Orange600,
-                contentColor = Color.White,
-            ),
-        ) {
-            AnimatedContent(
-                targetState = isTimerRunning,
-                transitionSpec = {
-                    fadeIn(tween(150)) togetherWith fadeOut(tween(150))
-                },
-                label = "pause_resume_icon",
-            ) { running ->
-                Text(
-                    text = if (running) "⏸" else "▶",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                )
+        if (hasTimer) {
+            FilledIconButton(
+                onClick = onPauseResume,
+                modifier = Modifier.size(72.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                AnimatedContent(
+                    targetState = isTimerRunning,
+                    transitionSpec = {
+                        fadeIn(tween(150)) togetherWith fadeOut(tween(150))
+                    },
+                    label = "pause_resume_icon",
+                ) { running ->
+                    Text(
+                        text = if (running) "⏸" else "▶",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
             }
+        } else {
+            Spacer(modifier = Modifier.size(72.dp))
         }
 
         IconButton(
@@ -399,7 +407,10 @@ private fun CompletionContent(
         Spacer(modifier = Modifier.height(Spacing.xxxl))
         Button(
             onClick = onFinish,
-            colors = ButtonDefaults.buttonColors(containerColor = Orange600),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -408,7 +419,7 @@ private fun CompletionContent(
             Text(
                 text = stringResource(R.string.steps_finish),
                 style = MaterialTheme.typography.labelLarge,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
             )
         }
     }

@@ -75,6 +75,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        resValue("string", "app_name", "Roasti")
     }
     packaging {
         resources {
@@ -85,11 +86,13 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            resValue("string", "app_name", "Roasti Debug")
         }
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("release")
+            resValue("string", "app_name", "Roasti")
         }
     }
     compileOptions {

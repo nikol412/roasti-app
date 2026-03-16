@@ -50,20 +50,20 @@ internal class RecipeStepsViewModel(
     }
 
     fun nextStep() {
-        val content = currentContent() ?: return
         val brew = currentBrewingSession ?: return
+        val newBrew = brew.nextStep()
         moveToSession(
-            newBrew = brew.nextStep(),
-            shouldAutoStart = content.session.isTimerRunning,
+            newBrew = newBrew,
+            shouldAutoStart = shouldAutoStartTimerFor(newBrew),
         )
     }
 
     fun previousStep() {
-        val content = currentContent() ?: return
         val brew = currentBrewingSession ?: return
+        val newBrew = brew.previousStep()
         moveToSession(
-            newBrew = brew.previousStep(),
-            shouldAutoStart = content.session.isTimerRunning,
+            newBrew = newBrew,
+            shouldAutoStart = shouldAutoStartTimerFor(newBrew),
         )
     }
 
@@ -93,7 +93,7 @@ internal class RecipeStepsViewModel(
         currentBrewingSession = brew
         currentTimerState = StepTimerState.forStep(
             durationSeconds = brew.stepDurationSeconds,
-            isRunning = !brew.isFinished,
+            isRunning = shouldAutoStartTimerFor(brew),
             nowMillis = nowMillis,
         )
         emitContent()
@@ -112,7 +112,9 @@ internal class RecipeStepsViewModel(
 
                 val updatedTimer = currentTimerState?.advance(nowMillis) ?: return@collect
                 if (updatedTimer.remainingMillis <= 0L) {
-                    moveToNextStepFromTimer(expectedStepIndex = current.session.currentStepIndex)
+                    stopTicker()
+                    currentTimerState = updatedTimer.complete()
+                    emitContent()
                 } else {
                     currentTimerState = updatedTimer
                     emitContent()
@@ -146,14 +148,9 @@ internal class RecipeStepsViewModel(
         }
     }
 
-    private fun moveToNextStepFromTimer(expectedStepIndex: Int) {
-        val brew = currentBrewingSession ?: return
-        if (brew.currentStepIndex != expectedStepIndex) return
-
-        moveToSession(
-            newBrew = brew.nextStep(),
-            shouldAutoStart = true,
-        )
+    private fun shouldAutoStartTimerFor(brew: BrewingSession): Boolean {
+        val durationSeconds = brew.stepDurationSeconds ?: return false
+        return !brew.isFinished && durationSeconds > 0
     }
 
     private fun currentContent() = _state.value as? RecipeStepsUiState.Content

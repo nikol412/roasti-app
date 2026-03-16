@@ -43,14 +43,21 @@ internal data class StepTimerState(
         )
     }
 
+    fun complete(): StepTimerState = copy(
+        remainingMillis = 0L,
+        isRunning = false,
+        startedAtMillis = null,
+    )
+
     companion object {
-        fun forStep(durationSeconds: Int, isRunning: Boolean, nowMillis: Long): StepTimerState {
-            val totalMillis = durationSeconds * MILLIS_IN_SECOND
+        fun forStep(durationSeconds: Int?, isRunning: Boolean, nowMillis: Long): StepTimerState {
+            val totalMillis = (durationSeconds ?: 0) * MILLIS_IN_SECOND
+            val shouldRun = isRunning && totalMillis > 0L
             return StepTimerState(
                 totalMillis = totalMillis,
                 remainingMillis = totalMillis,
-                isRunning = isRunning,
-                startedAtMillis = nowMillis.takeIf { isRunning },
+                isRunning = shouldRun,
+                startedAtMillis = nowMillis.takeIf { shouldRun },
             )
         }
 
@@ -76,6 +83,7 @@ internal data class SessionState(
     val timer: StepTimerState,
 ) {
     val currentStep: BrewingStepUiModel get() = steps[currentStepIndex]
+    val hasTimer: Boolean get() = (currentStep.durationSeconds ?: 0) > 0
     val isTimerRunning: Boolean get() = timer.isRunning
     val remainingSeconds: Int get() = ceil(timer.remainingMillis / 1000f).toInt()
     val timerProgress: Float get() = timer.progress

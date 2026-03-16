@@ -13,7 +13,7 @@ data class BrewingSession(
     val isFirstStep: Boolean get() = currentStepIndex == 0
     val isLastStep: Boolean get() = currentStepIndex == totalSteps - 1
     val stepProgress: Float get() = (currentStepIndex + 1f) / totalSteps
-    val stepDurationSeconds: Int get() = currentStep.durationSeconds ?: DEFAULT_AUTO_ADVANCE
+    val stepDurationSeconds: Int? get() = currentStep.durationSeconds
 
     fun nextStep(): BrewingSession =
         if (isLastStep) copy(isFinished = true)
@@ -22,8 +22,4 @@ data class BrewingSession(
     fun previousStep(): BrewingSession =
         if (isFirstStep) this
         else copy(currentStepIndex = currentStepIndex - 1)
-
-    companion object {
-        const val DEFAULT_AUTO_ADVANCE = 10
-    }
 }

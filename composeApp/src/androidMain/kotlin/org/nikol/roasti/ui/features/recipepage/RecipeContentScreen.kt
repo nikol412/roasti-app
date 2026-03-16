@@ -4,14 +4,17 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,7 +27,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,8 +41,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -46,34 +53,39 @@ import org.koin.core.parameter.parametersOf
 import org.nikol.roasti.R
 import org.nikol.roasti.ui.features.recipepage.model.RecipeDetailsUiModel
 import org.nikol.roasti.ui.features.recipepage.model.RecipeStepUiModel
-import org.nikol.roasti.ui.theme.Orange600
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.ShapeXxl
 import org.nikol.roasti.ui.theme.Spacing
-import org.nikol.roasti.ui.theme.Stone100
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
-private val HeaderHeight = 300.dp
-private val HeaderOverlap = 56.dp
-private val MetaCardHeight = 88.dp
-private val StepNumberSize = 32.dp
-private val BackButtonSize = 40.dp
+private val HeaderHeight = 220.dp
+private val HeaderOverlap = 40.dp
+private val MetaChipShape = RoundedCornerShape(18.dp)
+private val StepNumberSize = 28.dp
+private val StepDurationShape = RoundedCornerShape(10.dp)
+private val HeaderActionButtonHeight = 40.dp
 private val PrimaryButtonHeight = 56.dp
 private val ContentShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-private val StepShape = RoundedCornerShape(16.dp)
-private val MetaCardShape = RoundedCornerShape(14.dp)
+private val HeaderActionShape = RoundedCornerShape(20.dp)
 private const val BackLabel = "<"
 private const val StartArrow = ">"
+
+private data class RecipeMetaItem(
+    val title: String,
+    val value: String,
+    val isHighlighted: Boolean = false,
+)
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecipeContentRoute(
     id: String,
     onBackClick: () -> Unit = {},
+    onEditClick: () -> Unit = {},
     onStartBrewing: (startStep: Int) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -91,6 +103,7 @@ fun RecipeContentRoute(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             onBackClick = onBackClick,
+            onEditClick = onEditClick,
             onStepClick = onStartBrewing,
         )
     }
@@ -103,6 +116,7 @@ private fun RecipeContentScreen(
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onBackClick: () -> Unit = {},
+    onEditClick: () -> Unit = {},
     onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
     val recipe = state.recipe
@@ -123,25 +137,38 @@ private fun RecipeContentScreen(
         }
     } else emptyList()
 
-    Box(
-        modifier = recipeScreenModifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        RecipeHeaderImage(imageUrl = recipe.imageUrl)
-        RecipeContentList(
-            recipe = recipe,
-            stepModifiers = stepModifiers,
-            onStepClick = onStepClick,
-            modifier = Modifier.fillMaxSize(),
-        )
-        BackButton(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(start = Spacing.lg, top = Spacing.lg)
-                .clickable { onBackClick() }
-        )
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0),
+        bottomBar = {
+            RecipeBottomBar(
+                enabled = recipe.steps.isNotEmpty(),
+                onClick = {
+                    if (recipe.steps.isNotEmpty()) {
+                        onStepClick(0)
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        Box(
+            modifier = recipeScreenModifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            RecipeHeaderImage(imageUrl = recipe.imageUrl)
+            RecipeContentList(
+                recipe = recipe,
+                stepModifiers = stepModifiers,
+                bottomContentPadding = innerPadding.calculateBottomPadding(),
+                modifier = Modifier.fillMaxSize(),
+            )
+            RecipeTopBar(
+                onBackClick = onBackClick,
+                onEditClick = onEditClick,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+        }
     }
 }
 
@@ -181,12 +208,12 @@ private fun RecipeHeaderImage(
 private fun RecipeContentList(
     recipe: RecipeDetailsUiModel,
     stepModifiers: List<Modifier> = emptyList(),
-    onStepClick: (stepIndex: Int) -> Unit = {},
+    bottomContentPadding: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(bottom = Spacing.xxxl),
+        contentPadding = PaddingValues(bottom = Spacing.xxxl + bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(Spacing.lg),
     ) {
         item {
@@ -196,7 +223,6 @@ private fun RecipeContentList(
             RecipeMainContent(
                 recipe = recipe,
                 stepModifiers = stepModifiers,
-                onStepClick = onStepClick,
             )
         }
     }
@@ -206,7 +232,6 @@ private fun RecipeContentList(
 private fun RecipeMainContent(
     recipe: RecipeDetailsUiModel,
     stepModifiers: List<Modifier> = emptyList(),
-    onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -225,118 +250,165 @@ private fun RecipeMainContent(
             text = recipe.description,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
-        RecipeMetaGrid(recipe = recipe)
-        recipe.beans?.let { beans ->
-            RecipeTextSection(
-                title = stringResource(R.string.recipe_beans),
-                value = beans,
-            )
-        }
-        recipe.roastLevelLabelRes?.let { roastLevelLabelRes ->
-            RecipeTextSection(
-                title = stringResource(R.string.recipe_roast_level),
-                value = stringResource(roastLevelLabelRes),
-            )
-        }
+        RecipeMetaSection(recipe = recipe)
         RecipeStepsSection(
             steps = recipe.steps,
             stepModifiers = stepModifiers,
-            onStepClick = onStepClick,
-        )
-        StartBrewingButton(
-            onClick = {
-                if (recipe.steps.isNotEmpty()) {
-                    onStepClick(0)
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
-            enabled = recipe.steps.isNotEmpty(),
         )
     }
 }
 
 @Composable
-private fun RecipeMetaGrid(
+private fun RecipeTopBar(
+    onBackClick: () -> Unit,
+    onEditClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = Spacing.lg, vertical = Spacing.lg),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HeaderActionButton(
+            text = BackLabel,
+            onClick = onBackClick,
+            modifier = Modifier.size(HeaderActionButtonHeight),
+        )
+        HeaderActionButton(
+            text = stringResource(R.string.recipe_edit),
+            onClick = onEditClick,
+            modifier = Modifier.height(HeaderActionButtonHeight),
+        )
+    }
+}
+
+@Composable
+private fun HeaderActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .clip(HeaderActionShape)
+            .clickable(onClick = onClick),
+        shape = HeaderActionShape,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+        tonalElevation = 2.dp,
+        shadowElevation = 6.dp,
+    ) {
+        Box(
+            modifier = Modifier
+                .defaultMinSize(minWidth = HeaderActionButtonHeight)
+                .padding(horizontal = Spacing.lg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipeMetaSection(
     recipe: RecipeDetailsUiModel,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            MetaCard(
+    val items = buildList {
+        add(
+            RecipeMetaItem(
                 title = stringResource(R.string.recipe_brew_method),
                 value = stringResource(recipe.brewMethodLabelRes),
-                highlight = true,
-                modifier = Modifier.weight(1f),
+                isHighlighted = true,
             )
-            MetaCard(
+        )
+        add(
+            RecipeMetaItem(
                 title = stringResource(R.string.recipe_time),
                 value = formatBrewTime(recipe.totalBrewTimeSeconds),
-                modifier = Modifier.weight(1f),
             )
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            MetaCard(
-                title = stringResource(R.string.recipe_roaster),
-                value = recipe.beans ?: stringResource(R.string.recipe_missing_value),
-                modifier = Modifier.weight(1f),
-            )
-            MetaCard(
+        )
+        add(
+            RecipeMetaItem(
                 title = stringResource(R.string.recipe_difficulty),
                 value = stringResource(recipe.difficultyLabelRes),
-                modifier = Modifier.weight(1f),
             )
+        )
+        recipe.beans?.takeIf { it.isNotBlank() }?.let { beans ->
+            add(
+                RecipeMetaItem(
+                    title = stringResource(R.string.recipe_beans),
+                    value = beans,
+                )
+            )
+        }
+        recipe.roastLevelLabelRes?.let { roastLevelLabelRes ->
+            add(
+                RecipeMetaItem(
+                    title = stringResource(R.string.recipe_roast_level),
+                    value = stringResource(roastLevelLabelRes),
+                )
+            )
+        }
+    }
+
+    RecipeMetaChips(items = items)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RecipeMetaChips(
+    items: List<RecipeMetaItem>,
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items.forEach { item ->
+            RecipeMetaChip(item = item)
         }
     }
 }
 
 @Composable
-private fun MetaCard(
-    title: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    highlight: Boolean = false,
+private fun RecipeMetaChip(
+    item: RecipeMetaItem,
 ) {
-    val backgroundColor = if (highlight) {
-        MaterialTheme.colorScheme.primaryContainer
+    val backgroundColor = if (item.isHighlighted) {
+        MaterialTheme.colorScheme.tertiaryContainer
     } else {
-        MaterialTheme.colorScheme.surface
+        MaterialTheme.colorScheme.surfaceContainer
     }
-    val borderColor = if (highlight) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.outline
-    }
-    val titleColor = if (highlight) {
-        MaterialTheme.colorScheme.primary
+    val titleColor = if (item.isHighlighted) {
+        MaterialTheme.colorScheme.tertiary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Column(
-        modifier = modifier
-            .height(MetaCardHeight)
-            .clip(MetaCardShape)
+        modifier = Modifier
+            .clip(MetaChipShape)
             .background(backgroundColor)
-            .border(width = 1.dp, color = borderColor, shape = MetaCardShape)
-            .padding(Spacing.lg),
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         Text(
-            text = title,
-            style = MaterialTheme.typography.bodySmall,
+            text = item.title,
+            style = MaterialTheme.typography.labelSmall,
             color = titleColor,
         )
         Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
+            text = item.value,
+            style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
     }
@@ -362,60 +434,42 @@ private fun recipeScreenSharedBoundsModifier(
 }
 
 @Composable
-private fun RecipeTextSection(
-    title: String,
-    value: String,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
-
-@Composable
 private fun RecipeStepsSection(
     steps: List<RecipeStepUiModel>,
     stepModifiers: List<Modifier> = emptyList(),
-    onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Text(
             text = stringResource(R.string.recipe_brewing_steps),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        steps.forEachIndexed { index, step ->
-            BrewStepCard(
-                step = step,
-                modifier = stepModifiers.getOrElse(index) { Modifier },
-                onClick = { onStepClick(index) },
-            )
+        Column {
+            steps.forEachIndexed { index, step ->
+                BrewStepItem(
+                    step = step,
+                    modifier = stepModifiers.getOrElse(index) { Modifier },
+                )
+                if (index != steps.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = StepNumberSize + Spacing.md),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun BrewStepCard(
+private fun BrewStepItem(
     step: RecipeStepUiModel,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(StepShape)
-            .background(MaterialTheme.colorScheme.background)
-            .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = StepShape)
-            .clickable(onClick = onClick)
-            .padding(Spacing.lg),
+            .padding(vertical = Spacing.md),
         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         verticalAlignment = Alignment.Top,
     ) {
@@ -423,12 +477,12 @@ private fun BrewStepCard(
             modifier = Modifier
                 .size(StepNumberSize)
                 .clip(CircleShape)
-                .background(Stone100),
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = step.order.toString(),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
@@ -448,13 +502,27 @@ private fun BrewStepCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             step.durationSeconds?.let { duration ->
-                Text(
-                    text = formatStepDuration(duration),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                StepDurationChip(duration = formatStepDuration(duration))
             }
         }
+    }
+}
+
+@Composable
+private fun StepDurationChip(
+    duration: String,
+) {
+    Box(
+        modifier = Modifier
+            .clip(StepDurationShape)
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+    ) {
+        Text(
+            text = duration,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.tertiary,
+        )
     }
 }
 
@@ -468,7 +536,7 @@ private fun StartBrewingButton(
         onClick = onClick,
         modifier = modifier.height(PrimaryButtonHeight),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Orange600,
+            containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ),
         shape = ShapeXxl,
@@ -482,21 +550,37 @@ private fun StartBrewingButton(
 }
 
 @Composable
-private fun BackButton(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.size(BackButtonSize),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-        tonalElevation = 2.dp,
-        shadowElevation = 6.dp,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = BackLabel,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+private fun RecipeBottomBar(
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                brush = Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+                        0.32f to MaterialTheme.colorScheme.surface.copy(alpha = 0.48f),
+                        0.62f to MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+                        1.0f to MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                    )
+                )
             )
-        }
+    ) {
+        StartBrewingButton(
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(
+                    start = Spacing.xxl,
+                    top = 0.dp,
+                    end = Spacing.xxl,
+                    bottom = Spacing.lg,
+                ),
+            enabled = enabled,
+        )
     }
 }
 
@@ -524,33 +608,51 @@ private fun RecipeContentScreenPreview() {
             RecipeContentScreen(
                 RecipeContentState.Content(
                     recipe = RecipeDetailsUiModel(
-                        id = "classic-pour-over",
-                        title = "Classic Pour Over",
-                        description = "A bright and floral pour over with notes of blueberry and citrus.",
+                        id = "aeropress-inverted",
+                        title = "Aeropress Inverted",
+                        description = "Clean and sweet cup with balanced acidity and a compact recipe flow that stays readable even with multiple brewing steps.",
                         imageUrl = null,
-                        brewMethodLabelRes = R.string.recipe_brew_method_v60,
+                        brewMethodLabelRes = R.string.recipe_brew_method_aeropress,
                         difficultyLabelRes = R.string.recipe_difficulty_medium,
-                        totalBrewTimeSeconds = 240,
-                        roastLevelLabelRes = R.string.recipe_roast_level_light,
-                        beans = "Ethiopian Yirgacheffe",
+                        totalBrewTimeSeconds = 180,
+                        roastLevelLabelRes = R.string.recipe_roast_level_medium,
+                        beans = "Colombian Supremo",
                         steps = listOf(
                             RecipeStepUiModel(
                                 order = 1,
-                                title = "Prepare Equipment",
-                                description = "Place filter in V60 and rinse with hot water. Discard rinse water.",
+                                title = "Setup Inverted",
+                                description = "Assemble the Aeropress in inverted position with the plunger seated securely.",
                                 durationSeconds = 30,
                             ),
                             RecipeStepUiModel(
                                 order = 2,
                                 title = "Add Coffee",
-                                description = "Add 20g of medium-fine ground coffee to the filter.",
+                                description = "Add 17 g of medium-fine ground coffee and level the bed.",
                                 durationSeconds = 15,
                             ),
                             RecipeStepUiModel(
                                 order = 3,
-                                title = "Bloom",
-                                description = "Pour 40g of water in a circular motion. Let bloom for 30 seconds.",
+                                title = "First Pour",
+                                description = "Pour in hot water to half volume and make sure all grounds are saturated.",
                                 durationSeconds = 30,
+                            ),
+                            RecipeStepUiModel(
+                                order = 4,
+                                title = "Stir",
+                                description = "Stir gently for a few seconds to break crust and improve extraction.",
+                                durationSeconds = 10,
+                            ),
+                            RecipeStepUiModel(
+                                order = 5,
+                                title = "Top Up",
+                                description = "Add the remaining water, attach the filter cap, and wait briefly.",
+                                durationSeconds = 35,
+                            ),
+                            RecipeStepUiModel(
+                                order = 6,
+                                title = "Flip And Press",
+                                description = "Carefully flip onto the cup and press slowly until you hear a hiss.",
+                                durationSeconds = 60,
                             ),
                         ),
                     )

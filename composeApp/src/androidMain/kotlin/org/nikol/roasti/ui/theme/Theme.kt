@@ -5,17 +5,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalInspectionMode
 
 private val LightColorScheme = lightColorScheme(
-    primary = Orange600,
+    primary = LightPrimary,
     onPrimary = LightPrimaryFg,
-    primaryContainer = Orange100,
-    onPrimaryContainer = Orange800,
+    primaryContainer = LightPrimaryContainer,
+    onPrimaryContainer = LightPrimaryContainerFg,
     secondary = LightSecondary,
-    onSecondary = LightForeground,
-    secondaryContainer = LightSecondary,
-    onSecondaryContainer = LightForeground,
+    onSecondary = LightSecondaryFg,
+    secondaryContainer = LightSecondaryContainer,
+    onSecondaryContainer = LightSecondaryContainerFg,
+    tertiary = LightTertiary,
+    onTertiary = LightTertiaryFg,
+    tertiaryContainer = LightTertiaryContainer,
+    onTertiaryContainer = LightTertiaryContainerFg,
     background = LightBackground,
     onBackground = LightForeground,
     surface = LightCard,
@@ -30,23 +33,29 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Orange500,
+    primary = DarkPrimary,
     onPrimary = DarkPrimaryFg,
-    primaryContainer = Orange900,
-    onPrimaryContainer = Orange100,
-    secondary = DarkSurface,
-    onSecondary = DarkForeground,
-    secondaryContainer = DarkSurface,
-    onSecondaryContainer = DarkForeground,
+    primaryContainer = DarkPrimaryContainer,
+    onPrimaryContainer = DarkPrimaryContainerFg,
+    secondary = DarkSecondary,
+    onSecondary = DarkSecondaryFg,
+    secondaryContainer = DarkSecondaryContainer,
+    onSecondaryContainer = DarkSecondaryContainerFg,
+    tertiary = DarkTertiary,
+    onTertiary = DarkTertiaryFg,
+    tertiaryContainer = DarkTertiaryContainer,
+    onTertiaryContainer = DarkTertiaryContainerFg,
     background = DarkBackground,
     onBackground = DarkForeground,
     surface = DarkCard,
     onSurface = DarkForeground,
-    surfaceVariant = DarkSurface,
+    surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = DarkMutedFg,
     outline = DarkBorder,
     error = DarkDestructive,
     onError = DarkForeground,
+    errorContainer = DarkRedContainer,
+    onErrorContainer = Red50,
 )
 
 @Composable
