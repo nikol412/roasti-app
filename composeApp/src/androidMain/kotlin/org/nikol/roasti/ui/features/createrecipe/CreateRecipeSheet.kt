@@ -43,6 +43,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeEvent
 import org.nikol.roasti.ui.features.createrecipe.steps.BasicsStep
 import org.nikol.roasti.ui.features.createrecipe.steps.PreviewStep
 import org.nikol.roasti.ui.features.createrecipe.steps.StepsStep
@@ -65,7 +66,7 @@ fun CreateRecipeSheet(
         viewModel.events.collect { event ->
             when(event) {
                 is CreateRecipeEvent.OnRequestFinished -> {
-                    onPublished(event .recipe != null)
+                    onPublished(event.isSuccessful)
                 }
                 is CreateRecipeEvent.OnImageUploadFailed -> {
                     snackbarHostState.showSnackbar("Failed to upload image. Please try again.")

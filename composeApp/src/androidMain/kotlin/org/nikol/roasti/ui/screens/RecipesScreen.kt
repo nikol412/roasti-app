@@ -46,7 +46,7 @@ private fun RecipesScreenContent(
         contentAlignment = Alignment.Center,
     ) {
         RecipesListScreen(
-            onRecipeClick = { onRecipeClick(it.id) },
+            onRecipeClick = onRecipeClick,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             contentPadding = contentPadding,

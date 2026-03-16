@@ -10,54 +10,22 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.nikol.roasti.domain.recipe.BrewMethod
-import org.nikol.roasti.domain.recipe.BrewStep
-import org.nikol.roasti.domain.recipe.Difficulty
-import org.nikol.roasti.domain.recipe.Recipe
-import org.nikol.roasti.domain.recipe.RoastLevel
 import org.nikol.roasti.domain.recipe.RecipeRepository
 import org.nikol.roasti.domain.upload.UploadRepository
-
-
-data class CreateRecipeFormBrewStepItem(
-    val title: String,
-    val description: String,
-    val durationInSeconds: Int = 0,
-    val imageId: String? = null,
-)
-
-data class CreateRecipeFormState(
-    val name: String = "",
-    val brewMethod: BrewMethod? = null,
-    val description: String = "",
-    val difficulty: Difficulty = Difficulty.Medium,
-    val imageId: String? = null,
-    val isUploadingImage: Boolean = false,
-    val pendingStepImageId: String? = null,
-    val isUploadingStepImage: Boolean = false,
-    val roastLevel: RoastLevel? = null,
-    val beans: String = "",
-    val brewSteps: List<CreateRecipeFormBrewStepItem> = emptyList(),
-) {
-
-    val isDirty: Boolean
-        get() = name.isNotBlank() || brewMethod != null || beans.isNotBlank() || description.isNotBlank()
-
-    val canContinueToSteps: Boolean
-        get() = name.isNotBlank() && brewMethod != null && roastLevel != null
-}
-
-sealed interface CreateRecipeEvent {
-    data class OnRequestFinished(val recipe: Recipe?) : CreateRecipeEvent
-    data object OnImageUploadFailed : CreateRecipeEvent
-}
+import org.nikol.roasti.ui.features.createrecipe.mapper.toRecipeDraft
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeEvent
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeStepUiModel
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeUiState
+import org.nikol.roasti.domain.recipe.model.BrewMethod
+import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.domain.recipe.model.RoastLevel
 
 class CreateRecipeViewModel(
     private val repository: RecipeRepository,
     private val uploadRepository: UploadRepository,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(CreateRecipeFormState())
-    val state: StateFlow<CreateRecipeFormState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(CreateRecipeUiState())
+    val state: StateFlow<CreateRecipeUiState> = _state.asStateFlow()
 
     private val _events = MutableSharedFlow<CreateRecipeEvent>()
 
@@ -69,7 +37,7 @@ class CreateRecipeViewModel(
     fun updateDifficulty(value: Difficulty) = _state.update { it.copy(difficulty = value) }
     fun updateRoastLevel(value: RoastLevel) = _state.update { it.copy(roastLevel = value) }
     fun updateDescription(value: String) = _state.update { it.copy(description = value) }
-    fun addBrewStep(step: CreateRecipeFormBrewStepItem) {
+    fun addBrewStep(step: CreateRecipeStepUiModel) {
         _state.update { it.copy(brewSteps = it.brewSteps + step, pendingStepImageId = null) }
     }
 
@@ -99,30 +67,13 @@ class CreateRecipeViewModel(
         }
     }
 
-    fun reset() = _state.update { CreateRecipeFormState() }
+    fun reset() = _state.update { CreateRecipeUiState() }
 
     fun publishRecipe() {
-        val recipe = state.value.toRecipe()
+        val recipe = state.value.toRecipeDraft()
         viewModelScope.launch {
             val result = repository.addRecipe(recipe)
-            _events.emit(CreateRecipeEvent.OnRequestFinished(result.getOrNull()))
+            _events.emit(CreateRecipeEvent.OnRequestFinished(result.isSuccess))
         }
     }
 }
-
-
-private fun CreateRecipeFormState.toRecipe() = Recipe(
-    "",
-    title = this.name,
-    description = description,
-    imageId = imageId,
-    brewMethod = brewMethod,
-    difficulty = difficulty,
-    totalBrewTimeSeconds = 0,
-    roastLevel = roastLevel,
-    beans = beans,
-    steps = brewSteps.mapIndexed { index, item -> item.toBrewStep(index) },
-)
-
-private fun CreateRecipeFormBrewStepItem.toBrewStep(index: Int) =
-    BrewStep(index, title, description, durationInSeconds, imageId)

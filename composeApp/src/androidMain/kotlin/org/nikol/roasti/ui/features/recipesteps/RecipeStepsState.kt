@@ -1,7 +1,5 @@
 package org.nikol.roasti.ui.features.recipesteps
 
-import org.nikol.roasti.domain.recipe.BrewStep
-import org.nikol.roasti.domain.recipe.session.BrewingSession
 import kotlin.math.ceil
 
 internal sealed interface RecipeStepsUiState {
@@ -60,17 +58,24 @@ internal data class StepTimerState(
     }
 }
 
+internal data class BrewingStepUiModel(
+    val order: Int,
+    val title: String,
+    val description: String,
+    val durationSeconds: Int?,
+)
+
 internal data class SessionState(
-    val brew: BrewingSession,
+    val steps: List<BrewingStepUiModel>,
+    val currentStepIndex: Int,
+    val totalSteps: Int,
+    val isFirstStep: Boolean,
+    val isLastStep: Boolean,
+    val isFinished: Boolean,
+    val stepProgress: Float,
     val timer: StepTimerState,
 ) {
-    val currentStep: BrewStep get() = brew.currentStep
-    val currentStepIndex: Int get() = brew.currentStepIndex
-    val totalSteps: Int get() = brew.totalSteps
-    val isFirstStep: Boolean get() = brew.isFirstStep
-    val isLastStep: Boolean get() = brew.isLastStep
-    val isFinished: Boolean get() = brew.isFinished
-    val stepProgress: Float get() = brew.stepProgress
+    val currentStep: BrewingStepUiModel get() = steps[currentStepIndex]
     val isTimerRunning: Boolean get() = timer.isRunning
     val remainingSeconds: Int get() = ceil(timer.remainingMillis / 1000f).toInt()
     val timerProgress: Float get() = timer.progress

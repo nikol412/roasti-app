@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import org.nikol.roasti.domain.recipe.RecipeRepository
+import org.nikol.roasti.ui.features.recipepage.mapper.toUiModel
 
 
 class RecipeContentViewModel(
@@ -15,7 +16,7 @@ class RecipeContentViewModel(
     private val repository: RecipeRepository
 ) : ViewModel() {
     val state: StateFlow<RecipeContentState> = flow {
-        val recipe = repository.getById(recipeId)
+        val recipe = repository.getById(recipeId)?.toUiModel()
         if (recipe != null) {
             emit(RecipeContentState.Content(recipe))
         } else {

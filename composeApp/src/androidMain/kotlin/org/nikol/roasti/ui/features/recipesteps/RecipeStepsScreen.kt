@@ -223,7 +223,7 @@ private fun StepContent(
                 },
                 label = "step_content",
             ) { stepIndex ->
-                val step = session.brew.recipe.steps[stepIndex]
+                val step = session.steps[stepIndex]
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

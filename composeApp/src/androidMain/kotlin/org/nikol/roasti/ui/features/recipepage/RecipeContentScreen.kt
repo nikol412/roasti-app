@@ -44,12 +44,8 @@ import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.nikol.roasti.R
-import org.nikol.roasti.domain.recipe.BrewMethod
-import org.nikol.roasti.domain.recipe.BrewStep
-import org.nikol.roasti.domain.recipe.Difficulty
-import org.nikol.roasti.domain.recipe.Recipe
-import org.nikol.roasti.domain.recipe.RoastLevel
-import org.nikol.roasti.utils.imageUrl
+import org.nikol.roasti.ui.features.recipepage.model.RecipeDetailsUiModel
+import org.nikol.roasti.ui.features.recipepage.model.RecipeStepUiModel
 import org.nikol.roasti.ui.theme.Orange600
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.ShapeXxl
@@ -61,7 +57,6 @@ import org.nikol.roasti.ui.uikit.LoadingStub
 import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
-private const val UnknownBrewMethodLabel = "Unknown"
 private val HeaderHeight = 300.dp
 private val HeaderOverlap = 56.dp
 private val MetaCardHeight = 88.dp
@@ -133,7 +128,7 @@ private fun RecipeContentScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        RecipeHeaderImage(imageUrl = recipe.imageId?.let { imageUrl(it) })
+        RecipeHeaderImage(imageUrl = recipe.imageUrl)
         RecipeContentList(
             recipe = recipe,
             stepModifiers = stepModifiers,
@@ -184,7 +179,7 @@ private fun RecipeHeaderImage(
 
 @Composable
 private fun RecipeContentList(
-    recipe: Recipe,
+    recipe: RecipeDetailsUiModel,
     stepModifiers: List<Modifier> = emptyList(),
     onStepClick: (stepIndex: Int) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -209,7 +204,7 @@ private fun RecipeContentList(
 
 @Composable
 private fun RecipeMainContent(
-    recipe: Recipe,
+    recipe: RecipeDetailsUiModel,
     stepModifiers: List<Modifier> = emptyList(),
     onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
@@ -238,10 +233,10 @@ private fun RecipeMainContent(
                 value = beans,
             )
         }
-        recipe.roastLevel?.let { roastLevel ->
+        recipe.roastLevelLabelRes?.let { roastLevelLabelRes ->
             RecipeTextSection(
                 title = stringResource(R.string.recipe_roast_level),
-                value = roastLevel.displayName,
+                value = stringResource(roastLevelLabelRes),
             )
         }
         RecipeStepsSection(
@@ -265,7 +260,7 @@ private fun RecipeMainContent(
 
 @Composable
 private fun RecipeMetaGrid(
-    recipe: Recipe,
+    recipe: RecipeDetailsUiModel,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Row(
@@ -274,7 +269,7 @@ private fun RecipeMetaGrid(
         ) {
             MetaCard(
                 title = stringResource(R.string.recipe_brew_method),
-                value = recipe.brewMethod?.displayName ?: UnknownBrewMethodLabel,
+                value = stringResource(recipe.brewMethodLabelRes),
                 highlight = true,
                 modifier = Modifier.weight(1f),
             )
@@ -295,7 +290,7 @@ private fun RecipeMetaGrid(
             )
             MetaCard(
                 title = stringResource(R.string.recipe_difficulty),
-                value = recipe.difficulty?.displayName ?: UnknownBrewMethodLabel,
+                value = stringResource(recipe.difficultyLabelRes),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -387,7 +382,7 @@ private fun RecipeTextSection(
 
 @Composable
 private fun RecipeStepsSection(
-    steps: List<BrewStep>,
+    steps: List<RecipeStepUiModel>,
     stepModifiers: List<Modifier> = emptyList(),
     onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
@@ -409,7 +404,7 @@ private fun RecipeStepsSection(
 
 @Composable
 private fun BrewStepCard(
-    step: BrewStep,
+    step: RecipeStepUiModel,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
@@ -528,30 +523,30 @@ private fun RecipeContentScreenPreview() {
         AsyncImagePreviewProvider {
             RecipeContentScreen(
                 RecipeContentState.Content(
-                    recipe = Recipe(
+                    recipe = RecipeDetailsUiModel(
                         id = "classic-pour-over",
                         title = "Classic Pour Over",
                         description = "A bright and floral pour over with notes of blueberry and citrus.",
-                        imageId = null,
-                        brewMethod = BrewMethod.V60,
-                        difficulty = Difficulty.Medium,
+                        imageUrl = null,
+                        brewMethodLabelRes = R.string.recipe_brew_method_v60,
+                        difficultyLabelRes = R.string.recipe_difficulty_medium,
                         totalBrewTimeSeconds = 240,
-                        roastLevel = RoastLevel.Light,
+                        roastLevelLabelRes = R.string.recipe_roast_level_light,
                         beans = "Ethiopian Yirgacheffe",
                         steps = listOf(
-                            BrewStep(
+                            RecipeStepUiModel(
                                 order = 1,
                                 title = "Prepare Equipment",
                                 description = "Place filter in V60 and rinse with hot water. Discard rinse water.",
                                 durationSeconds = 30,
                             ),
-                            BrewStep(
+                            RecipeStepUiModel(
                                 order = 2,
                                 title = "Add Coffee",
                                 description = "Add 20g of medium-fine ground coffee to the filter.",
                                 durationSeconds = 15,
                             ),
-                            BrewStep(
+                            RecipeStepUiModel(
                                 order = 3,
                                 title = "Bloom",
                                 description = "Pour 40g of water in a circular motion. Let bloom for 30 seconds.",

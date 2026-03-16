@@ -1,7 +1,7 @@
 package org.nikol.roasti.domain.recipe.session
 
-import org.nikol.roasti.domain.recipe.BrewStep
-import org.nikol.roasti.domain.recipe.Recipe
+import org.nikol.roasti.domain.recipe.model.BrewStep
+import org.nikol.roasti.domain.recipe.model.Recipe
 
 data class BrewingSession(
     val recipe: Recipe,

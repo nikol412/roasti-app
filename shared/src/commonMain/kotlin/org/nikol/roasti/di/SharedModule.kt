@@ -11,10 +11,10 @@ import org.nikol.roasti.data.upload.NetworkUploadRepository
 import org.nikol.roasti.data.upload.network.UploadApiClient
 import org.nikol.roasti.data.upload.network.UploadApiClientImpl
 import org.nikol.roasti.domain.recipe.RecipeRepository
-import org.nikol.roasti.domain.recipe.filters.FilterStateHandler
 import org.nikol.roasti.domain.recipe.session.BrewingTimer
 import org.nikol.roasti.domain.recipe.session.BrewingTimerImpl
 import org.nikol.roasti.domain.upload.UploadRepository
+import org.nikol.roasti.presentation.recipe.filter.RecipeFilterStore
 
 
 val sharedModule = module {
@@ -24,5 +24,5 @@ val sharedModule = module {
     single { NetworkUploadRepository(get()) } bind UploadRepository::class
     single { RecipesApiClientImpl(get()) } bind RecipesApiClient::class
     factoryOf(::BrewingTimerImpl) bind BrewingTimer::class
-    factory<FilterStateHandler> { FilterStateHandler() }
+    factory<RecipeFilterStore> { RecipeFilterStore() }
 }

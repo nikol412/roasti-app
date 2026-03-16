@@ -15,17 +15,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
-import org.nikol.roasti.ui.features.createrecipe.CreateRecipeEvent
-import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormState
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeUiState
+import org.nikol.roasti.ui.features.recipe.mapper.labelRes
 import org.nikol.roasti.ui.theme.Spacing
 
 @Composable
 internal fun PreviewStep(
-    state: CreateRecipeFormState,
+    state: CreateRecipeUiState,
     onBack: () -> Unit,
     onUpload: () -> Unit
 ) {
@@ -40,13 +38,13 @@ internal fun PreviewStep(
         ) {
             PreviewField("Recipe Name", state.name.ifBlank { "—" })
             HorizontalDivider()
-            PreviewField("Brew Method", state.brewMethod?.displayName ?: "—")
+            PreviewField("Brew Method", state.brewMethod?.let { stringResource(it.labelRes()) } ?: "—")
             if (state.beans.isNotBlank()) {
                 HorizontalDivider()
                 PreviewField("Roaster", state.beans)
             }
             HorizontalDivider()
-            PreviewField("Difficulty", state.difficulty.displayName)
+            PreviewField("Difficulty", stringResource(state.difficulty.labelRes()))
             if (state.description.isNotBlank()) {
                 HorizontalDivider()
                 PreviewField("Description", state.description)

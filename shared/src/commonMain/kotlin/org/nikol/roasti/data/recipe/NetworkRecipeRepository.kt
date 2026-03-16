@@ -1,13 +1,15 @@
 package org.nikol.roasti.data.recipe
 
 import org.nikol.roasti.data.recipe.mapper.toDomain
-import org.nikol.roasti.data.recipe.mapper.toDto
+import org.nikol.roasti.data.recipe.mapper.toQueryDto
+import org.nikol.roasti.data.recipe.mapper.toRequestDto
 import org.nikol.roasti.data.recipe.network.RecipesApiClient
-import org.nikol.roasti.domain.recipe.BrewMethod
-import org.nikol.roasti.domain.recipe.Difficulty
-import org.nikol.roasti.domain.recipe.Recipe
 import org.nikol.roasti.domain.recipe.RecipeRepository
-import org.nikol.roasti.domain.recipe.RecipesPaginated
+import org.nikol.roasti.domain.recipe.model.BrewMethod
+import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.domain.recipe.model.Recipe
+import org.nikol.roasti.domain.recipe.model.RecipeDraft
+import org.nikol.roasti.domain.recipe.model.RecipesPage
 
 class NetworkRecipeRepository(
     private val apiClient: RecipesApiClient,
@@ -19,11 +21,11 @@ class NetworkRecipeRepository(
         difficulty: Difficulty?,
         limit: Int,
         page: Int
-    ): Result<RecipesPaginated> {
+    ): Result<RecipesPage> {
         return apiClient.getRecipes(
             authorId = authorId,
-            brewMethod = brewMethod?.toDto(),
-            difficulty = difficulty?.toDto(),
+            brewMethod = brewMethod.toRequestDto(),
+            difficulty = difficulty.toQueryDto(),
             limit = limit,
             page = page
         ).mapCatching { it.toDomain() }
@@ -35,12 +37,12 @@ class NetworkRecipeRepository(
         difficulty: Difficulty? = null,
         limit: Int = 50,
         page: Int = 1,
-    ): RecipesPaginated? = getRecipes(authorId, brewMethod, difficulty, limit, page).getOrNull()
+    ): RecipesPage? = getRecipes(authorId, brewMethod, difficulty, limit, page).getOrNull()
 
     override suspend fun getById(id: String): Recipe? =
         getRecipesOrNull()?.items?.find { recipe -> recipe.id == id }
 
-    override suspend fun addRecipe(recipe: Recipe): Result<Recipe> {
-        return apiClient.addRecipe(recipe.toDto()).map { it.toDomain() }
+    override suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe> {
+        return apiClient.addRecipe(recipe.toRequestDto()).map { it.toDomain() }
     }
 }

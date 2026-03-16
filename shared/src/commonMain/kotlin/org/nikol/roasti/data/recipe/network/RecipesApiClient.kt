@@ -11,11 +11,11 @@ import io.ktor.http.HttpMessageBuilder
 import io.ktor.http.contentType
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializer
-import org.nikol.roasti.data.recipe.dto.BrewMethodDto
-import org.nikol.roasti.data.recipe.dto.DifficultyDto
-import org.nikol.roasti.data.recipe.dto.RecipeDto
-import org.nikol.roasti.data.recipe.dto.RecipesResponseDto
-import org.nikol.roasti.data.recipe.mapper.toRequest
+import org.nikol.roasti.data.recipe.remote.model.BrewMethodDto
+import org.nikol.roasti.data.recipe.remote.model.DifficultyDto
+import org.nikol.roasti.data.recipe.remote.model.request.CreateRecipeRequestDto
+import org.nikol.roasti.data.recipe.remote.model.response.RecipeResponseDto
+import org.nikol.roasti.data.recipe.remote.model.response.RecipesPageResponseDto
 
 private const val RecipesPath = "/api/v1/recipes"
 internal const val UserIdHeader = "X-User-Id"
@@ -24,13 +24,13 @@ internal const val UserId = "test-user"
 interface RecipesApiClient {
     suspend fun getRecipes(
         authorId: String? = null,
-        brewMethod: BrewMethodDto? = null,
+        brewMethod: BrewMethodDto = BrewMethodDto.NONE,
         difficulty: DifficultyDto? = null,
         limit: Int = 50,
         page: Int = 1
-    ): Result<RecipesResponseDto>
+    ): Result<RecipesPageResponseDto>
 
-    suspend fun addRecipe(recipe: RecipeDto): Result<RecipeDto>
+    suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto>
 }
 
 class RecipesApiClientImpl(
@@ -39,36 +39,29 @@ class RecipesApiClientImpl(
 
     override suspend fun getRecipes(
         authorId: String?,
-        brewMethod: BrewMethodDto?,
+        brewMethod: BrewMethodDto,
         difficulty: DifficultyDto?,
         limit: Int,
         page: Int
-    ): Result<RecipesResponseDto> = runCatching {
+    ): Result<RecipesPageResponseDto> = runCatching {
             httpClient.get(RecipesPath) {
                 userIdHeader(UserId)
                 contentType(ContentType.Application.Json)
                 url {
-                    if (brewMethod != null) parameters.append(
-                        "brew_method",
-                        getSerialName(brewMethod)
-                    )
-                    if (difficulty != null) parameters.append(
-                        "difficulty",
-                        getSerialName(difficulty)
-                    )
+                    parameters.append("brew_method", getSerialName(brewMethod))
+                    difficulty?.let { parameters.append("difficulty", getSerialName(it)) }
                     parameters.append("limit", limit.toString())
                     parameters.append("page", page.toString())
                 }
-            }.body<RecipesResponseDto>()
+            }.body<RecipesPageResponseDto>()
         }
 
-    override suspend fun addRecipe(recipe: RecipeDto): Result<RecipeDto> = runCatching {
-        val body = recipe.toRequest()
+    override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> = runCatching {
         httpClient.post(RecipesPath) {
             userIdHeader(UserId)
             contentType(ContentType.Application.Json)
-            setBody(body)
-        }.body<RecipeDto>()
+            setBody(recipe)
+        }.body<RecipeResponseDto>()
     }
 }
 

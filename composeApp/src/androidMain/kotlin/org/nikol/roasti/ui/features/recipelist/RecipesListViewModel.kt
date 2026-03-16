@@ -7,19 +7,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.nikol.roasti.domain.recipe.BrewMethod
-import org.nikol.roasti.domain.recipe.Difficulty
 import org.nikol.roasti.domain.recipe.RecipeRepository
-import org.nikol.roasti.domain.recipe.filters.FilterStateHandler
-import org.nikol.roasti.domain.recipe.filters.FiltersState
+import org.nikol.roasti.domain.recipe.model.BrewMethod
+import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.presentation.recipe.filter.RecipeFilterState
+import org.nikol.roasti.presentation.recipe.filter.RecipeFilterStore
+import org.nikol.roasti.ui.features.recipelist.mapper.toUiModel
 
 private const val FirstPage = 1
 
 class RecipesListViewModel(
     private val recipeRepository: RecipeRepository,
-    private val filtersStateHandler: FilterStateHandler,
+    private val filterStore: RecipeFilterStore,
 ) : ViewModel() {
-    val filtersState: StateFlow<FiltersState> = filtersStateHandler.state
+    val filtersState: StateFlow<RecipeFilterState> = filterStore.state
 
     private val _recipes = MutableStateFlow<RecipesListState>(RecipesListState.Loading)
     val recipes: StateFlow<RecipesListState> = _recipes
@@ -48,7 +49,7 @@ class RecipesListViewModel(
 
             val current = _recipes.value as? RecipesListState.Content ?: return@launch
             _recipes.value = if (result != null) {
-                val mergedRecipes = (current.recipes + result.items).distinctBy { it.id }
+                val mergedRecipes = (current.recipes + result.items.map { it.toUiModel() }).distinctBy { it.id }
                 val pageAdvanced = result.page >= nextPage
                 val newItemsAdded = mergedRecipes.size > current.recipes.size
                 val hasProgress = pageAdvanced || newItemsAdded
@@ -94,14 +95,14 @@ class RecipesListViewModel(
     }
 
     fun filterByBrewMethod(method: BrewMethod?) {
-        filtersStateHandler.applyFilter(method, method != null)
+        filterStore.applyFilter(method, method != null)
     }
 
     fun filterByDifficulty(difficulty: Difficulty?, apply: Boolean = true) {
-        filtersStateHandler.applyFilter(difficulty, difficulty != null)
+        filterStore.applyFilter(difficulty, difficulty != null)
     }
 
-    private suspend fun loadPage(page: Int, filters: FiltersState) {
+    private suspend fun loadPage(page: Int, filters: RecipeFilterState) {
         val result = recipeRepository.getRecipes(
             brewMethod = filters.brewMethod,
             difficulty = filters.difficulty,
@@ -111,7 +112,7 @@ class RecipesListViewModel(
         _recipes.value = if (result != null) {
             val hasMore = result.items.isNotEmpty() && result.page * result.limit < result.totalCount
             RecipesListState.Content(
-                recipes = result.items,
+                recipes = result.items.map { it.toUiModel() },
                 hasMore = hasMore,
                 currentPage = result.page,
             )

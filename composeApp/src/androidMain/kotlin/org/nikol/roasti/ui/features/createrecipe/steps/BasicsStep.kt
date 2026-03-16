@@ -44,13 +44,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import org.nikol.roasti.domain.recipe.BrewMethod
-import org.nikol.roasti.domain.recipe.Difficulty
-import org.nikol.roasti.domain.recipe.RoastLevel
-import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormState
+import org.nikol.roasti.domain.recipe.model.BrewMethod
+import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.domain.recipe.model.RoastLevel
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeUiState
+import org.nikol.roasti.ui.features.recipe.mapper.labelRes
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.utils.imageUrl
 import org.nikol.roasti.utils.compressImage
@@ -59,7 +61,7 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BasicsStep(
-    state: CreateRecipeFormState,
+    state: CreateRecipeUiState,
     onNameChange: (String) -> Unit,
     onBrewMethodChange: (BrewMethod?) -> Unit,
     onBeansChange: (String) -> Unit,
@@ -181,7 +183,7 @@ internal fun BasicsStep(
                     onExpandedChange = { brewMethodExpanded = it },
                 ) {
                     OutlinedTextField(
-                        value = state.brewMethod?.displayName ?: "",
+                        value = state.brewMethod?.takeUnless { it == BrewMethod.NONE }?.let { stringResource(it.labelRes()) } ?: "",
                         onValueChange = {},
                         readOnly = true,
                         placeholder = { Text("Select brewing method...") },
@@ -194,9 +196,9 @@ internal fun BasicsStep(
                         expanded = brewMethodExpanded,
                         onDismissRequest = { brewMethodExpanded = false },
                     ) {
-                        BrewMethod.entries.forEach { method ->
+                        BrewMethod.entries.filterNot { it == BrewMethod.NONE }.forEach { method ->
                             DropdownMenuItem(
-                                text = { Text(method.displayName) },
+                                text = { Text(stringResource(method.labelRes())) },
                                 onClick = {
                                     onBrewMethodChange(method)
                                     brewMethodExpanded = false
@@ -292,7 +294,7 @@ private fun DifficultySelector(
 
     Row(modifier, horizontalArrangement = Arrangement.SpaceEvenly) {
         items.forEachIndexed { index, difficulty ->
-            SelectorItem(difficulty.displayName, index == selectedIndex, { onSelect(difficulty) })
+            SelectorItem(stringResource(difficulty.labelRes()), index == selectedIndex, { onSelect(difficulty) })
         }
     }
 }
@@ -303,7 +305,7 @@ private fun RoastLevelPickerRow(
     onSelect: (RoastLevel) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val items = RoastLevel.entries.toTypedArray()
+    val items = RoastLevel.entries.filterNot { it == RoastLevel.NONE }.toTypedArray()
     val selectedIndex = items.indexOfFirst { it == selected }
 
     Row(
@@ -311,7 +313,7 @@ private fun RoastLevelPickerRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items.forEachIndexed { index, difficulty ->
-            SelectorItem(difficulty.displayName, index == selectedIndex, { onSelect(difficulty) })
+            SelectorItem(stringResource(difficulty.labelRes()), index == selectedIndex, { onSelect(difficulty) })
         }
     }
 }

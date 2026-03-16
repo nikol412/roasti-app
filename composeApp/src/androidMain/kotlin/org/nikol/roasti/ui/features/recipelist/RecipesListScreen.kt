@@ -52,27 +52,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
-import org.nikol.roasti.domain.recipe.BrewMethod
-import org.nikol.roasti.domain.recipe.Difficulty
-import org.nikol.roasti.domain.recipe.Recipe
-import org.nikol.roasti.domain.recipe.RoastLevel
-import org.nikol.roasti.domain.recipe.filters.FiltersState
-import org.nikol.roasti.utils.imageUrl
+import org.nikol.roasti.domain.recipe.model.BrewMethod
+import org.nikol.roasti.domain.recipe.model.Difficulty
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeSheet
+import org.nikol.roasti.ui.features.recipe.mapper.labelRes
+import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.RoastiTypography
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.ErrorStub
+import org.nikol.roasti.presentation.recipe.filter.RecipeFilterState
 import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
-private const val UnknownBrewMethodLabel = "Unknown"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun RecipesListScreen(
-    onRecipeClick: (Recipe) -> Unit = {},
+    onRecipeClick: (String) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     contentPadding: PaddingValues,
@@ -163,9 +161,9 @@ private fun Loading(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Content(
-    filtersState: FiltersState,
+    filtersState: RecipeFilterState,
     state: RecipesListState.Content,
-    onClick: (Recipe) -> Unit,
+    onClick: (String) -> Unit,
     onLoadMore: () -> Unit,
     onRefresh: () -> Unit,
     onBrewMethodSelected: (BrewMethod?) -> Unit,
@@ -212,7 +210,7 @@ private fun Content(
                     animatedVisibilityScope = animatedVisibilityScope,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onClick(recipe) },
+                        .clickable { onClick(recipe.id) },
                 )
             }
             if (state.isLoadingMore) {
@@ -238,7 +236,7 @@ private fun Content(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun RecipeItem(
-    item: Recipe,
+    item: RecipeListItemUiModel,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     modifier: Modifier = Modifier,
@@ -254,7 +252,7 @@ private fun RecipeItem(
             .then(sharedBoundsModifier)
             .clip(RoundedCornerShape(8.dp)),
     ) {
-        RecipeImage(url = item.imageId?.let { imageUrl(it) })
+        RecipeImage(url = item.imageUrl)
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.padding(12.dp)
@@ -273,11 +271,11 @@ private fun RecipeItem(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    item.brewMethod?.displayName ?: UnknownBrewMethodLabel,
+                    stringResource(item.brewMethodLabelRes),
                     style = RoastiTypography.bodyMedium,
                 )
                 Text(
-                    item.difficulty?.displayName ?: UnknownBrewMethodLabel,
+                    stringResource(item.difficultyLabelRes),
                     style = RoastiTypography.bodyMedium,
                 )
                 Text(
@@ -319,15 +317,15 @@ private fun RecipeImage(url: String?, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun BrewMethodSelector(selectedValue: BrewMethod?, onSelected: (BrewMethod?) -> Unit) {
-    val methods = BrewMethod.entries.toTypedArray()
+private fun BrewMethodSelector(selectedValue: BrewMethod?, onSelected: (BrewMethod?) -> Unit) {
+    val methods = BrewMethod.entries.filterNot { it == BrewMethod.NONE }.toTypedArray()
     var expanded by remember { mutableStateOf(false) }
 
     Box {
         AssistChip(
             onClick = { expanded = true },
             label = {
-                if(selectedValue != null) Text(selectedValue.displayName) else Text("Brew method")
+                if (selectedValue != null) Text(stringResource(selectedValue.labelRes())) else Text(stringResource(R.string.recipe_brew_method))
             },
             trailingIcon = {
                 Text("☕️")
@@ -341,7 +339,7 @@ fun BrewMethodSelector(selectedValue: BrewMethod?, onSelected: (BrewMethod?) -> 
         ) {
             methods.forEach { method ->
                 DropdownMenuItem(
-                    text = { Text(method.displayName) },
+                    text = { Text(stringResource(method.labelRes())) },
                     onClick = {
                         onSelected(method)
                         expanded = false
@@ -364,7 +362,7 @@ fun BrewMethodSelector(selectedValue: BrewMethod?, onSelected: (BrewMethod?) -> 
 }
 
 @Composable
-fun DifficultySelector(selectedValue: Difficulty?, onSelected: (Difficulty?) -> Unit) {
+private fun DifficultySelector(selectedValue: Difficulty?, onSelected: (Difficulty?) -> Unit) {
     val methods = Difficulty.entries.toTypedArray()
     var expanded by remember { mutableStateOf(false) }
 
@@ -372,7 +370,7 @@ fun DifficultySelector(selectedValue: Difficulty?, onSelected: (Difficulty?) -> 
         AssistChip(
             onClick = { expanded = true },
             label = {
-                if(selectedValue != null) Text(selectedValue.displayName) else Text("Difficulty")
+                if (selectedValue != null) Text(stringResource(selectedValue.labelRes())) else Text(stringResource(R.string.recipe_difficulty))
             },
             trailingIcon = {
                 Text("📈️")
@@ -386,7 +384,7 @@ fun DifficultySelector(selectedValue: Difficulty?, onSelected: (Difficulty?) -> 
         ) {
             methods.forEach { method ->
                 DropdownMenuItem(
-                    text = { Text(method.displayName) },
+                    text = { Text(stringResource(method.labelRes())) },
                     onClick = {
                         onSelected(method)
                         expanded = false
@@ -414,17 +412,14 @@ private fun RecipeItemPreview() {
     RoastiTheme {
         AsyncImagePreviewProvider {
             RecipeItem(
-                Recipe(
+                RecipeListItemUiModel(
                     id = "erat",
                     title = "reformidans reformidans reformidans",
                     description = "eos",
-                    imageId = null,
-                    brewMethod = BrewMethod.V60,
-                    difficulty = Difficulty.Easy,
+                    imageUrl = null,
+                    brewMethodLabelRes = R.string.recipe_brew_method_v60,
+                    difficultyLabelRes = R.string.recipe_difficulty_easy,
                     totalBrewTimeSeconds = 2895,
-                    roastLevel = RoastLevel.Light,
-                    beans = "vocibus",
-                    steps = listOf()
                 )
             )
         }

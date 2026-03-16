@@ -10,10 +10,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.nikol.roasti.domain.recipe.Recipe
 import org.nikol.roasti.domain.recipe.RecipeRepository
+import org.nikol.roasti.domain.recipe.model.Recipe
 import org.nikol.roasti.domain.recipe.session.BrewingSession
 import org.nikol.roasti.domain.recipe.session.BrewingTimer
+import org.nikol.roasti.ui.features.recipesteps.mapper.toUiState
 
 internal class RecipeStepsViewModel(
     private val recipeId: String,
@@ -29,6 +30,8 @@ internal class RecipeStepsViewModel(
     val events: SharedFlow<RecipeStepsEvent> = _events.asSharedFlow()
 
     private var timerJob: Job? = null
+    private var currentBrewingSession: BrewingSession? = null
+    private var currentTimerState: StepTimerState? = null
 
     init {
         viewModelScope.launch {
@@ -48,29 +51,31 @@ internal class RecipeStepsViewModel(
 
     fun nextStep() {
         val content = currentContent() ?: return
+        val brew = currentBrewingSession ?: return
         moveToSession(
-            newBrew = content.session.brew.nextStep(),
+            newBrew = brew.nextStep(),
             shouldAutoStart = content.session.isTimerRunning,
         )
     }
 
     fun previousStep() {
         val content = currentContent() ?: return
+        val brew = currentBrewingSession ?: return
         moveToSession(
-            newBrew = content.session.brew.previousStep(),
+            newBrew = brew.previousStep(),
             shouldAutoStart = content.session.isTimerRunning,
         )
     }
 
     fun pauseTimer() {
         val nowMillis = timer.nowMillis()
-        updateSession { it.copy(timer = it.timer.pause(nowMillis)) }
+        updateTimer { it.pause(nowMillis) }
         stopTicker()
     }
 
     fun resumeTimer() {
         val nowMillis = timer.nowMillis()
-        updateSession { it.copy(timer = it.timer.resume(nowMillis)) }
+        updateTimer { it.resume(nowMillis) }
         startTicker()
     }
 
@@ -85,16 +90,13 @@ internal class RecipeStepsViewModel(
 
     private fun startSession(brew: BrewingSession) {
         val nowMillis = timer.nowMillis()
-        _state.value = RecipeStepsUiState.Content(
-            SessionState(
-                brew = brew,
-                timer = StepTimerState.forStep(
-                    durationSeconds = brew.stepDurationSeconds,
-                    isRunning = !brew.isFinished,
-                    nowMillis = nowMillis,
-                ),
-            )
+        currentBrewingSession = brew
+        currentTimerState = StepTimerState.forStep(
+            durationSeconds = brew.stepDurationSeconds,
+            isRunning = !brew.isFinished,
+            nowMillis = nowMillis,
         )
+        emitContent()
         startTicker()
     }
 
@@ -108,11 +110,12 @@ internal class RecipeStepsViewModel(
                 val current = currentContent() ?: return@collect
                 if (!current.session.isTimerRunning) return@collect
 
-                val updatedTimer = current.session.timer.advance(nowMillis)
+                val updatedTimer = currentTimerState?.advance(nowMillis) ?: return@collect
                 if (updatedTimer.remainingMillis <= 0L) {
                     moveToNextStepFromTimer(expectedStepIndex = current.session.currentStepIndex)
                 } else {
-                    updateSession { it.copy(timer = updatedTimer) }
+                    currentTimerState = updatedTimer
+                    emitContent()
                 }
             }
         }
@@ -130,16 +133,13 @@ internal class RecipeStepsViewModel(
         stopTicker()
 
         val nowMillis = timer.nowMillis()
-        _state.value = RecipeStepsUiState.Content(
-            SessionState(
-                brew = newBrew,
-                timer = StepTimerState.forStep(
-                    durationSeconds = newBrew.stepDurationSeconds,
-                    isRunning = shouldAutoStart && !newBrew.isFinished,
-                    nowMillis = nowMillis,
-                ),
-            )
+        currentBrewingSession = newBrew
+        currentTimerState = StepTimerState.forStep(
+            durationSeconds = newBrew.stepDurationSeconds,
+            isRunning = shouldAutoStart && !newBrew.isFinished,
+            nowMillis = nowMillis,
         )
+        emitContent()
 
         if (!newBrew.isFinished && shouldAutoStart) {
             startTicker()
@@ -147,20 +147,29 @@ internal class RecipeStepsViewModel(
     }
 
     private fun moveToNextStepFromTimer(expectedStepIndex: Int) {
-        val content = currentContent() ?: return
-        if (content.session.currentStepIndex != expectedStepIndex) return
+        val brew = currentBrewingSession ?: return
+        if (brew.currentStepIndex != expectedStepIndex) return
 
         moveToSession(
-            newBrew = content.session.brew.nextStep(),
+            newBrew = brew.nextStep(),
             shouldAutoStart = true,
         )
     }
 
     private fun currentContent() = _state.value as? RecipeStepsUiState.Content
 
-    private fun updateSession(update: (SessionState) -> SessionState) {
-        val content = currentContent() ?: return
-        _state.value = content.copy(session = update(content.session))
+    private fun updateTimer(update: (StepTimerState) -> StepTimerState) {
+        val timerState = currentTimerState ?: return
+        currentTimerState = update(timerState)
+        emitContent()
+    }
+
+    private fun emitContent() {
+        val brew = currentBrewingSession ?: return
+        val timerState = currentTimerState ?: return
+        _state.value = RecipeStepsUiState.Content(
+            session = brew.toUiState(timer = timerState),
+        )
     }
 
     override fun onCleared() {

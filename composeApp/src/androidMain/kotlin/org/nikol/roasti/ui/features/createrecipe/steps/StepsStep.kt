@@ -44,8 +44,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormBrewStepItem
-import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormState
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeStepUiModel
+import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeUiState
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.utils.imageUrl
 import org.nikol.roasti.utils.compressImage
@@ -53,8 +53,8 @@ import java.util.UUID
 
 @Composable
 internal fun StepsStep(
-    state: CreateRecipeFormState,
-    onAddStep: (CreateRecipeFormBrewStepItem) -> Unit,
+    state: CreateRecipeUiState,
+    onAddStep: (CreateRecipeStepUiModel) -> Unit,
     onRemoveStep: (Int) -> Unit,
     onUploadStepImage: (String, ByteArray) -> Unit,
     onBack: () -> Unit,
@@ -73,7 +73,7 @@ internal fun StepsStep(
             return
         }
         val totalSeconds = (stepMinutes.toIntOrNull() ?: 0) * 60 + (stepSeconds.toIntOrNull() ?: 0)
-        onAddStep(CreateRecipeFormBrewStepItem(stepTitle.trim(), stepDescription.trim(), totalSeconds, imageId = state.pendingStepImageId))
+        onAddStep(CreateRecipeStepUiModel(stepTitle.trim(), stepDescription.trim(), totalSeconds, imageId = state.pendingStepImageId))
         stepTitle = ""
         stepDescription = ""
         stepMinutes = ""
@@ -179,7 +179,7 @@ internal fun StepsStep(
 @Composable
 private fun BrewStepCard(
     index: Int,
-    step: CreateRecipeFormBrewStepItem,
+    step: CreateRecipeStepUiModel,
     onRemove: () -> Unit,
 ) {
     Card(
