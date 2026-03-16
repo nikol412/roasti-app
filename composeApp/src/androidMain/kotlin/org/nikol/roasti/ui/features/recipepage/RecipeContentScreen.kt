@@ -250,10 +250,15 @@ private fun RecipeMainContent(
             onStepClick = onStepClick,
         )
         StartBrewingButton(
-            onClick = { onStepClick(0) },
+            onClick = {
+                if (recipe.steps.isNotEmpty()) {
+                    onStepClick(0)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
+                .navigationBarsPadding(),
+            enabled = recipe.steps.isNotEmpty(),
         )
     }
 }
@@ -462,6 +467,7 @@ private fun BrewStepCard(
 private fun StartBrewingButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Button(
         onClick = onClick,
@@ -471,6 +477,7 @@ private fun StartBrewingButton(
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ),
         shape = ShapeXxl,
+        enabled = enabled,
     ) {
         Text(
             text = "$StartArrow  ${stringResource(R.string.recipe_start_brewing)}",
