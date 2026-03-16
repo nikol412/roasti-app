@@ -47,7 +47,7 @@ import coil3.compose.AsyncImage
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormBrewStepItem
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormState
 import org.nikol.roasti.ui.theme.Spacing
-import org.nikol.roasti.upload.imageUrl
+import org.nikol.roasti.utils.imageUrl
 import org.nikol.roasti.utils.compressImage
 import java.util.UUID
 

@@ -1,6 +1,6 @@
 package org.nikol.roasti.ui.features.recipelist
 
-import org.nikol.roasti.recipe.model.Recipe
+import org.nikol.roasti.domain.recipe.Recipe
 
 sealed interface RecipesListState {
     data object Loading: RecipesListState

@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
-import org.nikol.roasti.recipe.repository.RecipeRepository
+import org.nikol.roasti.domain.recipe.RecipeRepository
 
 
 class RecipeContentViewModel(

@@ -1,7 +1,7 @@
 package org.nikol.roasti.ui.features.recipesteps
 
-import org.nikol.roasti.recipe.model.BrewStep
-import org.nikol.roasti.recipe.session.BrewingSession
+import org.nikol.roasti.domain.recipe.BrewStep
+import org.nikol.roasti.domain.recipe.session.BrewingSession
 import kotlin.math.ceil
 
 internal sealed interface RecipeStepsUiState {

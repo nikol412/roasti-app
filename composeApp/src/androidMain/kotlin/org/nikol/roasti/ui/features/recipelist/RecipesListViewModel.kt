@@ -7,11 +7,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.nikol.roasti.recipe.filters.FilterStateHandler
-import org.nikol.roasti.recipe.filters.FiltersState
-import org.nikol.roasti.recipe.model.BrewMethod
-import org.nikol.roasti.recipe.model.Difficulty
-import org.nikol.roasti.recipe.repository.RecipeRepository
+import org.nikol.roasti.domain.recipe.BrewMethod
+import org.nikol.roasti.domain.recipe.Difficulty
+import org.nikol.roasti.domain.recipe.RecipeRepository
+import org.nikol.roasti.domain.recipe.filters.FilterStateHandler
+import org.nikol.roasti.domain.recipe.filters.FiltersState
 
 private const val FirstPage = 1
 

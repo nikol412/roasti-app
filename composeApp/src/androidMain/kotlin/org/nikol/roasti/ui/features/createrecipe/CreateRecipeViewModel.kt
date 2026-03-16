@@ -10,13 +10,13 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.nikol.roasti.recipe.model.BrewMethod
-import org.nikol.roasti.recipe.model.BrewStep
-import org.nikol.roasti.recipe.model.Difficulty
-import org.nikol.roasti.recipe.model.Recipe
-import org.nikol.roasti.recipe.model.RoastLevel
-import org.nikol.roasti.recipe.repository.RecipeRepository
-import org.nikol.roasti.upload.repository.UploadRepository
+import org.nikol.roasti.domain.recipe.BrewMethod
+import org.nikol.roasti.domain.recipe.BrewStep
+import org.nikol.roasti.domain.recipe.Difficulty
+import org.nikol.roasti.domain.recipe.Recipe
+import org.nikol.roasti.domain.recipe.RoastLevel
+import org.nikol.roasti.domain.recipe.RecipeRepository
+import org.nikol.roasti.domain.upload.UploadRepository
 
 
 data class CreateRecipeFormBrewStepItem(

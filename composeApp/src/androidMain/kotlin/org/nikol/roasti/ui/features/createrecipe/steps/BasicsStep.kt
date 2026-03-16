@@ -47,12 +47,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import org.nikol.roasti.recipe.model.BrewMethod
-import org.nikol.roasti.recipe.model.Difficulty
-import org.nikol.roasti.recipe.model.RoastLevel
+import org.nikol.roasti.domain.recipe.BrewMethod
+import org.nikol.roasti.domain.recipe.Difficulty
+import org.nikol.roasti.domain.recipe.RoastLevel
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormState
 import org.nikol.roasti.ui.theme.Spacing
-import org.nikol.roasti.upload.imageUrl
+import org.nikol.roasti.utils.imageUrl
 import org.nikol.roasti.utils.compressImage
 import java.util.UUID
 
