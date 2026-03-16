@@ -3,6 +3,7 @@ package org.nikol.roasti.ui.features.recipepage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -13,7 +14,7 @@ class RecipeContentViewModel(
     private val recipeId: String,
     private val repository: RecipeRepository
 ) : ViewModel() {
-    val state = flow {
+    val state: StateFlow<RecipeContentState> = flow {
         val recipe = repository.getById(recipeId)
         if (recipe != null) {
             emit(RecipeContentState.Content(recipe))

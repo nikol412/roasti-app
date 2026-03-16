@@ -9,21 +9,22 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import org.nikol.roasti.recipe.network.UserId
+import org.nikol.roasti.recipe.network.UserIdHeader
+import org.nikol.roasti.upload.model.UploadedImage
 import org.nikol.roasti.upload.network.dto.ImageDto
 
 private const val UploadsPath = "/api/v1/uploads/images"
-private const val UserIdHeader = "X-User-Id"
-private const val UserId = "test-user"
 
 interface UploadApiClient {
-    suspend fun uploadImage(fileName: String, bytes: ByteArray): Result<ImageDto>
+    suspend fun uploadImage(fileName: String, bytes: ByteArray): Result<UploadedImage>
 }
 
 class UploadApiClientImpl(
     private val httpClient: HttpClient,
 ) : UploadApiClient {
 
-    override suspend fun uploadImage(fileName: String, bytes: ByteArray): Result<ImageDto> =
+    override suspend fun uploadImage(fileName: String, bytes: ByteArray): Result<UploadedImage> =
         runCatching {
             httpClient.post(UploadsPath) {
                 header(UserIdHeader, UserId)
@@ -36,6 +37,6 @@ class UploadApiClientImpl(
                         }
                     )
                 )
-            }.body<ImageDto>()
+            }.body<UploadedImage>()
         }
 }

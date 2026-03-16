@@ -7,3 +7,4 @@ data class ImageDto(
 )
 
 fun ImageDto.toDomain() = UploadedImage(id = id)
+fun UploadedImage.toDto() = ImageDto(id)

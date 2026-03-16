@@ -21,8 +21,8 @@ import org.nikol.roasti.recipe.network.dto.RecipesResponseDto
 import org.nikol.roasti.recipe.network.dto.RoastLevelDto
 
 private const val RecipesPath = "/api/v1/recipes"
-private const val UserIdHeader = "X-User-Id"
-private const val UserId = "test-user"
+internal const val UserIdHeader = "X-User-Id"
+internal const val UserId = "test-user"
 
 interface RecipesApiClient {
     suspend fun getRecipes(
@@ -100,7 +100,7 @@ class RecipesApiClientImpl(
     }
 }
 
-private fun HttpMessageBuilder.userIdHeader(id: String) = header(UserIdHeader, id)
+fun HttpMessageBuilder.userIdHeader(id: String) = header(UserIdHeader, id)
 
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified T : Enum<T>> getSerialName(value: T): String {

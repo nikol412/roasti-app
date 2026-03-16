@@ -7,6 +7,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.nikol.roasti.recipe.model.BrewMethod
 import org.nikol.roasti.recipe.model.Difficulty
+import org.nikol.roasti.recipe.model.RoastLevel
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeFormState
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.upload.imageUrl
@@ -62,6 +64,7 @@ internal fun BasicsStep(
     onBrewMethodChange: (BrewMethod?) -> Unit,
     onBeansChange: (String) -> Unit,
     onDifficultyChange: (Difficulty) -> Unit,
+    onRoastLevelChange: (RoastLevel) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onUploadImage: (String, ByteArray) -> Unit,
     onContinue: () -> Unit,
@@ -78,12 +81,13 @@ internal fun BasicsStep(
     }
 
     val context = LocalContext.current
-    val imageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            val bytes = compressImage(context.contentResolver, it)
-            onUploadImage("${UUID.randomUUID()}.jpg", bytes)
+    val imageLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                val bytes = compressImage(context.contentResolver, it)
+                onUploadImage("${UUID.randomUUID()}.jpg", bytes)
+            }
         }
-    }
 
     var brewMethodExpanded by remember { mutableStateOf(false) }
     var showNameError by remember { mutableStateOf(false) }
@@ -113,6 +117,7 @@ internal fun BasicsStep(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
+
                 else -> Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.xs),
@@ -132,7 +137,10 @@ internal fun BasicsStep(
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             // Recipe Name
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.padding(top = 16.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
                 Row {
                     Text(
                         "Recipe Name",
@@ -211,6 +219,16 @@ internal fun BasicsStep(
                 )
             }
 
+            // Roast level
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                Text("Roast level", style = MaterialTheme.typography.labelLarge)
+                RoastLevelPickerRow(
+                    state.roastLevel,
+                    { onRoastLevelChange(it) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+            }
             // Difficulty
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 Text("Difficulty", style = MaterialTheme.typography.labelLarge)
@@ -273,6 +291,25 @@ private fun DifficultySelector(
     val selectedIndex = items.indexOfFirst { it == selected }
 
     Row(modifier, horizontalArrangement = Arrangement.SpaceEvenly) {
+        items.forEachIndexed { index, difficulty ->
+            SelectorItem(difficulty.displayName, index == selectedIndex, { onSelect(difficulty) })
+        }
+    }
+}
+
+@Composable
+private fun RoastLevelPickerRow(
+    selected: RoastLevel?,
+    onSelect: (RoastLevel) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val items = RoastLevel.entries.toTypedArray()
+    val selectedIndex = items.indexOfFirst { it == selected }
+
+    Row(
+        modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         items.forEachIndexed { index, difficulty ->
             SelectorItem(difficulty.displayName, index == selectedIndex, { onSelect(difficulty) })
         }

@@ -164,6 +164,7 @@ fun CreateRecipeSheet(
                         onBrewMethodChange = viewModel::updateBrewMethod,
                         onBeansChange = viewModel::updateBeans,
                         onDifficultyChange = viewModel::updateDifficulty,
+                        onRoastLevelChange = viewModel::updateRoastLevel,
                         onDescriptionChange = viewModel::updateDescription,
                         onUploadImage = viewModel::uploadImage,
                         onContinue = { sheetNavController.navigate(SheetStep.Steps) },

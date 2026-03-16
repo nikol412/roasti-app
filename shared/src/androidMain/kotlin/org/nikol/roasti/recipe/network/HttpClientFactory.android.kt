@@ -5,16 +5,17 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.header
 import io.ktor.http.URLProtocol
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.nikol.roasti.AppConfig
 
 private const val KtorLogTag = "KtorHttp"
+
 
 actual fun createHttpClient(): HttpClient = HttpClient(OkHttp) {
     expectSuccess = true
@@ -25,6 +26,7 @@ actual fun createHttpClient(): HttpClient = HttpClient(OkHttp) {
         url {
             protocol = URLProtocol.HTTP
         }
+        header(UserIdHeader, UserId)
     }
     install(ContentNegotiation) {
         json(

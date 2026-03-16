@@ -44,7 +44,7 @@ data class CreateRecipeFormState(
         get() = name.isNotBlank() || brewMethod != null || beans.isNotBlank() || description.isNotBlank()
 
     val canContinueToSteps: Boolean
-        get() = name.isNotBlank() && brewMethod != null
+        get() = name.isNotBlank() && brewMethod != null && roastLevel != null
 }
 
 sealed interface CreateRecipeEvent {
@@ -67,6 +67,7 @@ class CreateRecipeViewModel(
     fun updateBrewMethod(value: BrewMethod?) = _state.update { it.copy(brewMethod = value) }
     fun updateBeans(value: String) = _state.update { it.copy(beans = value) }
     fun updateDifficulty(value: Difficulty) = _state.update { it.copy(difficulty = value) }
+    fun updateRoastLevel(value: RoastLevel) = _state.update { it.copy(roastLevel = value) }
     fun updateDescription(value: String) = _state.update { it.copy(description = value) }
     fun addBrewStep(step: CreateRecipeFormBrewStepItem) {
         _state.update { it.copy(brewSteps = it.brewSteps + step, pendingStepImageId = null) }
