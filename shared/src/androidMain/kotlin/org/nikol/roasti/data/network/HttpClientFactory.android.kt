@@ -8,13 +8,10 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.request.header
 import io.ktor.http.URLProtocol
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.nikol.roasti.AppConfig
-import org.nikol.roasti.data.recipe.network.UserId
-import org.nikol.roasti.data.recipe.network.UserIdHeader
 
 private const val KtorLogTag = "KtorHttp"
 
@@ -28,7 +25,6 @@ actual fun createHttpClient(): HttpClient = HttpClient(OkHttp) {
         url {
             protocol = URLProtocol.HTTP
         }
-        header(UserIdHeader, UserId)
     }
     install(ContentNegotiation) {
         json(

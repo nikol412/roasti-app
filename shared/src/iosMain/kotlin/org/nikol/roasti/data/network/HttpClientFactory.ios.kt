@@ -7,12 +7,15 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.http.URLProtocol
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.nikol.roasti.AppConfig
 
-private const val BaseUrl = "155.212.158.252:9090"
 
 actual fun createHttpClient(): HttpClient = HttpClient(Darwin) {
+    expectSuccess = true
+
     defaultRequest {
-        host = BaseUrl
+        host = AppConfig.HOST
+        port = AppConfig.PORT
         url {
             protocol = URLProtocol.HTTP
         }

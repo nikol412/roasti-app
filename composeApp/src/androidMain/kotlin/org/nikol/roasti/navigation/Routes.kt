@@ -5,6 +5,7 @@ package org.nikol.roasti.navigation
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
+    object Register : Screen("register")
     object Feed : Screen("feed")
     object Recipes : Screen("recipes")
     object RecipeItem : Screen("recipe/{id}") {

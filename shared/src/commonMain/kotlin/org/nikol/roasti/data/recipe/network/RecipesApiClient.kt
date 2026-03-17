@@ -3,14 +3,14 @@ package org.nikol.roasti.data.recipe.network
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.HttpMessageBuilder
 import io.ktor.http.contentType
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializer
+import org.nikol.roasti.data.network.AuthorizedRequestExecutor
+import org.nikol.roasti.data.network.bearerAuthorization
 import org.nikol.roasti.data.recipe.remote.model.BrewMethodDto
 import org.nikol.roasti.data.recipe.remote.model.DifficultyDto
 import org.nikol.roasti.data.recipe.remote.model.request.CreateRecipeRequestDto
@@ -18,8 +18,6 @@ import org.nikol.roasti.data.recipe.remote.model.response.RecipeResponseDto
 import org.nikol.roasti.data.recipe.remote.model.response.RecipesPageResponseDto
 
 private const val RecipesPath = "/api/v1/recipes"
-internal const val UserIdHeader = "X-User-Id"
-internal const val UserId = "test-user"
 
 interface RecipesApiClient {
     suspend fun getRecipes(
@@ -35,6 +33,7 @@ interface RecipesApiClient {
 
 class RecipesApiClientImpl(
     private val httpClient: HttpClient,
+    private val authorizedRequestExecutor: AuthorizedRequestExecutor,
 ) : RecipesApiClient {
 
     override suspend fun getRecipes(
@@ -43,9 +42,9 @@ class RecipesApiClientImpl(
         difficulty: DifficultyDto?,
         limit: Int,
         page: Int
-    ): Result<RecipesPageResponseDto> = runCatching {
+    ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { accessToken ->
             httpClient.get(RecipesPath) {
-                userIdHeader(UserId)
+                bearerAuthorization(accessToken)
                 contentType(ContentType.Application.Json)
                 url {
                     parameters.append("brew_method", getSerialName(brewMethod))
@@ -56,16 +55,14 @@ class RecipesApiClientImpl(
             }.body<RecipesPageResponseDto>()
         }
 
-    override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> = runCatching {
+    override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> = authorizedRequestExecutor.execute { accessToken ->
         httpClient.post(RecipesPath) {
-            userIdHeader(UserId)
+            bearerAuthorization(accessToken)
             contentType(ContentType.Application.Json)
             setBody(recipe)
         }.body<RecipeResponseDto>()
     }
 }
-
-fun HttpMessageBuilder.userIdHeader(id: String) = header(UserIdHeader, id)
 
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified T : Enum<T>> getSerialName(value: T): String {
