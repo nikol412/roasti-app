@@ -9,10 +9,8 @@ import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import org.nikol.roasti.data.network.AuthorizedRequestExecutor
-import org.nikol.roasti.data.network.bearerAuthorization
+import org.nikol.roasti.data.network.ApiRoutes
 import org.nikol.roasti.data.upload.remote.model.response.ImageUploadResponseDto
-
-private const val UploadsPath = "/api/v1/uploads/images"
 
 interface UploadApiClient {
     suspend fun uploadImage(fileName: String, bytes: ByteArray): Result<ImageUploadResponseDto>
@@ -24,9 +22,8 @@ class UploadApiClientImpl(
 ) : UploadApiClient {
 
     override suspend fun uploadImage(fileName: String, bytes: ByteArray): Result<ImageUploadResponseDto> =
-        authorizedRequestExecutor.execute { accessToken ->
-            httpClient.post(UploadsPath) {
-                bearerAuthorization(accessToken)
+        authorizedRequestExecutor.execute { _ ->
+            httpClient.post(ApiRoutes.UploadsImages) {
                 setBody(
                     MultiPartFormDataContent(
                         formData {

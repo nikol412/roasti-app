@@ -15,7 +15,8 @@ data class Recipe(
 
 data class RecipesPage(
     val items: List<Recipe>,
-    val page: Int,
-    val limit: Int,
-    val totalCount: Int,
+    val currentPage: Int,
+    val itemsCount: Int,
+    val lastPage: Int,
+    val nextPage: Int,
 )

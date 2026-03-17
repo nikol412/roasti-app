@@ -10,14 +10,12 @@ import io.ktor.http.contentType
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializer
 import org.nikol.roasti.data.network.AuthorizedRequestExecutor
-import org.nikol.roasti.data.network.bearerAuthorization
+import org.nikol.roasti.data.network.ApiRoutes
 import org.nikol.roasti.data.recipe.remote.model.BrewMethodDto
 import org.nikol.roasti.data.recipe.remote.model.DifficultyDto
 import org.nikol.roasti.data.recipe.remote.model.request.CreateRecipeRequestDto
 import org.nikol.roasti.data.recipe.remote.model.response.RecipeResponseDto
 import org.nikol.roasti.data.recipe.remote.model.response.RecipesPageResponseDto
-
-private const val RecipesPath = "/api/v1/recipes"
 
 interface RecipesApiClient {
     suspend fun getRecipes(
@@ -42,9 +40,8 @@ class RecipesApiClientImpl(
         difficulty: DifficultyDto?,
         limit: Int,
         page: Int
-    ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { accessToken ->
-            httpClient.get(RecipesPath) {
-                bearerAuthorization(accessToken)
+    ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { _ ->
+            httpClient.get(ApiRoutes.Recipes) {
                 contentType(ContentType.Application.Json)
                 url {
                     parameters.append("brew_method", getSerialName(brewMethod))
@@ -55,9 +52,8 @@ class RecipesApiClientImpl(
             }.body<RecipesPageResponseDto>()
         }
 
-    override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> = authorizedRequestExecutor.execute { accessToken ->
-        httpClient.post(RecipesPath) {
-            bearerAuthorization(accessToken)
+    override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> = authorizedRequestExecutor.execute { _ ->
+        httpClient.post(ApiRoutes.Recipes) {
             contentType(ContentType.Application.Json)
             setBody(recipe)
         }.body<RecipeResponseDto>()

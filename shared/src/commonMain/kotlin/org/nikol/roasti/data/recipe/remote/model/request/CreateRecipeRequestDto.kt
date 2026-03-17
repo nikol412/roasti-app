@@ -20,7 +20,7 @@ data class CreateRecipeRequestDto(
 
 @Serializable
 data class CreateRecipeStepRequestDto(
-    @SerialName("description") val description: String,
+    @SerialName("description") val description: String? = null,
     @SerialName("duration_seconds") val durationSeconds: Int? = null,
     @SerialName("image_id") val imageId: String? = null,
     @SerialName("order") val order: Int,

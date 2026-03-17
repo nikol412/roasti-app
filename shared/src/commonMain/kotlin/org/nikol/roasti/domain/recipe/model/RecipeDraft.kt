@@ -14,7 +14,7 @@ data class RecipeDraft(
 data class RecipeDraftStep(
     val order: Int,
     val title: String,
-    val description: String,
+    val description: String?,
     val durationSeconds: Int?,
     val imageId: String? = null,
 )

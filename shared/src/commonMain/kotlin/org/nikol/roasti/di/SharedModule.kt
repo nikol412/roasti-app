@@ -29,8 +29,13 @@ import org.nikol.roasti.presentation.recipe.filter.RecipeFilterStore
 
 
 val sharedModule = module {
-    single { createHttpClient() }
     single<SessionRepository> { SessionStore(get()) }
+    single {
+        val sessionRepository: SessionRepository = get()
+        createHttpClient(
+            accessTokenProvider = { sessionRepository.currentSession()?.accessToken }
+        )
+    }
     single<AuthApiClient> { AuthApiClientImpl(get()) }
     single<SessionRefresher> { TokenRefreshCoordinator(get(), get()) }
     single { AuthorizedRequestExecutor(get(), get()) }

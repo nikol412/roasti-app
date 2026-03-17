@@ -13,12 +13,8 @@ import org.nikol.roasti.auth.data.network.model.request.RefreshRequestDto
 import org.nikol.roasti.auth.data.network.model.request.RegisterRequestDto
 import org.nikol.roasti.auth.data.network.model.response.AuthResponseDto
 import org.nikol.roasti.auth.data.network.model.response.RefreshResponseDto
-
-private const val LoginPath = "/api/v1/auth/login"
-private const val RegisterPath = "/api/v1/auth/register"
-private const val LogoutPath = "/api/v1/auth/logout"
-private const val RefreshPath = "/api/v1/auth/refresh"
-private const val BearerPrefix = "Bearer "
+import org.nikol.roasti.data.network.ApiRoutes
+import org.nikol.roasti.data.network.NetworkHeaders
 
 interface AuthApiClient {
     suspend fun login(request: LoginRequestDto): Result<AuthResponseDto>
@@ -35,27 +31,27 @@ class AuthApiClientImpl(
 ) : AuthApiClient {
 
     override suspend fun login(request: LoginRequestDto): Result<AuthResponseDto> = runCatching {
-        httpClient.post(LoginPath) {
+        httpClient.post(ApiRoutes.Login) {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body<AuthResponseDto>()
     }
 
     override suspend fun register(request: RegisterRequestDto): Result<AuthResponseDto> = runCatching {
-        httpClient.post(RegisterPath) {
+        httpClient.post(ApiRoutes.Register) {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body<AuthResponseDto>()
     }
 
     override suspend fun logout(accessToken: String): Result<Unit> = runCatching {
-        httpClient.post(LogoutPath) {
-            header(HttpHeaders.Authorization, BearerPrefix + accessToken)
+        httpClient.post(ApiRoutes.Logout) {
+            header(HttpHeaders.Authorization, NetworkHeaders.BearerPrefix + accessToken)
         }
     }.map { Unit }
 
     override suspend fun refresh(refreshToken: String): Result<RefreshResponseDto> = runCatching {
-        httpClient.post(RefreshPath) {
+        httpClient.post(ApiRoutes.Refresh) {
             contentType(ContentType.Application.Json)
             setBody(RefreshRequestDto(refreshToken = refreshToken))
         }.body<RefreshResponseDto>()

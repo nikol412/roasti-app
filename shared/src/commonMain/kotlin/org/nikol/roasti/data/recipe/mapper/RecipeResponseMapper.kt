@@ -15,9 +15,10 @@ import org.nikol.roasti.domain.recipe.model.RoastLevel
 
 fun RecipesPageResponseDto.toDomain() = RecipesPage(
     items = items.map { it.toDomain() },
-    page = page,
-    limit = limit,
-    totalCount = totalCount,
+    currentPage = pagination.currentPage,
+    itemsCount = pagination.itemsCount,
+    lastPage = pagination.lastPage,
+    nextPage = pagination.nextPage,
 )
 
 fun RecipeResponseDto.toDomain(): Recipe = Recipe(

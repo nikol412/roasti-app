@@ -1,14 +1,9 @@
 package org.nikol.roasti.data.network
 
 import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMessageBuilder
 import io.ktor.http.HttpStatusCode
 import org.nikol.roasti.auth.domain.repository.SessionRepository
 import org.nikol.roasti.auth.domain.session.SessionRefresher
-
-private const val BearerPrefix = "Bearer "
 
 class AuthorizedRequestExecutor(
     private val sessionRepository: SessionRepository,
@@ -33,8 +28,4 @@ class AuthorizedRequestExecutor(
             block(refreshedSession.accessToken)
         }
     }
-}
-
-fun HttpMessageBuilder.bearerAuthorization(accessToken: String) {
-    header(HttpHeaders.Authorization, BearerPrefix + accessToken)
 }

@@ -11,5 +11,6 @@ sealed interface RecipesListState {
         val isLoadingMore: Boolean = false,
         val hasMore: Boolean = true,
         val currentPage: Int = 1,
+        val nextPage: Int? = null,
     ): RecipesListState
 }

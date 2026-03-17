@@ -38,7 +38,7 @@ class RecipesListViewModel(
         val state = _recipes.value as? RecipesListState.Content ?: return
         if (state.isLoadingMore || !state.hasMore) return
 
-        val nextPage = state.currentPage + 1
+        val nextPage = state.nextPage ?: return
         _recipes.value = state.copy(isLoadingMore = true)
         viewModelScope.launch {
             val result = recipeRepository.getRecipes(
@@ -50,22 +50,23 @@ class RecipesListViewModel(
             val current = _recipes.value as? RecipesListState.Content ?: return@launch
             _recipes.value = if (result != null) {
                 val mergedRecipes = (current.recipes + result.items.map { it.toUiModel() }).distinctBy { it.id }
-                val pageAdvanced = result.page >= nextPage
+                val pageAdvanced = result.currentPage >= nextPage
                 val newItemsAdded = mergedRecipes.size > current.recipes.size
                 val hasProgress = pageAdvanced || newItemsAdded
 
                 if (!hasProgress) {
                     current.copy(
                         isLoadingMore = false,
-                        hasMore = false,
+                        hasMore = result.hasNextPage(),
+                        nextPage = result.nextPageOrNull(),
                     )
                 } else {
-                    val hasMore = mergedRecipes.size < result.totalCount
                     current.copy(
                         recipes = mergedRecipes,
                         isLoadingMore = false,
-                        hasMore = hasMore,
-                        currentPage = maxOf(current.currentPage, result.page),
+                        hasMore = result.hasNextPage(),
+                        currentPage = maxOf(current.currentPage, result.currentPage),
+                        nextPage = result.nextPageOrNull(),
                     )
                 }
             } else {
@@ -110,14 +111,19 @@ class RecipesListViewModel(
         ).getOrNull()
 
         _recipes.value = if (result != null) {
-            val hasMore = result.items.isNotEmpty() && result.page * result.limit < result.totalCount
             RecipesListState.Content(
                 recipes = result.items.map { it.toUiModel() },
-                hasMore = hasMore,
-                currentPage = result.page,
+                hasMore = result.hasNextPage(),
+                currentPage = result.currentPage,
+                nextPage = result.nextPageOrNull(),
             )
         } else {
             RecipesListState.Error
         }
     }
 }
+
+private fun org.nikol.roasti.domain.recipe.model.RecipesPage.hasNextPage(): Boolean = currentPage < lastPage
+
+private fun org.nikol.roasti.domain.recipe.model.RecipesPage.nextPageOrNull(): Int? =
+    nextPage.takeIf { hasNextPage() }

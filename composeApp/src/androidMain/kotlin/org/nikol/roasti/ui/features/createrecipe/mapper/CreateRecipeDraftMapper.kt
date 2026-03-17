@@ -21,7 +21,7 @@ internal fun CreateRecipeUiState.toRecipeDraft() = RecipeDraft(
 private fun CreateRecipeStepUiModel.toRecipeDraftStep(index: Int) = RecipeDraftStep(
     order = index,
     title = title,
-    description = description,
+    description = description.takeIf { it.isNotBlank() },
     durationSeconds = durationInSeconds,
     imageId = imageId,
 )

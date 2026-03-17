@@ -7,10 +7,6 @@ import kotlinx.serialization.Serializable
 data class RecipesPageResponseDto(
     @SerialName("items")
     val items: List<RecipeResponseDto>,
-    @SerialName("page")
-    val page: Int,
-    @SerialName("limit")
-    val limit: Int,
-    @SerialName("total_count")
-    val totalCount: Int,
+    @SerialName("pagination")
+    val pagination: RecipesPaginationResponseDto,
 )
