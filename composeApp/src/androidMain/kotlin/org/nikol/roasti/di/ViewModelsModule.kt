@@ -5,6 +5,7 @@ import org.koin.dsl.module
 import org.nikol.roasti.navigation.AppNavigationViewModel
 import org.nikol.roasti.ui.features.auth.login.LoginViewModel
 import org.nikol.roasti.ui.features.auth.register.RegisterViewModel
+import org.nikol.roasti.ui.features.createrecipe.CreateRecipeScreenViewModel
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeViewModel
 import org.nikol.roasti.ui.features.editrecipe.EditRecipeViewModel
 import org.nikol.roasti.ui.features.profile.ProfileViewModel
@@ -21,5 +22,6 @@ val viewModelsModule = module {
     viewModel { params -> RecipeContentViewModel(params.get(), get()) }
     viewModel { params -> RecipeStepsViewModel(params.get(), params.get(), get(), get()) }
     viewModel { CreateRecipeViewModel(get(), get()) }
+    viewModel { CreateRecipeScreenViewModel(get(), get()) }
     viewModel { params -> EditRecipeViewModel(params.get(), get(), get()) }
 }

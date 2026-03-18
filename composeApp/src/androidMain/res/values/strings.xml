@@ -27,6 +27,8 @@
     <string name="recipe_roast_level_medium">Medium</string>
     <string name="recipe_roast_level_medium_dark">Medium-Dark</string>
     <string name="recipe_roast_level_dark">Dark</string>
+    <!-- Create Recipe Screen -->
+    <string name="create_recipe_create">Create Recipe</string>
     <!-- Edit Recipe -->
     <string name="edit_recipe_save">Save</string>
     <string name="edit_recipe_save_changes">Save Changes</string>

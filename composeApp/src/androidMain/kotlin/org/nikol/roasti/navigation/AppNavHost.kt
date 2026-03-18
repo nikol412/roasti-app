@@ -28,6 +28,7 @@ import org.nikol.roasti.auth.domain.model.AuthState
 import org.nikol.roasti.ui.components.BottomBar
 import org.nikol.roasti.ui.features.auth.login.LoginRoute
 import org.nikol.roasti.ui.features.auth.register.RegisterRoute
+import org.nikol.roasti.ui.features.createrecipe.CreateRecipeRoute
 import org.nikol.roasti.ui.features.editrecipe.EditRecipeRoute
 import org.nikol.roasti.ui.features.profile.ProfileRoute
 import org.nikol.roasti.ui.features.recipepage.RecipeContentRoute
@@ -113,8 +114,15 @@ private fun MainNavHost(
                     RecipesRoute(
                         contentPadding = mainScreenContentPadding,
                         onRecipeClick = { navController.navigate(Screen.RecipeItem.createRoute(it)) },
+                        onCreateClick = { navController.navigate(Screen.CreateRecipe.route) },
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable,
+                    )
+                }
+
+                composable(Screen.CreateRecipe.route) {
+                    CreateRecipeRoute(
+                        onBackClick = { navController.popBackStack() },
                     )
                 }
 

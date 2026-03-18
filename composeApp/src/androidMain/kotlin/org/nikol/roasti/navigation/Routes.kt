@@ -20,6 +20,8 @@ sealed class Screen(val route: String) {
         fun createRoute(id: String) = "recipe/$id/edit"
     }
 
+    object CreateRecipe : Screen("recipe/create")
+
     object Profile : Screen("profile")
 }
 

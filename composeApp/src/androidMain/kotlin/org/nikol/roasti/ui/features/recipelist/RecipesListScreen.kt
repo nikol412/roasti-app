@@ -35,12 +35,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +68,7 @@ private const val RecipeScreenKeyPrefix = "recipe_screen_"
 @Composable
 internal fun RecipesListScreen(
     onRecipeClick: (String) -> Unit = {},
+    onCreateClick: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     contentPadding: PaddingValues,
@@ -79,9 +78,7 @@ internal fun RecipesListScreen(
     val filtersState by viewModel.filtersState.collectAsStateWithLifecycle()
     val state by viewModel.recipes.collectAsStateWithLifecycle()
 
-    var showCreateSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (state) {
@@ -112,7 +109,7 @@ internal fun RecipesListScreen(
         }
 
         FloatingActionButton(
-            onClick = { showCreateSheet = true },
+            onClick = onCreateClick,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(
@@ -132,18 +129,22 @@ internal fun RecipesListScreen(
         )
     }
 
-    if (showCreateSheet) {
-        CreateRecipeSheet(
-            onDismiss = { showCreateSheet = false },
-            onPublished = {
-                showCreateSheet = false
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(if(it) "Recipe created" else "something went wrong, try again")
-                }
-                viewModel.reload()
-            },
-        )
-    }
+    // Full-screen create is now handled via navigation (CreateRecipeRoute).
+    // Modal sheet kept below for reference — uncomment to compare both approaches.
+    //
+    // var showCreateSheet by remember { mutableStateOf(false) }
+    // if (showCreateSheet) {
+    //     CreateRecipeSheet(
+    //         onDismiss = { showCreateSheet = false },
+    //         onPublished = {
+    //             showCreateSheet = false
+    //             coroutineScope.launch {
+    //                 snackbarHostState.showSnackbar(if (it) "Recipe created" else "something went wrong, try again")
+    //             }
+    //             viewModel.reload()
+    //         },
+    //     )
+    // }
 }
 
 @Composable

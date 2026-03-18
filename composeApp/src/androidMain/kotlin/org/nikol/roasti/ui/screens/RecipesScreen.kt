@@ -19,24 +19,9 @@ import org.nikol.roasti.ui.features.recipelist.RecipesListScreen
 fun RecipesRoute(
     contentPadding: PaddingValues = PaddingValues(),
     onRecipeClick: (String) -> Unit = {},
+    onCreateClick: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
-) {
-    RecipesScreenContent(
-        contentPadding = contentPadding,
-        onRecipeClick = onRecipeClick,
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
-    )
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-private fun RecipesScreenContent(
-    contentPadding: PaddingValues,
-    onRecipeClick: (String) -> Unit,
-    sharedTransitionScope: SharedTransitionScope?,
-    animatedVisibilityScope: AnimatedVisibilityScope?,
 ) {
     Box(
         modifier = Modifier
@@ -47,6 +32,7 @@ private fun RecipesScreenContent(
     ) {
         RecipesListScreen(
             onRecipeClick = onRecipeClick,
+            onCreateClick = onCreateClick,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             contentPadding = contentPadding,

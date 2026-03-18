@@ -17,10 +17,11 @@ import org.nikol.roasti.domain.recipe.model.RoastLevel
 import org.nikol.roasti.domain.upload.UploadRepository
 import org.nikol.roasti.ui.features.editrecipe.mapper.toEditState
 import org.nikol.roasti.ui.features.editrecipe.mapper.toRecipeDraft
-import org.nikol.roasti.ui.features.editrecipe.model.ActiveStepSheet
 import org.nikol.roasti.ui.features.editrecipe.model.EditRecipeEvent
-import org.nikol.roasti.ui.features.editrecipe.model.EditRecipeStepUiModel
 import org.nikol.roasti.ui.features.editrecipe.model.EditRecipeUiState
+import org.nikol.roasti.ui.features.recipeform.model.ActiveStepSheet
+import org.nikol.roasti.ui.features.recipeform.model.RecipeFormFields
+import org.nikol.roasti.ui.features.recipeform.model.RecipeFormStepUiModel
 import org.nikol.roasti.utils.imageUrl
 
 class EditRecipeViewModel(
@@ -45,91 +46,95 @@ class EditRecipeViewModel(
         }
     }
 
-    fun updateTitle(value: String) = _state.update { it.copy(title = value, saveError = false) }
-    fun updateDescription(value: String) = _state.update { it.copy(description = value) }
-    fun updateBrewMethod(value: BrewMethod) = _state.update { it.copy(brewMethod = value) }
-    fun updateDifficulty(value: Difficulty) = _state.update { it.copy(difficulty = value) }
-    fun updateRoastLevel(value: RoastLevel) = _state.update { it.copy(roastLevel = value) }
-    fun updateBeans(value: String) = _state.update { it.copy(beans = value) }
+    fun updateTitle(value: String) = _state.update { it.copyForm { copy(title = value, saveError = false) } }
+    fun updateDescription(value: String) = _state.update { it.copyForm { copy(description = value) } }
+    fun updateBrewMethod(value: BrewMethod) = _state.update { it.copyForm { copy(brewMethod = value) } }
+    fun updateDifficulty(value: Difficulty) = _state.update { it.copyForm { copy(difficulty = value) } }
+    fun updateRoastLevel(value: RoastLevel) = _state.update { it.copyForm { copy(roastLevel = value) } }
+    fun updateBeans(value: String) = _state.update { it.copyForm { copy(beans = value) } }
 
-    fun openAddStep() = _state.update { it.copy(activeStepSheet = ActiveStepSheet(editingIndex = null)) }
+    fun openAddStep() = _state.update { it.copyForm { copy(activeStepSheet = ActiveStepSheet(editingIndex = null)) } }
 
     fun openEditStep(index: Int) {
-        val step = _state.value.steps.getOrNull(index) ?: return
+        val step = _state.value.form.steps.getOrNull(index) ?: return
         _state.update {
-            it.copy(
-                activeStepSheet = ActiveStepSheet(
-                    editingIndex = index,
-                    title = step.title,
-                    description = step.description,
-                    durationMinutes = step.durationSeconds?.let { s -> (s / 60).toString() } ?: "",
-                    durationSeconds = step.durationSeconds?.let { s -> (s % 60).toString() } ?: "",
+            it.copyForm {
+                copy(
+                    activeStepSheet = ActiveStepSheet(
+                        editingIndex = index,
+                        title = step.title,
+                        durationMinutes = step.durationSeconds?.let { s -> (s / 60).toString() } ?: "",
+                        durationSeconds = step.durationSeconds?.let { s -> (s % 60).toString() } ?: "",
+                    )
                 )
-            )
+            }
         }
     }
 
     fun updateActiveStepTitle(value: String) =
-        _state.update { it.copy(activeStepSheet = it.activeStepSheet?.copy(title = value)) }
-
-    fun updateActiveStepDescription(value: String) =
-        _state.update { it.copy(activeStepSheet = it.activeStepSheet?.copy(description = value)) }
+        _state.update { it.copyForm { copy(activeStepSheet = activeStepSheet?.copy(title = value)) } }
 
     fun updateActiveStepDurationMinutes(value: String) =
-        _state.update { it.copy(activeStepSheet = it.activeStepSheet?.copy(durationMinutes = value)) }
+        _state.update { it.copyForm { copy(activeStepSheet = activeStepSheet?.copy(durationMinutes = value)) } }
 
     fun updateActiveStepDurationSeconds(value: String) =
-        _state.update { it.copy(activeStepSheet = it.activeStepSheet?.copy(durationSeconds = value)) }
+        _state.update { it.copyForm { copy(activeStepSheet = activeStepSheet?.copy(durationSeconds = value)) } }
 
     fun confirmStepEdit() {
-        val sheet = _state.value.activeStepSheet ?: return
+        val sheet = _state.value.form.activeStepSheet ?: return
         if (!sheet.canConfirm) return
-        val newStep = EditRecipeStepUiModel(
-            order = sheet.editingIndex ?: _state.value.steps.size,
+        val newStep = RecipeFormStepUiModel(
+            order = sheet.editingIndex ?: _state.value.form.steps.size,
             title = sheet.title,
-            description = sheet.description,
             durationSeconds = sheet.durationTotalSeconds,
         )
         _state.update { state ->
-            val updatedSteps = state.steps.toMutableList()
-            val idx = sheet.editingIndex
-            if (idx != null) updatedSteps[idx] = newStep else updatedSteps.add(newStep)
-            state.copy(steps = updatedSteps, activeStepSheet = null)
+            state.copyForm {
+                val updatedSteps = steps.toMutableList()
+                val idx = sheet.editingIndex
+                if (idx != null) updatedSteps[idx] = newStep else updatedSteps.add(newStep)
+                copy(steps = updatedSteps, activeStepSheet = null)
+            }
         }
     }
 
-    fun cancelStepEdit() = _state.update { it.copy(activeStepSheet = null) }
+    fun cancelStepEdit() = _state.update { it.copyForm { copy(activeStepSheet = null) } }
 
     fun removeStep(index: Int) = _state.update { state ->
-        state.copy(steps = state.steps.toMutableList().also { it.removeAt(index) })
+        state.copyForm { copy(steps = steps.toMutableList().also { it.removeAt(index) }) }
     }
 
     fun uploadImage(fileName: String, bytes: ByteArray) {
         viewModelScope.launch {
-            _state.update { it.copy(isUploadingImage = true) }
+            _state.update { it.copyForm { copy(isUploadingImage = true) } }
             val result = uploadRepository.uploadImage(fileName, bytes)
             if (result.isFailure) _events.emit(EditRecipeEvent.ImageUploadFailed)
             _state.update { state ->
-                state.copy(
-                    imageId = result.getOrNull()?.id ?: state.imageId,
-                    imageUrl = result.getOrNull()?.id?.let(::imageUrl) ?: state.imageUrl,
-                    isUploadingImage = false,
-                )
+                state.copyForm {
+                    copy(
+                        imageId = result.getOrNull()?.id ?: imageId,
+                        imageUrl = result.getOrNull()?.id?.let(::imageUrl) ?: imageUrl,
+                        isUploadingImage = false,
+                    )
+                }
             }
         }
     }
 
     fun save() {
         viewModelScope.launch {
-            _state.update { it.copy(isSaving = true, saveError = false) }
+            _state.update { it.copyForm { copy(isSaving = true, saveError = false) } }
             val draft = state.value.toRecipeDraft()
             val result = recipeRepository.updateRecipe(recipeId, draft)
             if (result.isSuccess) {
                 _events.emit(EditRecipeEvent.SaveSuccess)
             } else {
-                _state.update { it.copy(isSaving = false, saveError = true) }
+                _state.update { it.copyForm { copy(isSaving = false, saveError = true) } }
                 _events.emit(EditRecipeEvent.SaveError)
             }
         }
     }
 }
+
+private fun EditRecipeUiState.copyForm(transform: RecipeFormFields.() -> RecipeFormFields) =
+    copy(form = form.transform())
