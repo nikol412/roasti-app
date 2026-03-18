@@ -441,6 +441,7 @@ private fun RecipeStepsSection(
             steps.forEachIndexed { index, step ->
                 BrewStepItem(
                     step = step,
+                    stepNumber = index + 1,
                     modifier = stepModifiers.getOrElse(index) { Modifier },
                 )
                 if (index != steps.lastIndex) {
@@ -457,6 +458,7 @@ private fun RecipeStepsSection(
 @Composable
 private fun BrewStepItem(
     step: RecipeStepUiModel,
+    stepNumber: Int,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -474,25 +476,22 @@ private fun BrewStepItem(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = step.order.toString(),
+                text = stepNumber.toString(),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
         }
-        Column(
+        Row(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
         ) {
             Text(
                 text = step.title,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = step.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
             )
             step.durationSeconds?.let { duration ->
                 StepDurationChip(duration = formatStepDuration(duration))
