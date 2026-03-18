@@ -41,8 +41,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -59,7 +59,6 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
-import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
 private val HeaderHeight = 220.dp
@@ -332,12 +331,6 @@ private fun RecipeMetaSection(
         )
         add(
             RecipeMetaItem(
-                title = stringResource(R.string.recipe_time),
-                value = formatBrewTime(recipe.totalBrewTimeSeconds),
-            )
-        )
-        add(
-            RecipeMetaItem(
                 title = stringResource(R.string.recipe_difficulty),
                 value = stringResource(recipe.difficultyLabelRes),
             )
@@ -584,16 +577,6 @@ private fun RecipeBottomBar(
     }
 }
 
-@Composable
-private fun formatBrewTime(totalSeconds: Int): String {
-    val minutes = totalSeconds.seconds.inWholeMinutes
-    return if (minutes > 0) {
-        minutes.toInt().let { stringResource(R.string.recipe_time_minutes, it) }
-    } else {
-        stringResource(R.string.recipe_missing_value)
-    }
-}
-
 private fun formatStepDuration(totalSeconds: Int): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
@@ -614,7 +597,6 @@ private fun RecipeContentScreenPreview() {
                         imageUrl = null,
                         brewMethodLabelRes = R.string.recipe_brew_method_aeropress,
                         difficultyLabelRes = R.string.recipe_difficulty_medium,
-                        totalBrewTimeSeconds = 180,
                         roastLevelLabelRes = R.string.recipe_roast_level_medium,
                         beans = "Colombian Supremo",
                         steps = listOf(

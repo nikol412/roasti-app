@@ -16,6 +16,10 @@ sealed class Screen(val route: String) {
         fun createRoute(id: String, startStep: Int = 0) = "recipe/$id/steps/$startStep"
     }
 
+    object EditRecipe : Screen("recipe/{id}/edit") {
+        fun createRoute(id: String) = "recipe/$id/edit"
+    }
+
     object Profile : Screen("profile")
 }
 

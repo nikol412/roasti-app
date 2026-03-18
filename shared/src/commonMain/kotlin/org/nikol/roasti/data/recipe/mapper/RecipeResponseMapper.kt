@@ -28,7 +28,6 @@ fun RecipeResponseDto.toDomain(): Recipe = Recipe(
     imageId = imageId,
     brewMethod = brewMethod.toDomain(),
     difficulty = difficulty.toDomain(),
-    totalBrewTimeSeconds = steps.orEmpty().sumOf { step -> step.durationSeconds ?: 0 },
     roastLevel = roastLevel.toDomain(),
     beans = beans,
     steps = steps.orEmpty().map(RecipeStepResponseDto::toDomain),

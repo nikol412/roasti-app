@@ -45,4 +45,8 @@ class NetworkRecipeRepository(
     override suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe> {
         return apiClient.addRecipe(recipe.toRequestDto()).map { it.toDomain() }
     }
+
+    override suspend fun updateRecipe(id: String, recipe: RecipeDraft): Result<Recipe> {
+        return apiClient.updateRecipe(id, recipe.toRequestDto()).map { it.toDomain() }
+    }
 }

@@ -10,7 +10,6 @@ data class RecipeDetailsUiModel(
     @StringRes val brewMethodLabelRes: Int,
     @StringRes val difficultyLabelRes: Int,
     @StringRes val roastLevelLabelRes: Int?,
-    val totalBrewTimeSeconds: Int,
     val beans: String?,
     val steps: List<RecipeStepUiModel>,
 )

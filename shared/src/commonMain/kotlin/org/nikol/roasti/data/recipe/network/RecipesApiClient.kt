@@ -4,13 +4,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializer
-import org.nikol.roasti.data.network.AuthorizedRequestExecutor
 import org.nikol.roasti.data.network.ApiRoutes
+import org.nikol.roasti.data.network.AuthorizedRequestExecutor
 import org.nikol.roasti.data.recipe.remote.model.BrewMethodDto
 import org.nikol.roasti.data.recipe.remote.model.DifficultyDto
 import org.nikol.roasti.data.recipe.remote.model.request.CreateRecipeRequestDto
@@ -27,6 +28,8 @@ interface RecipesApiClient {
     ): Result<RecipesPageResponseDto>
 
     suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto>
+
+    suspend fun updateRecipe(id: String, recipe: CreateRecipeRequestDto): Result<RecipeResponseDto>
 }
 
 class RecipesApiClientImpl(
@@ -41,19 +44,29 @@ class RecipesApiClientImpl(
         limit: Int,
         page: Int
     ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { _ ->
-            httpClient.get(ApiRoutes.Recipes) {
+        httpClient.get(ApiRoutes.Recipes) {
+            contentType(ContentType.Application.Json)
+            url {
+                parameters.append("brew_method", getSerialName(brewMethod))
+                difficulty?.let { parameters.append("difficulty", getSerialName(it)) }
+                parameters.append("limit", limit.toString())
+                parameters.append("page", page.toString())
+            }
+        }.body<RecipesPageResponseDto>()
+    }
+
+    override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> =
+        authorizedRequestExecutor.execute { _ ->
+            httpClient.post(ApiRoutes.Recipes) {
                 contentType(ContentType.Application.Json)
-                url {
-                    parameters.append("brew_method", getSerialName(brewMethod))
-                    difficulty?.let { parameters.append("difficulty", getSerialName(it)) }
-                    parameters.append("limit", limit.toString())
-                    parameters.append("page", page.toString())
-                }
-            }.body<RecipesPageResponseDto>()
+                setBody(recipe)
+            }.body<RecipeResponseDto>()
         }
 
-    override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> = authorizedRequestExecutor.execute { _ ->
-        httpClient.post(ApiRoutes.Recipes) {
+    override suspend fun updateRecipe(
+        id: String, recipe: CreateRecipeRequestDto
+    ): Result<RecipeResponseDto> = authorizedRequestExecutor.execute {
+        httpClient.put(ApiRoutes.recipeById(id)) {
             contentType(ContentType.Application.Json)
             setBody(recipe)
         }.body<RecipeResponseDto>()

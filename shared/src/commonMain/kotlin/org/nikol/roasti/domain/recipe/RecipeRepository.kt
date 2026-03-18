@@ -18,4 +18,6 @@ interface RecipeRepository {
     suspend fun getById(id: String): Recipe?
 
     suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe>
+
+    suspend fun updateRecipe(id: String, recipe: RecipeDraft): Result<Recipe>
 }

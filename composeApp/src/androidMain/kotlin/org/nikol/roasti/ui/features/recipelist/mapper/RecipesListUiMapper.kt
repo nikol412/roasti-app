@@ -12,5 +12,4 @@ internal fun Recipe.toUiModel() = RecipeListItemUiModel(
     imageUrl = imageId?.let(::imageUrl),
     brewMethodLabelRes = brewMethod.labelRes(),
     difficultyLabelRes = difficulty.labelRes(),
-    totalBrewTimeSeconds = totalBrewTimeSeconds,
 )

@@ -28,6 +28,7 @@ import org.nikol.roasti.auth.domain.model.AuthState
 import org.nikol.roasti.ui.components.BottomBar
 import org.nikol.roasti.ui.features.auth.login.LoginRoute
 import org.nikol.roasti.ui.features.auth.register.RegisterRoute
+import org.nikol.roasti.ui.features.editrecipe.EditRecipeRoute
 import org.nikol.roasti.ui.features.profile.ProfileRoute
 import org.nikol.roasti.ui.features.recipepage.RecipeContentRoute
 import org.nikol.roasti.ui.features.recipesteps.RecipeStepsRoute
@@ -131,9 +132,21 @@ private fun MainNavHost(
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable,
                         onBackClick = { navController.popBackStack() },
+                        onEditClick = { navController.navigate(Screen.EditRecipe.createRoute(id)) },
                         onStartBrewing = { startStep ->
                             navController.navigate(Screen.RecipeSteps.createRoute(id, startStep))
                         },
+                    )
+                }
+
+                composable(
+                    route = Screen.EditRecipe.route,
+                    arguments = listOf(navArgument("id") { type = NavType.StringType }),
+                ) { entry ->
+                    val id = entry.arguments?.getString("id") ?: return@composable
+                    EditRecipeRoute(
+                        id = id,
+                        onBackClick = { navController.popBackStack() },
                     )
                 }
 

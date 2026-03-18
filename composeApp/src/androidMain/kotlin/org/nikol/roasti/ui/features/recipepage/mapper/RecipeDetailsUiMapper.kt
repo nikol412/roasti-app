@@ -16,7 +16,6 @@ internal fun Recipe.toUiModel() = RecipeDetailsUiModel(
     brewMethodLabelRes = brewMethod.labelRes(),
     difficultyLabelRes = difficulty.labelRes(),
     roastLevelLabelRes = roastLevel.takeUnless { it == RoastLevel.NONE }?.labelRes(),
-    totalBrewTimeSeconds = totalBrewTimeSeconds,
     beans = beans,
     steps = steps.map(BrewStep::toUiModel),
 )

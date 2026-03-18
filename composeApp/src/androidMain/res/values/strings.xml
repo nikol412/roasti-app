@@ -10,10 +10,8 @@
     <string name="recipe_roast_level">Roast Level</string>
     <string name="recipe_missing_value">N/A</string>
     <string name="recipe_brew_method">Brew Method</string>
-    <string name="recipe_time">Time</string>
     <string name="recipe_roaster">Roaster</string>
     <string name="recipe_difficulty">Difficulty</string>
-    <string name="recipe_time_minutes">%1$d mins</string>
     <string name="recipe_brew_method_v60">V60</string>
     <string name="recipe_brew_method_french_press">French Press</string>
     <string name="recipe_brew_method_aeropress">Aeropress</string>
@@ -29,6 +27,26 @@
     <string name="recipe_roast_level_medium">Medium</string>
     <string name="recipe_roast_level_medium_dark">Medium-Dark</string>
     <string name="recipe_roast_level_dark">Dark</string>
+    <!-- Edit Recipe -->
+    <string name="edit_recipe_save">Save</string>
+    <string name="edit_recipe_save_changes">Save Changes</string>
+    <string name="edit_recipe_title_hint">Recipe title…</string>
+    <string name="edit_recipe_description_hint">Describe this recipe…</string>
+    <string name="edit_recipe_beans_hint">e.g. Ethiopia Yirgacheffe</string>
+    <string name="edit_recipe_add_step">+ Add Step</string>
+    <string name="edit_recipe_save_error">Failed to save. Please try again.</string>
+    <string name="edit_recipe_discard_title">Discard changes?</string>
+    <string name="edit_recipe_discard_message">Your unsaved changes will be lost.</string>
+    <string name="edit_recipe_discard_confirm">Discard</string>
+    <string name="edit_recipe_keep_editing">Keep editing</string>
+    <string name="edit_recipe_step_add_title">Add Step</string>
+    <string name="edit_recipe_step_edit_title">Edit Step</string>
+    <string name="edit_recipe_step_title_label">Title</string>
+    <string name="edit_recipe_step_description_label">Description (optional)</string>
+    <string name="edit_recipe_step_duration_min">min</string>
+    <string name="edit_recipe_step_duration_sec">sec</string>
+    <string name="edit_recipe_step_save">Save Step</string>
+
     <string name="steps_step_counter">Step %1$d of %2$d</string>
     <string name="steps_brew_ready">Your brew is ready!</string>
     <string name="steps_finish">Finish</string>

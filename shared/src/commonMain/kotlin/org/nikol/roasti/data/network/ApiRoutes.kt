@@ -8,6 +8,7 @@ object ApiRoutes {
     const val Logout = "${AuthPathPrefix}logout"
     const val Refresh = "${AuthPathPrefix}refresh"
     const val Recipes = "$ApiV1Path/recipes"
+    fun recipeById(id: String) = "$Recipes/$id"
     const val UploadsImages = "$ApiV1Path/uploads/images"
     const val ProfileMe = "$ApiV1Path/profiles/me"
 }

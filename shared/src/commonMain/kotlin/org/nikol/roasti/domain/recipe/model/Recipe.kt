@@ -7,7 +7,6 @@ data class Recipe(
     val imageId: String?,
     val brewMethod: BrewMethod,
     val difficulty: Difficulty,
-    val totalBrewTimeSeconds: Int,
     val roastLevel: RoastLevel,
     val beans: String?,
     val steps: List<BrewStep>,

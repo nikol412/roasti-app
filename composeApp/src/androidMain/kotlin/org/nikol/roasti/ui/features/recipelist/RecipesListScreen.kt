@@ -63,7 +63,6 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.presentation.recipe.filter.RecipeFilterState
-import kotlin.time.Duration.Companion.seconds
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
 
@@ -278,10 +277,6 @@ private fun RecipeItem(
                     stringResource(item.difficultyLabelRes),
                     style = RoastiTypography.bodyMedium,
                 )
-                Text(
-                    "${item.totalBrewTimeSeconds.seconds.inWholeMinutes} min",
-                    style = RoastiTypography.bodyMedium
-                )
             }
         }
     }
@@ -419,7 +414,6 @@ private fun RecipeItemPreview() {
                     imageUrl = null,
                     brewMethodLabelRes = R.string.recipe_brew_method_v60,
                     difficultyLabelRes = R.string.recipe_difficulty_easy,
-                    totalBrewTimeSeconds = 2895,
                 )
             )
         }
