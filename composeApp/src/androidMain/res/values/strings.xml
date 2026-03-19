@@ -10,6 +10,9 @@
     <string name="recipe_roast_level">Roast Level</string>
     <string name="recipe_missing_value">N/A</string>
     <string name="recipe_brew_method">Brew Method</string>
+    <string name="recipe_brew_method_all">All</string>
+    <string name="recipes_search_hint">Search blends, roasts…</string>
+    <string name="filter_clear">Clear</string>
     <string name="recipe_roaster">Roaster</string>
     <string name="recipe_difficulty">Difficulty</string>
     <string name="recipe_brew_method_v60">V60</string>

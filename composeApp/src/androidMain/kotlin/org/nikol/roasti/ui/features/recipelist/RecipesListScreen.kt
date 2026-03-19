@@ -16,14 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -33,34 +27,27 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
 import org.nikol.roasti.domain.recipe.model.BrewMethod
 import org.nikol.roasti.domain.recipe.model.Difficulty
-import org.nikol.roasti.ui.features.createrecipe.CreateRecipeSheet
-import org.nikol.roasti.ui.features.recipe.mapper.labelRes
-import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
-import org.nikol.roasti.ui.theme.RoastiTheme
-import org.nikol.roasti.ui.theme.RoastiTypography
-import org.nikol.roasti.ui.theme.Spacing
-import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
-import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.presentation.recipe.filter.RecipeFilterState
+import org.nikol.roasti.ui.features.recipelist.components.BrewMethodFilterRow
+import org.nikol.roasti.ui.features.recipelist.components.DifficultyFilterChip
+import org.nikol.roasti.ui.features.recipelist.components.RecipeCard
+import org.nikol.roasti.ui.features.recipelist.components.RecipeSearchBar
+import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
+import org.nikol.roasti.ui.theme.Spacing
+import org.nikol.roasti.ui.uikit.ErrorStub
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
 
@@ -77,6 +64,7 @@ internal fun RecipesListScreen(
 
     val filtersState by viewModel.filtersState.collectAsStateWithLifecycle()
     val state by viewModel.recipes.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -94,13 +82,15 @@ internal fun RecipesListScreen(
             )
 
             is RecipesListState.Content -> Content(
+                searchQuery = searchQuery,
                 filtersState = filtersState,
                 state = state as RecipesListState.Content,
                 onClick = onRecipeClick,
+                onSearch = viewModel::search,
                 onLoadMore = viewModel::loadNextPage,
-                onRefresh = { viewModel.reload() },
-                onBrewMethodSelected = { viewModel.filterByBrewMethod(it) },
-                onDifficultySelected = { viewModel.filterByDifficulty(it) },
+                onRefresh = viewModel::reload,
+                onBrewMethodSelected = viewModel::filterByBrewMethod,
+                onDifficultySelected = viewModel::filterByDifficulty,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
                 contentPadding = contentPadding,
@@ -128,23 +118,6 @@ internal fun RecipesListScreen(
                 .padding(bottom = contentPadding.calculateBottomPadding()),
         )
     }
-
-    // Full-screen create is now handled via navigation (CreateRecipeRoute).
-    // Modal sheet kept below for reference — uncomment to compare both approaches.
-    //
-    // var showCreateSheet by remember { mutableStateOf(false) }
-    // if (showCreateSheet) {
-    //     CreateRecipeSheet(
-    //         onDismiss = { showCreateSheet = false },
-    //         onPublished = {
-    //             showCreateSheet = false
-    //             coroutineScope.launch {
-    //                 snackbarHostState.showSnackbar(if (it) "Recipe created" else "something went wrong, try again")
-    //             }
-    //             viewModel.reload()
-    //         },
-    //     )
-    // }
 }
 
 @Composable
@@ -161,12 +134,14 @@ private fun Loading(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Content(
+    searchQuery: String,
     filtersState: RecipeFilterState,
     state: RecipesListState.Content,
     onClick: (String) -> Unit,
+    onSearch: (String) -> Unit,
     onLoadMore: () -> Unit,
     onRefresh: () -> Unit,
-    onBrewMethodSelected: (BrewMethod?) -> Unit,
+    onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
@@ -189,36 +164,45 @@ private fun Content(
     PullToRefreshBox(isRefreshing = state.isRefreshing, onRefresh = onRefresh, modifier) {
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 16.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            contentPadding = PaddingValues(
+                top = Spacing.sm,
+                bottom = contentPadding.calculateBottomPadding() + Spacing.lg,
+            ),
         ) {
-
-            stickyHeader {
-                Surface(Modifier.fillMaxWidth()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        BrewMethodSelector(filtersState.brewMethod, onBrewMethodSelected)
-                        DifficultySelector(filtersState.difficulty, onDifficultySelected)
-                    }
-                }
+            stickyHeader(key = "filters") {
+                FilterHeader(
+                    searchQuery = searchQuery,
+                    filtersState = filtersState,
+                    onSearch = onSearch,
+                    onBrewMethodSelected = onBrewMethodSelected,
+                    onDifficultySelected = onDifficultySelected,
+                )
             }
+
             items(state.recipes, key = { it.id }) { recipe ->
-                RecipeItem(
+                RecipeCard(
                     item = recipe,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = Spacing.lg)
+                        .then(
+                            recipeSharedBoundsModifier(
+                                recipeId = recipe.id,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        )
                         .clickable { onClick(recipe.id) },
                 )
             }
+
             if (state.isLoadingMore) {
                 item {
                     Box(
                         modifier = Modifier
                             .fillParentMaxWidth()
-                            .padding(16.dp),
+                            .padding(Spacing.lg),
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator(
@@ -233,50 +217,34 @@ private fun Content(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun RecipeItem(
-    item: RecipeListItemUiModel,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    modifier: Modifier = Modifier,
+private fun FilterHeader(
+    searchQuery: String,
+    filtersState: RecipeFilterState,
+    onSearch: (String) -> Unit,
+    onBrewMethodSelected: (BrewMethod) -> Unit,
+    onDifficultySelected: (Difficulty?) -> Unit,
 ) {
-    val sharedBoundsModifier = recipeScreenSharedBoundsModifier(
-        recipeId = item.id,
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
-    )
-
-    Row(
-        modifier = modifier
-            .then(sharedBoundsModifier)
-            .clip(RoundedCornerShape(8.dp)),
-    ) {
-        RecipeImage(url = item.imageUrl)
+    Surface(modifier = Modifier.fillMaxWidth()) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.padding(12.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            modifier = Modifier.padding(vertical = Spacing.sm),
         ) {
-            Text(
-                item.title,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                style = RoastiTypography.titleMedium
+            RecipeSearchBar(
+                query = searchQuery,
+                onQueryChange = onSearch,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.lg),
             )
-            Text(
-                item.description,
-                maxLines = 5,
-                overflow = TextOverflow.Ellipsis,
-                style = RoastiTypography.bodyMedium
+            BrewMethodFilterRow(
+                selectedMethod = filtersState.brewMethod,
+                onMethodSelected = onBrewMethodSelected,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    stringResource(item.brewMethodLabelRes),
-                    style = RoastiTypography.bodyMedium,
-                )
-                Text(
-                    stringResource(item.difficultyLabelRes),
-                    style = RoastiTypography.bodyMedium,
+            Row(modifier = Modifier.padding(horizontal = Spacing.lg)) {
+                DifficultyFilterChip(
+                    selectedDifficulty = filtersState.difficulty,
+                    onDifficultySelected = onDifficultySelected,
                 )
             }
         }
@@ -285,148 +253,17 @@ private fun RecipeItem(
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun recipeScreenSharedBoundsModifier(
+private fun recipeSharedBoundsModifier(
     recipeId: String,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
 ): Modifier {
-    if (sharedTransitionScope == null || animatedVisibilityScope == null) {
-        return Modifier
-    }
+    if (sharedTransitionScope == null || animatedVisibilityScope == null) return Modifier
 
     return with(sharedTransitionScope) {
         Modifier.sharedBounds(
             sharedContentState = rememberSharedContentState(key = "$RecipeScreenKeyPrefix$recipeId"),
             animatedVisibilityScope = animatedVisibilityScope,
         )
-    }
-}
-
-@Composable
-private fun RecipeImage(url: String?, modifier: Modifier = Modifier) {
-    AsyncImage(
-        model = url,
-        contentDescription = null,
-        placeholder = null,
-        modifier = modifier.size(120.dp),
-    )
-}
-
-@Composable
-private fun BrewMethodSelector(selectedValue: BrewMethod?, onSelected: (BrewMethod?) -> Unit) {
-    val methods = BrewMethod.entries.filterNot { it == BrewMethod.NONE }.toTypedArray()
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        AssistChip(
-            onClick = { expanded = true },
-            label = {
-                if (selectedValue != null) Text(stringResource(selectedValue.labelRes())) else Text(stringResource(R.string.recipe_brew_method))
-            },
-            trailingIcon = {
-                Text("☕️")
-            },
-            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-        )
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            methods.forEach { method ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(method.labelRes())) },
-                    onClick = {
-                        onSelected(method)
-                        expanded = false
-                    }
-                )
-            }
-            Box {
-                HorizontalDivider(Modifier.matchParentSize())
-                DropdownMenuItem(
-                    text = { Text("clear") },
-                    onClick = {
-                        onSelected(null)
-                        expanded = false
-                    },
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DifficultySelector(selectedValue: Difficulty?, onSelected: (Difficulty?) -> Unit) {
-    val methods = Difficulty.entries.toTypedArray()
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        AssistChip(
-            onClick = { expanded = true },
-            label = {
-                if (selectedValue != null) Text(stringResource(selectedValue.labelRes())) else Text(stringResource(R.string.recipe_difficulty))
-            },
-            trailingIcon = {
-                Text("📈️")
-            },
-            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        )
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            methods.forEach { method ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(method.labelRes())) },
-                    onClick = {
-                        onSelected(method)
-                        expanded = false
-                    }
-                )
-            }
-            Box {
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("clear") },
-                    onClick = {
-                        onSelected(null)
-                        expanded = false
-                    },
-                    modifier = Modifier
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun RecipeItemPreview() {
-    RoastiTheme {
-        AsyncImagePreviewProvider {
-            RecipeItem(
-                RecipeListItemUiModel(
-                    id = "erat",
-                    title = "reformidans reformidans reformidans",
-                    description = "eos",
-                    imageUrl = null,
-                    brewMethodLabelRes = R.string.recipe_brew_method_v60,
-                    difficultyLabelRes = R.string.recipe_difficulty_easy,
-                )
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun ImagePreview() {
-    RoastiTheme {
-        AsyncImagePreviewProvider {
-            RecipeImage("", Modifier.size(20.dp))
-        }
     }
 }
