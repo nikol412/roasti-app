@@ -26,8 +26,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -61,8 +59,8 @@ import org.nikol.roasti.R
 import org.nikol.roasti.ui.features.recipepage.model.RecipeDetailsUiModel
 import org.nikol.roasti.ui.features.recipepage.model.RecipeStepUiModel
 import org.nikol.roasti.ui.theme.RoastiTheme
-import org.nikol.roasti.ui.theme.ShapeXxl
 import org.nikol.roasti.ui.theme.Spacing
+import org.nikol.roasti.ui.uikit.ActionButtonPrimary
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
@@ -74,11 +72,9 @@ private val MetaChipShape = RoundedCornerShape(18.dp)
 private val StepNumberSize = 28.dp
 private val StepDurationShape = RoundedCornerShape(10.dp)
 private val HeaderActionButtonHeight = 40.dp
-private val PrimaryButtonHeight = 56.dp
 private val ContentShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 private val HeaderActionShape = RoundedCornerShape(20.dp)
 private const val BackLabel = "<"
-private const val StartArrow = ">"
 
 private data class RecipeMetaItem(
     val title: String,
@@ -564,29 +560,6 @@ private fun StepDurationChip(
 }
 
 @Composable
-private fun StartBrewingButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.height(PrimaryButtonHeight),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        shape = ShapeXxl,
-        enabled = enabled,
-    ) {
-        Text(
-            text = "$StartArrow  ${stringResource(R.string.recipe_start_brewing)}",
-            style = MaterialTheme.typography.labelLarge,
-        )
-    }
-}
-
-@Composable
 private fun RecipeBottomBar(
     enabled: Boolean,
     onClick: () -> Unit,
@@ -605,8 +578,9 @@ private fun RecipeBottomBar(
                 )
             )
     ) {
-        StartBrewingButton(
+        ActionButtonPrimary(
             onClick = onClick,
+            text = stringResource(R.string.recipe_start_brewing),
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
@@ -616,7 +590,7 @@ private fun RecipeBottomBar(
                     end = Spacing.xxl,
                     bottom = Spacing.lg,
                 ),
-            enabled = enabled,
+            enabled = enabled
         )
     }
 }

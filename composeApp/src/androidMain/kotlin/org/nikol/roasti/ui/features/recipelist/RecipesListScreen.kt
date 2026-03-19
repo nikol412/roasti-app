@@ -48,6 +48,7 @@ import org.nikol.roasti.ui.features.recipelist.components.RecipeSearchBar
 import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
+import org.nikol.roasti.ui.uikit.LoadingStub
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
 
@@ -70,11 +71,7 @@ internal fun RecipesListScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (state) {
-            RecipesListState.Loading -> Loading(
-                Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding)
-            )
+            RecipesListState.Loading -> LoadingStub(Modifier.align(Alignment.Center))
 
             RecipesListState.Error -> ErrorStub(
                 stringResource(R.string.recipes_load_error),
@@ -116,17 +113,6 @@ internal fun RecipesListScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = contentPadding.calculateBottomPadding()),
-        )
-    }
-}
-
-@Composable
-private fun Loading(modifier: Modifier = Modifier) {
-    Box(modifier, contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(64.dp),
-            color = MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
     }
 }
