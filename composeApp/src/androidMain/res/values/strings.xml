@@ -4,6 +4,7 @@
     <string name="recipes_load_error">Failed to load recipes</string>
     <string name="recipe_not_found">Not found</string>
     <string name="recipe_edit">Edit</string>
+    <string name="recipe_remove">Remove</string>
     <string name="recipe_start_brewing">Start Brewing</string>
     <string name="recipe_beans">Beans</string>
     <string name="recipe_brewing_steps">Brewing Steps</string>
@@ -55,4 +56,9 @@
     <string name="steps_step_counter">Step %1$d of %2$d</string>
     <string name="steps_brew_ready">Your brew is ready!</string>
     <string name="steps_finish">Finish</string>
+
+    <string name="dialog_confirm_title">Confirm action</string>
+    <string name="dialog_remove_label">Remove</string>
+    <string name="dialog_dismiss_label">Dismiss</string>
+
 </resources>

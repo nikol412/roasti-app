@@ -31,16 +31,8 @@ class NetworkRecipeRepository(
         ).mapCatching { it.toDomain() }
     }
 
-    private suspend fun getRecipesOrNull(
-        authorId: String? = null,
-        brewMethod: BrewMethod? = null,
-        difficulty: Difficulty? = null,
-        limit: Int = 50,
-        page: Int = 1,
-    ): RecipesPage? = getRecipes(authorId, brewMethod, difficulty, limit, page).getOrNull()
-
-    override suspend fun getById(id: String): Recipe? =
-        getRecipesOrNull()?.items?.find { recipe -> recipe.id == id }
+    override suspend fun getById(id: String): Result<Recipe> =
+        apiClient.getRecipe(id).map { it.toDomain() }
 
     override suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe> {
         return apiClient.addRecipe(recipe.toRequestDto()).map { it.toDomain() }
@@ -49,4 +41,6 @@ class NetworkRecipeRepository(
     override suspend fun updateRecipe(id: String, recipe: RecipeDraft): Result<Recipe> {
         return apiClient.updateRecipe(id, recipe.toRequestDto()).map { it.toDomain() }
     }
+
+    override suspend fun removeRecipe(id: String): Result<Unit> = apiClient.removeRecipe(id)
 }

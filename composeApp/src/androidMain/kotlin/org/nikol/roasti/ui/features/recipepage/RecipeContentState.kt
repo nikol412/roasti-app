@@ -8,3 +8,7 @@ sealed interface RecipeContentState {
     data object NotFound: RecipeContentState
     data class Content(val recipe: RecipeDetailsUiModel): RecipeContentState
 }
+
+sealed interface RecipeContentEvent {
+    object NavigateBack: RecipeContentEvent
+}

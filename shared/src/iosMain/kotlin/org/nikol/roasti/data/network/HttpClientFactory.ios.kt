@@ -5,8 +5,10 @@ import io.ktor.client.engine.darwin.Darwin
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.header
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.URLProtocol
+import io.ktor.http.contentType
 import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -23,6 +25,9 @@ actual fun createHttpClient(
         url {
             protocol = URLProtocol.HTTP
         }
+
+        contentType(ContentType.Application.Json)
+
         if (!url.encodedPath.startsWith(ApiRoutes.AuthPathPrefix)) {
             accessTokenProvider()?.let { accessToken ->
                 header(HttpHeaders.Authorization, NetworkHeaders.BearerPrefix + accessToken)

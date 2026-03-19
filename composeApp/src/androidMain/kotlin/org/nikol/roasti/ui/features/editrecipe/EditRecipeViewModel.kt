@@ -38,10 +38,9 @@ class EditRecipeViewModel(
 
     init {
         viewModelScope.launch {
-            val recipe = recipeRepository.getById(recipeId)
+            val recipe = recipeRepository.getById(recipeId).getOrNull()
             _state.update {
-                if (recipe != null) recipe.toEditState()
-                else it.copy(isLoading = false, loadError = true)
+                recipe?.toEditState() ?: it.copy(isLoading = false, loadError = true)
             }
         }
     }

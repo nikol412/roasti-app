@@ -15,9 +15,11 @@ interface RecipeRepository {
         page: Int = 1
     ): Result<RecipesPage>
 
-    suspend fun getById(id: String): Recipe?
+    suspend fun getById(id: String): Result<Recipe>
 
     suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe>
 
     suspend fun updateRecipe(id: String, recipe: RecipeDraft): Result<Recipe>
+
+    suspend fun removeRecipe(id: String): Result<Unit>
 }

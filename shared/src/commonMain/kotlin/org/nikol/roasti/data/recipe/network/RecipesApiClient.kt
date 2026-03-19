@@ -2,12 +2,15 @@ package org.nikol.roasti.data.recipe.network
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.prepareDelete
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializer
 import org.nikol.roasti.data.network.ApiRoutes
@@ -27,9 +30,12 @@ interface RecipesApiClient {
         page: Int = 1
     ): Result<RecipesPageResponseDto>
 
+    suspend fun getRecipe(id: String): Result<RecipeResponseDto>
     suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto>
 
     suspend fun updateRecipe(id: String, recipe: CreateRecipeRequestDto): Result<RecipeResponseDto>
+
+    suspend fun removeRecipe(id: String): Result<Unit>
 }
 
 class RecipesApiClientImpl(
@@ -45,7 +51,6 @@ class RecipesApiClientImpl(
         page: Int
     ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { _ ->
         httpClient.get(ApiRoutes.Recipes) {
-            contentType(ContentType.Application.Json)
             url {
                 parameters.append("brew_method", getSerialName(brewMethod))
                 difficulty?.let { parameters.append("difficulty", getSerialName(it)) }
@@ -55,10 +60,14 @@ class RecipesApiClientImpl(
         }.body<RecipesPageResponseDto>()
     }
 
+    override suspend fun getRecipe(id: String): Result<RecipeResponseDto> =
+        authorizedRequestExecutor.execute {
+            httpClient.get(ApiRoutes.recipeById(id)).body<RecipeResponseDto>()
+        }
+
     override suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto> =
         authorizedRequestExecutor.execute { _ ->
             httpClient.post(ApiRoutes.Recipes) {
-                contentType(ContentType.Application.Json)
                 setBody(recipe)
             }.body<RecipeResponseDto>()
         }
@@ -67,10 +76,16 @@ class RecipesApiClientImpl(
         id: String, recipe: CreateRecipeRequestDto
     ): Result<RecipeResponseDto> = authorizedRequestExecutor.execute {
         httpClient.put(ApiRoutes.recipeById(id)) {
-            contentType(ContentType.Application.Json)
             setBody(recipe)
         }.body<RecipeResponseDto>()
     }
+
+    override suspend fun removeRecipe(id: String): Result<Unit> =
+        authorizedRequestExecutor.execute {
+            val status = httpClient.delete(ApiRoutes.recipeById(id)).status
+
+            return@execute if (status.isSuccess()) Unit else throw Throwable("error while deleting recipe")
+        }
 }
 
 @OptIn(ExperimentalSerializationApi::class)

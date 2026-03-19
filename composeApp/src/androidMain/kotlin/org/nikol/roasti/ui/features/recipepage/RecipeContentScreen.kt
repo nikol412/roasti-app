@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -32,8 +33,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +54,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.nikol.roasti.R
@@ -93,6 +100,29 @@ fun RecipeContentRoute(
     val viewModel: RecipeContentViewModel = koinViewModel(parameters = { parametersOf(id) })
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+
+    var showRemoveDialogConfirmation: Boolean by remember { mutableStateOf(false) }
+
+    if (showRemoveDialogConfirmation) {
+        RemoveConfirmationDialog(
+            onConfirmRemove = {
+                viewModel.onRemoveRecipe()
+                showRemoveDialogConfirmation = false
+            },
+            onDismiss = {
+                showRemoveDialogConfirmation = false
+            }
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collectLatest { event ->
+            when (event) {
+                RecipeContentEvent.NavigateBack -> onBackClick()
+            }
+        }
+    }
+
     when (state) {
         RecipeContentState.Loading -> LoadingStub()
         RecipeContentState.Error -> ErrorStub(stringResource(R.string.error_generic))
@@ -103,6 +133,7 @@ fun RecipeContentRoute(
             animatedVisibilityScope = animatedVisibilityScope,
             onBackClick = onBackClick,
             onEditClick = onEditClick,
+            onRemoveClick = { showRemoveDialogConfirmation = true },
             onStepClick = onStartBrewing,
         )
     }
@@ -116,6 +147,7 @@ private fun RecipeContentScreen(
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onBackClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
+    onRemoveClick: () -> Unit = {},
     onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
     val recipe = state.recipe
@@ -165,6 +197,7 @@ private fun RecipeContentScreen(
             RecipeTopBar(
                 onBackClick = onBackClick,
                 onEditClick = onEditClick,
+                onRemoveClick = onRemoveClick,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
         }
@@ -264,6 +297,7 @@ private fun RecipeMainContent(
 private fun RecipeTopBar(
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
+    onRemoveClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -271,7 +305,6 @@ private fun RecipeTopBar(
             .fillMaxWidth()
             .statusBarsPadding()
             .padding(horizontal = Spacing.lg, vertical = Spacing.lg),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HeaderActionButton(
@@ -279,10 +312,21 @@ private fun RecipeTopBar(
             onClick = onBackClick,
             modifier = Modifier.size(HeaderActionButtonHeight),
         )
+
+        Spacer(Modifier.weight(1f))
         HeaderActionButton(
             text = stringResource(R.string.recipe_edit),
             onClick = onEditClick,
+            modifier = Modifier
+                .height(HeaderActionButtonHeight)
+                .padding(end = 16.dp),
+        )
+
+        HeaderActionButton(
+            text = stringResource(R.string.recipe_remove),
+            onClick = onRemoveClick,
             modifier = Modifier.height(HeaderActionButtonHeight),
+            highlightDangerous = true,
         )
     }
 }
@@ -292,6 +336,7 @@ private fun HeaderActionButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    highlightDangerous: Boolean = false,
 ) {
     Surface(
         modifier = modifier
@@ -311,7 +356,7 @@ private fun HeaderActionButton(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (highlightDangerous) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -574,6 +619,27 @@ private fun RecipeBottomBar(
             enabled = enabled,
         )
     }
+}
+
+@Composable
+private fun RemoveConfirmationDialog(onConfirmRemove: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.dialog_confirm_title)) },
+        confirmButton = {
+            TextButton(onClick = onConfirmRemove) {
+                Text(
+                    text = stringResource(R.string.dialog_confirm_title),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.dialog_dismiss_label))
+            }
+        },
+    )
 }
 
 private fun formatStepDuration(totalSeconds: Int): String {
