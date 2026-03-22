@@ -25,12 +25,24 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.versions.toml', '**/*.gradle.kts') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-      - name: assembleDebug
+      - name: Decode keystore
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > keystore.jks
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      - name: Build release Google APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
+        env:
+          RELEASE_STORE_FILE: ${{ github.workspace }}/keystore.jks
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
       - name: Save artifact
         uses: actions/upload-artifact@v6
         with:
-          name: debug-apk
-          path: composeApp/build/outputs/apk/debug/
+          name: release-apk
+          path: composeApp/build/outputs/apk/release/
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f keystore.jks
