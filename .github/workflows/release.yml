@@ -1,0 +1,11 @@
+name: Google release apk
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+jobs:
+  Demo-github-action:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Starting release workflow"
+      - run: echo "called on tag - ${{ github.ref_name }} "
