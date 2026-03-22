@@ -20,3 +20,8 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
+      - name: Save artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: debug-apk
+          path: composeApp/build/outputs/apk/debug/
