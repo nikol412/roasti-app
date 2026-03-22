@@ -53,6 +53,20 @@ jobs:
             --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Notify Telegram
+        run: |
+          NOTES=$(gh release view ${{ github.ref_name }} --json body -q '.body')
+          curl -s -X POST "https://api.telegram.org/bot$TG_BOT_TOKEN/sendMessage" \                                                                                                                            
+            -d chat_id="$CHAT_ID" \
+            -d message_thread_id="$THREAD_ID" \                                                                                                                                                             
+            --data-urlencode text="✅ Release ${{ github.ref_name }}                                                                                                                                        ─
+          
+          $NOTES"
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          THREAD_ID: ${{ secrets.TELEGRAM_THREAD_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup keystore
         if: always()
         run: rm -f keystore.jks
