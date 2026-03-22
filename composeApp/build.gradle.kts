@@ -82,6 +82,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
     buildTypes {
         getByName("debug") {
             applicationIdSuffix = ".debug"
