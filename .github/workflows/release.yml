@@ -29,6 +29,12 @@ jobs:
         run: echo "$KEYSTORE_BASE64" | base64 --decode > keystore.jks
         env:
           KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      - name: Verify keystore
+        run: |
+          wc -c keystore.jks
+          keytool -list -keystore keystore.jks -storepass $STORE_PASS | head -5
+        env:
+          STORE_PASS: ${{ secrets.RELEASE_STORE_PASSWORD }}
       - name: Build release Google APK
         run: |
           chmod +x gradlew
