@@ -1,0 +1,31 @@
+name: Warm Gradle cache
+on:
+  push:
+    branches: [master]
+    paths:
+      - '**/*.gradle.kts'
+      - '**/*.versions.toml'
+      - 'gradle/**'
+  schedule:
+    - cron: '0 8 * * 1' # каждый понедельник в 8:00 UTC
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.versions.toml', '**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Download dependencies
+        run: |
+          chmod +x gradlew
+          ./gradlew dependencies --no-daemon
