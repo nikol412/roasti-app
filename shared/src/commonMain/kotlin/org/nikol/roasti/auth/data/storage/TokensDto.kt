@@ -1,10 +1,10 @@
-package org.nikol.roasti.auth.domain.model
+package org.nikol.roasti.auth.data.storage
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class UserSession(
+data class TokensDto(
     @SerialName("access_token")
     val accessToken: String,
     @SerialName("refresh_token")

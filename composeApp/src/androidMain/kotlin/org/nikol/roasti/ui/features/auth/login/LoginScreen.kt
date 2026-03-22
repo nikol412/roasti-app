@@ -51,44 +51,22 @@ internal fun LoginRoute(
                 )
                 .padding(innerPaddings)
         ) {
-            when (state) {
-                is LoginUiState.Content -> LoginScreenContent(
-                    state = state as LoginUiState.Content,
-                    isSubmitting = false,
-                    errorMessage = null,
-                    onUsernameChanged = viewModel::updateUsername,
-                    onPasswordChanged = viewModel::updatePassword,
-                    onSubmit = viewModel::login,
-                    onNavigateToRegister = onNavigateToRegister,
-                )
-
-                is LoginUiState.Error -> LoginScreenContent(
-                    state = LoginUiState.Content((state as LoginUiState.Error).form),
-                    isSubmitting = false,
-                    errorMessage = (state as LoginUiState.Error).message,
-                    onUsernameChanged = viewModel::updateUsername,
-                    onPasswordChanged = viewModel::updatePassword,
-                    onSubmit = viewModel::login,
-                    onNavigateToRegister = onNavigateToRegister,
-                )
-
-                is LoginUiState.Loading -> LoginScreenContent(
-                    state = LoginUiState.Content((state as LoginUiState.Loading).form),
-                    isSubmitting = true,
-                    errorMessage = null,
-                    onUsernameChanged = viewModel::updateUsername,
-                    onPasswordChanged = viewModel::updatePassword,
-                    onSubmit = viewModel::login,
-                    onNavigateToRegister = onNavigateToRegister,
-                )
-            }
+            LoginScreenContent(
+                state = state,
+                isSubmitting = state.isLoading,
+                errorMessage = state.errorMessage,
+                onUsernameChanged = viewModel::updateUsername,
+                onPasswordChanged = viewModel::updatePassword,
+                onSubmit = viewModel::login,
+                onNavigateToRegister = onNavigateToRegister,
+            )
         }
     }
 }
 
 @Composable
 private fun LoginScreenContent(
-    state: LoginUiState.Content,
+    state: LoginUiState,
     isSubmitting: Boolean,
     errorMessage: String?,
     onUsernameChanged: (String) -> Unit,
@@ -132,7 +110,7 @@ private fun LoginScreenContent(
 private fun LoginScreenPreview() {
     RoastiTheme {
         LoginScreenContent(
-            state = LoginUiState.Content(
+            state = LoginUiState(
                 form = LoginFormState(
                     username = "coffee_nomad",
                     password = "hunter2",

@@ -16,11 +16,9 @@ fun UserDto.toDomain(): User = User(
 fun AuthResponseDto.toDomain(): UserSession = UserSession(
     accessToken = accessToken,
     refreshToken = refreshToken,
-    user = user.toDomain(),
 )
 
-fun RefreshResponseDto.toDomain(currentUser: User): UserSession = UserSession(
+fun RefreshResponseDto.toDomain(): UserSession = UserSession(
     accessToken = accessToken,
     refreshToken = refreshToken,
-    user = currentUser,
 )

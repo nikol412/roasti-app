@@ -1,0 +1,36 @@
+-- Таблица для кешированного юзера приложения.
+-- cache_key — технический ключ, всегда равен 'me'. Гарантирует ровно 1 строку.
+-- id — настоящий id из API, может быть любой строкой.
+CREATE TABLE User (
+    cache_key TEXT PRIMARY KEY NOT NULL,
+    id        TEXT NOT NULL,
+    image_id  TEXT,
+    bio       TEXT,
+    username  TEXT NOT NULL
+);
+
+-- Получить юзера (всегда максимум один)
+getUser:
+SELECT * FROM User LIMIT 1;
+
+-- Вставить юзера или заменить существующего (upsert).
+-- cache_key всегда передаём как 'me' — INSERT OR REPLACE заменит строку если она есть.
+upsertUser:
+INSERT OR REPLACE INTO User(cache_key, id, image_id, bio, username)
+VALUES ('me', ?, ?, ?, ?);
+
+-- Обновить только bio
+updateBio:
+UPDATE User SET bio = ? WHERE cache_key = 'me';
+
+-- Обновить только username
+updateUsername:
+UPDATE User SET username = ? WHERE cache_key = 'me';
+
+-- Обновить только аватар
+updateImageId:
+UPDATE User SET image_id = ? WHERE cache_key = 'me';
+
+-- Удалить юзера (выход из аккаунта / сброс кеша)
+deleteUser:
+DELETE FROM User;

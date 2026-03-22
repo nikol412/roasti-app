@@ -1,11 +1,14 @@
 package org.nikol.roasti.auth.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import org.nikol.roasti.auth.domain.model.AuthState
 import org.nikol.roasti.auth.domain.model.User
 
 interface AuthRepository {
     val authState: StateFlow<AuthState>
+
+    fun getUser(): Flow<User?>
 
     suspend fun bootstrap()
 

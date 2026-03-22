@@ -55,43 +55,18 @@ internal fun RegisterRoute(
             )
             .padding(innerPaddings)
         ) {
-            when (state) {
-                is RegisterUiState.Content -> RegisterScreenContent(
-                    state = state as RegisterUiState.Content,
-                    isSubmitting = false,
-                    errorMessage = null,
-                    onUsernameChanged = viewModel::updateUsername,
-                    onEmailChanged = viewModel::updateEmail,
-                    onPasswordChanged = viewModel::updatePassword,
-                    onBioChanged = viewModel::updateBio,
-                    onSubmit = viewModel::register,
-                    onNavigateToLogin = onNavigateToLogin,
-                )
 
-                is RegisterUiState.Error -> RegisterScreenContent(
-                    state = RegisterUiState.Content((state as RegisterUiState.Error).form),
-                    isSubmitting = false,
-                    errorMessage = (state as RegisterUiState.Error).message,
-                    onUsernameChanged = viewModel::updateUsername,
-                    onEmailChanged = viewModel::updateEmail,
-                    onPasswordChanged = viewModel::updatePassword,
-                    onBioChanged = viewModel::updateBio,
-                    onSubmit = viewModel::register,
-                    onNavigateToLogin = onNavigateToLogin,
-                )
-
-                is RegisterUiState.Loading -> RegisterScreenContent(
-                    state = RegisterUiState.Content((state as RegisterUiState.Loading).form),
-                    isSubmitting = true,
-                    errorMessage = null,
-                    onUsernameChanged = viewModel::updateUsername,
-                    onEmailChanged = viewModel::updateEmail,
-                    onPasswordChanged = viewModel::updatePassword,
-                    onBioChanged = viewModel::updateBio,
-                    onSubmit = viewModel::register,
-                    onNavigateToLogin = onNavigateToLogin,
-                )
-            }
+            RegisterScreenContent(
+                state = state,
+                isSubmitting = state.isLoading,
+                errorMessage = state.errorMessage,
+                onUsernameChanged = viewModel::updateUsername,
+                onEmailChanged = viewModel::updateEmail,
+                onPasswordChanged = viewModel::updatePassword,
+                onBioChanged = viewModel::updateBio,
+                onSubmit = viewModel::register,
+                onNavigateToLogin = onNavigateToLogin,
+            )
         }
 
     }
@@ -100,7 +75,7 @@ internal fun RegisterRoute(
 
 @Composable
 private fun RegisterScreenContent(
-    state: RegisterUiState.Content,
+    state: RegisterUiState,
     isSubmitting: Boolean,
     errorMessage: String?,
     onUsernameChanged: (String) -> Unit,
@@ -159,7 +134,7 @@ private fun RegisterScreenContent(
 private fun RegisterScreenPreview() {
     RoastiTheme {
         RegisterScreenContent(
-            state = RegisterUiState.Content(
+            state = RegisterUiState(
                 form = RegisterFormState(
                     username = "origin_story",
                     email = "name@example.com",

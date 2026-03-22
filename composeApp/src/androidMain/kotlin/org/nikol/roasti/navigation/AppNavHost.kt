@@ -51,8 +51,8 @@ fun AppNavHost(
 
     Surface(modifier = Modifier.fillMaxSize()) {
         when (authState.value) {
-            AuthState.Initializing -> LoadingStub(modifier = Modifier.fillMaxSize())
-            AuthState.Guest -> AuthNavHost()
+            AuthState.Loading -> LoadingStub(modifier = Modifier.fillMaxSize())
+            is AuthState.Error, AuthState.Guest -> AuthNavHost()
             is AuthState.Authenticated -> MainNavHost()
         }
     }

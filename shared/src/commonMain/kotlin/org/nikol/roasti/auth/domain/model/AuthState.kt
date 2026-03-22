@@ -1,7 +1,9 @@
 package org.nikol.roasti.auth.domain.model
 
 sealed interface AuthState {
-    data object Initializing : AuthState
+    data object Loading : AuthState
     data object Guest : AuthState
-    data class Authenticated(val session: UserSession) : AuthState
+    data class Error(val message: String): AuthState
+    data class Authenticated(val user: User) : AuthState
 }
+

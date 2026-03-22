@@ -3,10 +3,10 @@ package org.nikol.roasti.auth.storage
 import android.content.Context
 import kotlinx.serialization.json.Json
 import org.nikol.roasti.auth.data.storage.TokenStorage
-import org.nikol.roasti.auth.domain.model.UserSession
+import org.nikol.roasti.auth.data.storage.TokensDto
 
 private const val PreferencesName = "roasti_auth"
-private const val SessionKey = "session"
+private const val TokensKey = "tokens"
 
 class SharedPreferencesTokenStorage(
     context: Context,
@@ -18,20 +18,20 @@ class SharedPreferencesTokenStorage(
         explicitNulls = false
     }
 
-    override suspend fun readSession(): UserSession? {
-        val rawSession = preferences.getString(SessionKey, null) ?: return null
-        return runCatching { json.decodeFromString<UserSession>(rawSession) }.getOrNull()
+    override suspend fun readTokens(): TokensDto? {
+        val raw = preferences.getString(TokensKey, null) ?: return null
+        return runCatching { json.decodeFromString<TokensDto>(raw) }.getOrNull()
     }
 
-    override suspend fun writeSession(session: UserSession) {
+    override suspend fun writeTokens(tokens: TokensDto) {
         preferences.edit()
-            .putString(SessionKey, json.encodeToString(UserSession.serializer(), session))
+            .putString(TokensKey, json.encodeToString(TokensDto.serializer(), tokens))
             .apply()
     }
 
-    override suspend fun clearSession() {
+    override suspend fun clearTokens() {
         preferences.edit()
-            .remove(SessionKey)
+            .remove(TokensKey)
             .apply()
     }
 }

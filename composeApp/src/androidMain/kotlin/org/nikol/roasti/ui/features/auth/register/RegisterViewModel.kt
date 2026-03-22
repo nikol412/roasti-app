@@ -21,20 +21,35 @@ data class RegisterFormState(
     val bio: String = "",
 )
 
-sealed interface RegisterUiState {
-    data class Content(val form: RegisterFormState) : RegisterUiState
-    data class Loading(val form: RegisterFormState) : RegisterUiState
-    data class Error(
-        val form: RegisterFormState,
-        val message: String,
-    ) : RegisterUiState
+data class RegisterUiState(
+    val form: RegisterFormState,
+    val isLoading: Boolean = false,
+    val isError: Boolean = false,
+    val errorMessage: String? = null,
+) {
+    companion object {
+        fun initial() = RegisterUiState(RegisterFormState())
+
+        fun loading(form: RegisterFormState) = RegisterUiState(
+            form = form,
+            isLoading = true,
+        )
+
+        fun error(form: RegisterFormState, message: String) = RegisterUiState(
+            form = form,
+            isError = true,
+            errorMessage = message
+        )
+
+        fun content(form: RegisterFormState) = RegisterUiState(form)
+    }
 }
 
 class RegisterViewModel(
     private val authRepository: AuthRepository,
 ) : ViewModel() {
 
-    private val mutableUiState = MutableStateFlow<RegisterUiState>(RegisterUiState.Content(RegisterFormState()))
+    private val mutableUiState = MutableStateFlow<RegisterUiState>(RegisterUiState.initial())
 
     val uiState: StateFlow<RegisterUiState> = mutableUiState.asStateFlow()
 
@@ -58,11 +73,11 @@ class RegisterViewModel(
         val form = currentForm()
         val validationMessage = validate(form)
         if (validationMessage != null) {
-            mutableUiState.value = RegisterUiState.Error(form, validationMessage)
+            mutableUiState.value = RegisterUiState.error(form, validationMessage)
             return
         }
 
-        mutableUiState.value = RegisterUiState.Loading(form)
+        mutableUiState.value = RegisterUiState.loading(form)
         viewModelScope.launch {
             authRepository.register(
                 username = form.username.trim(),
@@ -71,20 +86,16 @@ class RegisterViewModel(
                 bio = form.bio.trim().ifBlank { null },
                 avatarId = null,
             ).onFailure {
-                mutableUiState.value = RegisterUiState.Error(form, it.toAuthUiMessage())
+                mutableUiState.value = RegisterUiState.error(form, it.toAuthUiMessage())
             }
         }
     }
 
     private fun updateForm(transform: RegisterFormState.() -> RegisterFormState) {
-        mutableUiState.value = RegisterUiState.Content(currentForm().transform())
+        mutableUiState.value = RegisterUiState.content(currentForm().transform())
     }
 
-    private fun currentForm(): RegisterFormState = when (val state = mutableUiState.value) {
-        is RegisterUiState.Content -> state.form
-        is RegisterUiState.Error -> state.form
-        is RegisterUiState.Loading -> state.form
-    }
+    private fun currentForm(): RegisterFormState = mutableUiState.value.form
 
     private fun validate(form: RegisterFormState): String? = when {
         form.username.isBlank() -> EmptyUsernameMessage

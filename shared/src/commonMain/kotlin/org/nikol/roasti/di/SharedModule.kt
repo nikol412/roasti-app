@@ -3,7 +3,7 @@ package org.nikol.roasti.di
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import org.nikol.roasti.auth.data.NetworkAuthRepository
+import org.nikol.roasti.auth.data.AuthRepositoryImpl
 import org.nikol.roasti.auth.data.network.AuthApiClient
 import org.nikol.roasti.auth.data.network.AuthApiClientImpl
 import org.nikol.roasti.auth.data.network.ProfileApiClient
@@ -40,7 +40,7 @@ val sharedModule = module {
     single<SessionRefresher> { TokenRefreshCoordinator(get(), get()) }
     single { AuthorizedRequestExecutor(get(), get()) }
     single<ProfileApiClient> { ProfileApiClientImpl(get(), get()) }
-    single<AuthRepository> { NetworkAuthRepository(get(), get(), get()) }
+    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }
     single { NetworkRecipeRepository(get()) } bind RecipeRepository::class
     single { UploadApiClientImpl(get(), get()) } bind UploadApiClient::class
     single { NetworkUploadRepository(get()) } bind UploadRepository::class

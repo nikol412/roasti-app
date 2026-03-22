@@ -4,40 +4,46 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.nikol.roasti.auth.data.storage.TokenStorage
-import org.nikol.roasti.auth.domain.model.AuthState
-import org.nikol.roasti.auth.domain.model.User
+import org.nikol.roasti.auth.data.storage.TokensDto
 import org.nikol.roasti.auth.domain.model.UserSession
 import org.nikol.roasti.auth.domain.repository.SessionRepository
+
+
+sealed interface SessionState {
+    data object Empty : SessionState
+    data object Guest : SessionState
+    data class Error(val message: String): SessionState
+    data class Authenticated(val session: UserSession) : SessionState
+}
 
 class SessionStore(
     private val tokenStorage: TokenStorage,
 ) : SessionRepository {
 
-    private val mutableAuthState = MutableStateFlow<AuthState>(AuthState.Initializing)
+    private val mutableAuthState = MutableStateFlow<SessionState>(SessionState.Empty)
 
-    override val authState: StateFlow<AuthState> = mutableAuthState.asStateFlow()
+    override val authState: StateFlow<SessionState> = mutableAuthState.asStateFlow()
 
     override suspend fun restore() {
-        val session = tokenStorage.readSession()
-        mutableAuthState.value = session?.toAuthenticatedState() ?: AuthState.Guest
+        val tokens = tokenStorage.readTokens()
+        mutableAuthState.value = if (tokens != null) {
+            SessionState.Authenticated(UserSession(tokens.accessToken, tokens.refreshToken))
+        } else {
+            SessionState.Guest
+        }
     }
 
     override suspend fun saveSession(session: UserSession) {
-        tokenStorage.writeSession(session)
+        tokenStorage.writeTokens(TokensDto(session.accessToken, session.refreshToken))
         mutableAuthState.value = session.toAuthenticatedState()
     }
 
-    override suspend fun updateUser(user: User) {
-        val currentSession = currentSession() ?: return
-        saveSession(currentSession.copy(user = user))
-    }
-
     override suspend fun clearSession() {
-        tokenStorage.clearSession()
-        mutableAuthState.value = AuthState.Guest
+        tokenStorage.clearTokens()
+        mutableAuthState.value = SessionState.Guest
     }
 
-    override fun currentSession(): UserSession? = (authState.value as? AuthState.Authenticated)?.session
+    override fun currentSession(): UserSession? = (authState.value as? SessionState.Authenticated)?.session
 }
 
-private fun UserSession.toAuthenticatedState(): AuthState.Authenticated = AuthState.Authenticated(this)
+private fun UserSession.toAuthenticatedState() = SessionState.Authenticated(this)

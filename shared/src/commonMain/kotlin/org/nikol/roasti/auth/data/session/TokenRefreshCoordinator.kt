@@ -4,6 +4,7 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.nikol.roasti.auth.data.local.UserCacheDataSource
 import org.nikol.roasti.auth.data.network.AuthApiClient
 import org.nikol.roasti.auth.data.network.mapper.toDomain
 import org.nikol.roasti.auth.domain.model.UserSession
@@ -26,7 +27,7 @@ class TokenRefreshCoordinator(
         }
 
         val refreshedSession = authApiClient.refresh(currentSession.refreshToken)
-            .map { it.toDomain(currentSession.user) }
+            .map { it.toDomain() }
 
         if (refreshedSession.isSuccess) {
             sessionRepository.saveSession(refreshedSession.getOrThrow())

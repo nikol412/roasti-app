@@ -17,20 +17,37 @@ data class LoginFormState(
     val password: String = "",
 )
 
-sealed interface LoginUiState {
-    data class Content(val form: LoginFormState) : LoginUiState
-    data class Loading(val form: LoginFormState) : LoginUiState
-    data class Error(
-        val form: LoginFormState,
-        val message: String,
-    ) : LoginUiState
+data class LoginUiState(
+    val form: LoginFormState,
+    val isError: Boolean = false,
+    val errorMessage: String? = null,
+    val isLoading: Boolean = false,
+) {
+
+    companion object {
+        fun initial() = LoginUiState(LoginFormState())
+
+        fun loading(form: LoginFormState) = LoginUiState(
+            form = form,
+            isLoading = true,
+        )
+
+        fun error(form: LoginFormState, message: String) = LoginUiState(
+            form = form,
+            isError = true,
+            errorMessage = message,
+        )
+
+        fun content(form: LoginFormState) = LoginUiState(form)
+    }
 }
 
 class LoginViewModel(
     private val authRepository: AuthRepository,
 ) : ViewModel() {
 
-    private val mutableUiState = MutableStateFlow<LoginUiState>(LoginUiState.Content(LoginFormState()))
+    private val mutableUiState =
+        MutableStateFlow<LoginUiState>(LoginUiState.initial())
 
     val uiState: StateFlow<LoginUiState> = mutableUiState.asStateFlow()
 
@@ -46,30 +63,27 @@ class LoginViewModel(
         val form = currentForm()
         val validationMessage = validate(form)
         if (validationMessage != null) {
-            mutableUiState.value = LoginUiState.Error(form, validationMessage)
-            return
-        }
-
-        mutableUiState.value = LoginUiState.Loading(form)
-        viewModelScope.launch {
-            authRepository.login(
-                username = form.username.trim(),
-                password = form.password,
-            ).onFailure {
-                mutableUiState.value = LoginUiState.Error(form, it.toAuthUiMessage())
+            mutableUiState.value = LoginUiState.error(form, validationMessage)
+        } else {
+            mutableUiState.value = LoginUiState.loading(form)
+            viewModelScope.launch {
+                authRepository.login(
+                    username = form.username.trim(),
+                    password = form.password,
+                ).onFailure {
+                    mutableUiState.value = LoginUiState.error(form, it.toAuthUiMessage())
+                }
             }
         }
+
+
     }
 
     private fun updateForm(transform: LoginFormState.() -> LoginFormState) {
-        mutableUiState.value = LoginUiState.Content(currentForm().transform())
+        mutableUiState.value = LoginUiState.content(currentForm().transform())
     }
 
-    private fun currentForm(): LoginFormState = when (val state = mutableUiState.value) {
-        is LoginUiState.Content -> state.form
-        is LoginUiState.Error -> state.form
-        is LoginUiState.Loading -> state.form
-    }
+    private fun currentForm(): LoginFormState = mutableUiState.value.form
 
     private fun validate(form: LoginFormState): String? = when {
         form.username.isBlank() -> EmptyUsernameMessage

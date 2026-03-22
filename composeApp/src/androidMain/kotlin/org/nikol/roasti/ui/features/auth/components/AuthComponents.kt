@@ -1,5 +1,6 @@
 package org.nikol.roasti.ui.features.auth.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -94,8 +95,9 @@ internal fun AuthScreenFrame(
                         .padding(Spacing.xxl),
                     verticalArrangement = Arrangement.spacedBy(Spacing.lg),
                 ) {
-                    if (errorMessage != null) {
-                        ErrorCard(errorMessage)
+
+                    AnimatedVisibility(errorMessage != null) {
+                        errorMessage?.let { ErrorCard(errorMessage) }
                     }
 
                     content()

@@ -9,6 +9,7 @@ import io.ktor.client.HttpClient
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.nikol.roasti.di.dbSharedModule
 import org.nikol.roasti.di.sharedModule
 import org.nikol.roasti.di.platformModule
 import org.nikol.roasti.di.viewModelsModule
@@ -19,7 +20,7 @@ class RoastiApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@RoastiApplication)
-            modules(platformModule, sharedModule, viewModelsModule)
+            modules(platformModule, dbSharedModule, sharedModule, viewModelsModule)
         }
 
         initCoilHttpClient()

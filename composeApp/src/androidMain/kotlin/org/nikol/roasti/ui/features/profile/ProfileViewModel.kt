@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 import org.nikol.roasti.auth.domain.model.AuthState
 import org.nikol.roasti.auth.domain.model.User
 import org.nikol.roasti.auth.domain.repository.AuthRepository
-import org.nikol.roasti.auth.domain.repository.SessionRepository
 
 private const val SessionExpiredMessage = "Your session has ended. Please sign in again."
 
@@ -27,22 +26,21 @@ sealed interface ProfileUiState {
 
 class ProfileViewModel(
     private val authRepository: AuthRepository,
-    sessionRepository: SessionRepository,
 ) : ViewModel() {
 
     private val isRefreshing = MutableStateFlow(false)
     private val isLoggingOut = MutableStateFlow(false)
 
     val uiState: StateFlow<ProfileUiState> = combine(
-        sessionRepository.authState,
+        authRepository.authState,
         isRefreshing,
         isLoggingOut,
     ) { authState, refreshing, loggingOut ->
         when (authState) {
-            AuthState.Initializing -> ProfileUiState.Loading
-            AuthState.Guest -> ProfileUiState.Error(SessionExpiredMessage)
+            AuthState.Loading -> ProfileUiState.Loading
+            AuthState.Guest, is AuthState.Error -> ProfileUiState.Error(SessionExpiredMessage)
             is AuthState.Authenticated -> ProfileUiState.Content(
-                user = authState.session.user,
+                user = authState.user,
                 isRefreshing = refreshing,
                 isLoggingOut = loggingOut,
             )
@@ -54,10 +52,7 @@ class ProfileViewModel(
     )
 
     fun syncProfile() {
-        if (isRefreshing.value) {
-            return
-        }
-
+        if (isRefreshing.value) return
         viewModelScope.launch {
             isRefreshing.value = true
             authRepository.syncProfile()
@@ -66,10 +61,7 @@ class ProfileViewModel(
     }
 
     fun logout() {
-        if (isLoggingOut.value) {
-            return
-        }
-
+        if (isLoggingOut.value) return
         viewModelScope.launch {
             isLoggingOut.value = true
             authRepository.logout()
