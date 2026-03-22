@@ -6,6 +6,8 @@ on:
 jobs:
   Demo-github-action:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Start info
         run: echo "Release job run on tag ${{ github.ref_name }}"
