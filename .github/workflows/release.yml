@@ -43,6 +43,14 @@ jobs:
         with:
           name: release-apk
           path: composeApp/build/outputs/apk/release/
+      - name: Create Github release
+        run: |
+          gh release create ${{ github.ref_name }} \
+            composeApp/build/outputs/apk/release/*.apk \
+            --title "Release ${{ github.ref_name }}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup keystore
         if: always()
         run: rm -f keystore.jks
