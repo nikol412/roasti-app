@@ -35,6 +35,15 @@ jobs:
           keytool -list -keystore keystore.jks -storepass $STORE_PASS | head -5
         env:
           STORE_PASS: ${{ secrets.RELEASE_STORE_PASSWORD }}
+      - name: Check secret
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then                                                                                                                                                                
+            echo "Secret is EMPTY"                                                                                                                                                                          
+          else        
+            echo "Secret length: ${#KEYSTORE_BASE64}"                                                                                                                                                       
+          fi
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
       - name: Build release Google APK
         run: |
           chmod +x gradlew
