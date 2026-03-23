@@ -4,7 +4,7 @@ on:
     tags:
       - 'v*.*.*'
 jobs:
-  Demo-github-action:
+  Release apk:
     runs-on: ubuntu-latest
     permissions:
       contents: write
