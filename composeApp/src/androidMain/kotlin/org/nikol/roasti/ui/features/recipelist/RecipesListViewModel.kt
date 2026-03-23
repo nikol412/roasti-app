@@ -48,7 +48,9 @@ class RecipesListViewModel(
     init {
         viewModelScope.launch {
             filtersState.collectLatest { filters ->
-                _baseState.value = RecipesListState.Loading
+//                _baseState.update {
+//                    (it as? RecipesListState.Content)?.copy(isRefreshing = true) ?: it
+//                }
                 loadPage(page = FirstPage, filters = filters)
             }
         }

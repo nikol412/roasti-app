@@ -169,6 +169,7 @@ private fun Content(
                     onBrewMethodSelected = onBrewMethodSelected,
                     onDifficultySelected = onDifficultySelected,
                     onRoastLevelSelected = onRoastLevelSelected,
+                    modifier = Modifier.animateItem(),
                 )
             }
 
@@ -185,7 +186,8 @@ private fun Content(
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         )
-                        .clickable { onClick(recipe.id) },
+                        .clickable { onClick(recipe.id) }
+                        .animateItem(),
                 )
             }
 
@@ -198,7 +200,7 @@ private fun Content(
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(32.dp).animateItem(),
                             color = MaterialTheme.colorScheme.secondary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
@@ -217,8 +219,9 @@ private fun FilterHeader(
     onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
     onRoastLevelSelected: (RoastLevel?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = Modifier.fillMaxWidth()) {
+    Surface(modifier = modifier.fillMaxWidth()) {
         Column(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             modifier = Modifier.padding(vertical = Spacing.sm),
