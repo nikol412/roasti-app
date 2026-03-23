@@ -10,6 +10,7 @@ import org.nikol.roasti.domain.recipe.model.Difficulty
 import org.nikol.roasti.domain.recipe.model.Recipe
 import org.nikol.roasti.domain.recipe.model.RecipeDraft
 import org.nikol.roasti.domain.recipe.model.RecipesPage
+import org.nikol.roasti.domain.recipe.model.RoastLevel
 
 class NetworkRecipeRepository(
     private val apiClient: RecipesApiClient,
@@ -19,6 +20,7 @@ class NetworkRecipeRepository(
         authorId: String?,
         brewMethod: BrewMethod?,
         difficulty: Difficulty?,
+        roastLevel: RoastLevel?,
         limit: Int,
         page: Int
     ): Result<RecipesPage> {
@@ -26,6 +28,7 @@ class NetworkRecipeRepository(
             authorId = authorId,
             brewMethod = brewMethod.toRequestDto(),
             difficulty = difficulty.toQueryDto(),
+            roastLevel = roastLevel.toQueryDto(),
             limit = limit,
             page = page
         ).mapCatching { it.toDomain() }

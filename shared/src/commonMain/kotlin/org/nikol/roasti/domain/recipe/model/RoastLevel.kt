@@ -6,5 +6,7 @@ enum class RoastLevel {
     Medium,
     MediumDark,
     Dark,
-    NONE,
+    NONE;
+
+    companion object
 }

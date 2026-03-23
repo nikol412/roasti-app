@@ -6,10 +6,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.nikol.roasti.domain.recipe.model.BrewMethod
 import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.domain.recipe.model.RoastLevel
 
 data class RecipeFilterState(
     val brewMethod: BrewMethod? = null,
     val difficulty: Difficulty? = null,
+    val roastLevel: RoastLevel? = null,
 )
 
 class RecipeFilterStore {
@@ -25,5 +27,10 @@ class RecipeFilterStore {
     fun applyFilter(brewMethod: BrewMethod?, enabled: Boolean = true) {
         val newValue = brewMethod.takeIf { enabled }
         _state.update { it.copy(brewMethod = newValue) }
+    }
+
+    fun applyFilter(roastLevel: RoastLevel?, enabled: Boolean = true) {
+        val newValue = roastLevel.takeIf { enabled }
+        _state.update { it.copy(roastLevel = newValue) }
     }
 }

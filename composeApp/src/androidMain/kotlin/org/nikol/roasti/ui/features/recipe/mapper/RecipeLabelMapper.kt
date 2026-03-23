@@ -18,11 +18,29 @@ internal fun BrewMethod.labelRes(): Int = when (this) {
     BrewMethod.NONE -> R.string.recipe_missing_value
 }
 
+internal fun BrewMethod.Companion.fromLabelRes(resInt: Int?): BrewMethod = when (resInt) {
+    R.string.recipe_brew_method_v60 -> BrewMethod.V60
+    R.string.recipe_brew_method_french_press -> BrewMethod.FrenchPress
+    R.string.recipe_brew_method_aeropress -> BrewMethod.Aeropress
+    R.string.recipe_brew_method_chemex -> BrewMethod.Chemex
+    R.string.recipe_brew_method_cold_brew -> BrewMethod.ColdBrew
+    R.string.recipe_brew_method_espresso_machine -> BrewMethod.EspressoMachine
+    R.string.recipe_brew_method_moka_pot -> BrewMethod.MokaPot
+    else -> BrewMethod.NONE
+}
+
 @StringRes
 internal fun Difficulty.labelRes(): Int = when (this) {
     Difficulty.Easy -> R.string.recipe_difficulty_easy
     Difficulty.Medium -> R.string.recipe_difficulty_medium
     Difficulty.Hard -> R.string.recipe_difficulty_hard
+}
+
+internal fun Difficulty.Companion.fromLabelRes(resInt: Int?): Difficulty? = when (resInt) {
+    R.string.recipe_difficulty_easy -> Difficulty.Easy
+    R.string.recipe_difficulty_medium -> Difficulty.Medium
+    R.string.recipe_difficulty_hard -> Difficulty.Hard
+    else -> null
 }
 
 @StringRes
@@ -33,4 +51,13 @@ internal fun RoastLevel.labelRes(): Int = when (this) {
     RoastLevel.MediumDark -> R.string.recipe_roast_level_medium_dark
     RoastLevel.Dark -> R.string.recipe_roast_level_dark
     RoastLevel.NONE -> R.string.recipe_missing_value
+}
+
+internal fun RoastLevel.Companion.fromLabelRes(resInt: Int?): RoastLevel = when (resInt) {
+    R.string.recipe_roast_level_light -> RoastLevel.Light
+    R.string.recipe_roast_level_medium_light -> RoastLevel.MediumLight
+    R.string.recipe_roast_level_medium -> RoastLevel.Medium
+    R.string.recipe_roast_level_medium_dark -> RoastLevel.MediumDark
+    R.string.recipe_roast_level_dark -> RoastLevel.Dark
+    else -> RoastLevel.NONE
 }

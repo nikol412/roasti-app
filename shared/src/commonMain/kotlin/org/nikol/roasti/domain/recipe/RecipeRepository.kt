@@ -5,12 +5,14 @@ import org.nikol.roasti.domain.recipe.model.Difficulty
 import org.nikol.roasti.domain.recipe.model.Recipe
 import org.nikol.roasti.domain.recipe.model.RecipeDraft
 import org.nikol.roasti.domain.recipe.model.RecipesPage
+import org.nikol.roasti.domain.recipe.model.RoastLevel
 
 interface RecipeRepository {
     suspend fun getRecipes(
         authorId: String? = null,
         brewMethod: BrewMethod? = null,
         difficulty: Difficulty? = null,
+        roastLevel: RoastLevel? = null,
         limit: Int = 50,
         page: Int = 1
     ): Result<RecipesPage>
