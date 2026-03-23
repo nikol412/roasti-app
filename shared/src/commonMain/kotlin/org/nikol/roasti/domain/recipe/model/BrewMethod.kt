@@ -9,6 +9,4 @@ enum class BrewMethod {
     EspressoMachine,
     MokaPot,
     NONE;
-
-    companion object
 }
