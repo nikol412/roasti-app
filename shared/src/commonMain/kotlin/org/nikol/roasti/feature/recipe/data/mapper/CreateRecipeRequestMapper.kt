@@ -16,6 +16,7 @@ fun RecipeDraft.toRequestDto() = CreateRecipeRequestDto(
     beans = beans,
     brewMethod = brewMethod.toRequestDto(),
     description = description,
+    note = note,
     difficulty = difficulty.toRequestDto(),
     imageId = imageId,
     roastLevel = roastLevel.toRequestDto(),

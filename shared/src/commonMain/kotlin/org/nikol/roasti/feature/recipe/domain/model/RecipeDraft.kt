@@ -3,6 +3,7 @@ package org.nikol.roasti.feature.recipe.domain.model
 data class RecipeDraft(
     val title: String,
     val description: String,
+    val note: String? = null,
     val imageId: String?,
     val brewMethod: BrewMethod,
     val difficulty: Difficulty,

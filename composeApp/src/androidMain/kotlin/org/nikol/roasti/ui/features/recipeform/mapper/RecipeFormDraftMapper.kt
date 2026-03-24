@@ -8,6 +8,7 @@ import org.nikol.roasti.ui.features.recipeform.model.RecipeFormStepUiModel
 internal fun RecipeFormFields.toRecipeDraft() = RecipeDraft(
     title = title,
     description = description,
+    note = null,
     imageId = imageId,
     brewMethod = brewMethod,
     difficulty = difficulty,

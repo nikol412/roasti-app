@@ -12,6 +12,7 @@ data class CreateRecipeRequestDto(
     @SerialName("beans") val beans: String? = null,
     @SerialName("brew_method") val brewMethod: BrewMethodDto,
     @SerialName("description") val description: String,
+    @SerialName("note") val note: String? = null,
     @SerialName("difficulty") val difficulty: DifficultyDto,
     @SerialName("image_id") val imageId: String? = null,
     @SerialName("roast_level") val roastLevel: RoastLevelDto,

@@ -18,6 +18,8 @@ data class RecipeResponseDto(
     val title: String,
     @SerialName("description")
     val description: String,
+    @SerialName("note")
+    val note: String? = null,
     @SerialName("image_id")
     val imageId: String? = null,
     @SerialName("brew_method")

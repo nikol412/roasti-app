@@ -10,6 +10,7 @@ import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeUiState
 internal fun CreateRecipeUiState.toRecipeDraft() = RecipeDraft(
     title = name,
     description = description,
+    note = null,
     imageId = imageId,
     brewMethod = brewMethod ?: BrewMethod.NONE,
     difficulty = difficulty,

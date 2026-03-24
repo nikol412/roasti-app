@@ -6,6 +6,7 @@ sealed interface RecipesListState {
     data object Loading: RecipesListState
     data object Error : RecipesListState
     data class Content(
+        val favoriteRecipes: List<RecipeListItemUiModel> = emptyList(),
         val recipes: List<RecipeListItemUiModel>,
         val isRefreshing: Boolean = false, // for pull to refresh, used when we reload our data
         val isLoadingMore: Boolean = false,

@@ -29,6 +29,7 @@ fun RecipeResponseDto.toDomain(): Recipe = Recipe(
     id = id,
     title = title,
     description = description,
+    note = note,
     imageId = imageId,
     brewMethod = brewMethod.toDomain(),
     difficulty = difficulty.toDomain(),
