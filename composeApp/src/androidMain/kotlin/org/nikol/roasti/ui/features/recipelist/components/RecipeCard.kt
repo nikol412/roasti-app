@@ -4,31 +4,34 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import org.nikol.roasti.R
 import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
 import org.nikol.roasti.ui.theme.Spacing
 
 @Composable
 internal fun RecipeCard(
     item: RecipeListItemUiModel,
+    onLikeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -68,16 +71,61 @@ internal fun RecipeCard(
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                SuggestionChip(
-                    onClick = {},
-                    label = {
-                        Text(
-                            text = stringResource(item.difficultyLabelRes),
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    },
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    SuggestionChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                text = stringResource(item.difficultyLabelRes),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        },
+                    )
+                    LikeButton(
+                        isLiked = item.isLiked,
+                        likesCount = item.likesCount,
+                        onClick = onLikeClick,
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun LikeButton(
+    isLiked: Boolean,
+    likesCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        if (likesCount > 0) {
+            Text(
+                text = likesCount.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.size(32.dp),
+        ) {
+            Icon(
+                painter = painterResource(
+                    if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined
+                ),
+                contentDescription = null,
+                tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }

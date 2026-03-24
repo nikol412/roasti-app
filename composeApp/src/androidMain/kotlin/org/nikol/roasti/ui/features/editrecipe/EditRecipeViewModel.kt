@@ -10,11 +10,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.nikol.roasti.domain.recipe.RecipeRepository
-import org.nikol.roasti.domain.recipe.model.BrewMethod
-import org.nikol.roasti.domain.recipe.model.Difficulty
-import org.nikol.roasti.domain.recipe.model.RoastLevel
-import org.nikol.roasti.domain.upload.UploadRepository
+import org.nikol.roasti.feature.recipe.domain.RecipeRepository
+import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
+import org.nikol.roasti.feature.recipe.domain.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
+import org.nikol.roasti.feature.upload.domain.UploadRepository
 import org.nikol.roasti.ui.features.editrecipe.mapper.toEditState
 import org.nikol.roasti.ui.features.editrecipe.mapper.toRecipeDraft
 import org.nikol.roasti.ui.features.editrecipe.model.EditRecipeEvent
@@ -22,7 +22,7 @@ import org.nikol.roasti.ui.features.editrecipe.model.EditRecipeUiState
 import org.nikol.roasti.ui.features.recipeform.model.ActiveStepSheet
 import org.nikol.roasti.ui.features.recipeform.model.RecipeFormFields
 import org.nikol.roasti.ui.features.recipeform.model.RecipeFormStepUiModel
-import org.nikol.roasti.utils.imageUrl
+import org.nikol.roasti.core.utils.imageUrl
 
 class EditRecipeViewModel(
     private val recipeId: String,

@@ -1,7 +1,7 @@
 package org.nikol.roasti.ui.features.recipesteps.mapper
 
-import org.nikol.roasti.domain.recipe.model.BrewStep
-import org.nikol.roasti.domain.recipe.session.BrewingSession
+import org.nikol.roasti.feature.recipe.domain.model.BrewStep
+import org.nikol.roasti.feature.recipe.domain.session.BrewingSession
 import org.nikol.roasti.ui.features.recipesteps.BrewingStepUiModel
 import org.nikol.roasti.ui.features.recipesteps.SessionState
 import org.nikol.roasti.ui.features.recipesteps.StepTimerState

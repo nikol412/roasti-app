@@ -31,6 +31,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.Alignment
@@ -40,14 +43,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
-import org.nikol.roasti.domain.recipe.model.BrewMethod
-import org.nikol.roasti.domain.recipe.model.Difficulty
-import org.nikol.roasti.domain.recipe.model.RoastLevel
-import org.nikol.roasti.presentation.recipe.filter.RecipeFilterState
+import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
+import org.nikol.roasti.feature.recipe.domain.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
+import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterState
 import org.nikol.roasti.ui.features.recipelist.components.BrewMethodFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.DifficultyFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.RoastLevelFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.RecipeCard
+import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
 import org.nikol.roasti.ui.features.recipelist.components.RecipeSearchBar
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
@@ -72,6 +76,13 @@ internal fun RecipesListScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.reload()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (state) {
             RecipesListState.Loading -> LoadingStub(Modifier.align(Alignment.Center))
@@ -86,6 +97,7 @@ internal fun RecipesListScreen(
                 filtersState = filtersState,
                 state = state as RecipesListState.Content,
                 onClick = onRecipeClick,
+                onLikeClick = viewModel::likeRecipe,
                 onSearch = viewModel::search,
                 onLoadMore = viewModel::loadNextPage,
                 onRefresh = viewModel::reload,
@@ -128,6 +140,7 @@ private fun Content(
     filtersState: RecipeFilterState,
     state: RecipesListState.Content,
     onClick: (String) -> Unit,
+    onLikeClick: (RecipeListItemUiModel) -> Unit,
     onSearch: (String) -> Unit,
     onLoadMore: () -> Unit,
     onRefresh: () -> Unit,
@@ -176,6 +189,7 @@ private fun Content(
             items(state.recipes, key = { it.id }) { recipe ->
                 RecipeCard(
                     item = recipe,
+                    onLikeClick = { onLikeClick(recipe) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = Spacing.lg)

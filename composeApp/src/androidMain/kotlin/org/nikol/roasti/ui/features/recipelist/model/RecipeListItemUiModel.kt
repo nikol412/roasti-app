@@ -9,4 +9,6 @@ data class RecipeListItemUiModel(
     val imageUrl: String?,
     @StringRes val brewMethodLabelRes: Int,
     @StringRes val difficultyLabelRes: Int,
+    val isLiked: Boolean,
+    val likesCount: Int,
 )

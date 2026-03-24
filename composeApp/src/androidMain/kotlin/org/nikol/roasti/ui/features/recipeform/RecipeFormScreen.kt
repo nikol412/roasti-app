@@ -65,9 +65,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.nikol.roasti.R
-import org.nikol.roasti.domain.recipe.model.BrewMethod
-import org.nikol.roasti.domain.recipe.model.Difficulty
-import org.nikol.roasti.domain.recipe.model.RoastLevel
+import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
+import org.nikol.roasti.feature.recipe.domain.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.ui.features.recipe.mapper.labelRes
 import org.nikol.roasti.ui.features.recipeform.model.ActiveStepSheet
 import org.nikol.roasti.ui.features.recipeform.model.RecipeFormFields

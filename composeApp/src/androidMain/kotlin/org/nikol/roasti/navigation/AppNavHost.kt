@@ -24,7 +24,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.koin.compose.viewmodel.koinViewModel
-import org.nikol.roasti.auth.domain.model.AuthState
+import org.nikol.roasti.feature.auth.domain.model.AuthState
 import org.nikol.roasti.ui.components.BottomBar
 import org.nikol.roasti.ui.features.auth.login.LoginRoute
 import org.nikol.roasti.ui.features.auth.register.RegisterRoute

@@ -12,6 +12,8 @@ data class RecipeDetailsUiModel(
     @StringRes val roastLevelLabelRes: Int?,
     val beans: String?,
     val steps: List<RecipeStepUiModel>,
+    val isLiked: Boolean,
+    val likesCount: Int,
 )
 
 data class RecipeStepUiModel(

@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -43,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -130,6 +133,7 @@ fun RecipeContentRoute(
             onBackClick = onBackClick,
             onEditClick = onEditClick,
             onRemoveClick = { showRemoveDialogConfirmation = true },
+            onLikeClick = viewModel::toggleLike,
             onStepClick = onStartBrewing,
         )
     }
@@ -144,6 +148,7 @@ private fun RecipeContentScreen(
     onBackClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onRemoveClick: () -> Unit = {},
+    onLikeClick: () -> Unit = {},
     onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
     val recipe = state.recipe
@@ -187,6 +192,7 @@ private fun RecipeContentScreen(
             RecipeContentList(
                 recipe = recipe,
                 stepModifiers = stepModifiers,
+                onLikeClick = onLikeClick,
                 bottomContentPadding = innerPadding.calculateBottomPadding(),
                 modifier = Modifier.fillMaxSize(),
             )
@@ -236,6 +242,7 @@ private fun RecipeHeaderImage(
 private fun RecipeContentList(
     recipe: RecipeDetailsUiModel,
     stepModifiers: List<Modifier> = emptyList(),
+    onLikeClick: () -> Unit = {},
     bottomContentPadding: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
@@ -251,6 +258,7 @@ private fun RecipeContentList(
             RecipeMainContent(
                 recipe = recipe,
                 stepModifiers = stepModifiers,
+                onLikeClick = onLikeClick,
             )
         }
     }
@@ -260,6 +268,7 @@ private fun RecipeContentList(
 private fun RecipeMainContent(
     recipe: RecipeDetailsUiModel,
     stepModifiers: List<Modifier> = emptyList(),
+    onLikeClick: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -269,11 +278,23 @@ private fun RecipeMainContent(
             .padding(horizontal = Spacing.xxl, vertical = Spacing.xxl),
         verticalArrangement = Arrangement.spacedBy(Spacing.xl),
     ) {
-        Text(
-            text = recipe.title,
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = recipe.title,
+                style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            RecipeLikeButton(
+                isLiked = recipe.isLiked,
+                likesCount = recipe.likesCount,
+                onClick = onLikeClick,
+            )
+        }
         Text(
             text = recipe.description,
             style = MaterialTheme.typography.bodyLarge,
@@ -445,6 +466,37 @@ private fun RecipeMetaChip(
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
+    }
+}
+
+@Composable
+private fun RecipeLikeButton(
+    isLiked: Boolean,
+    likesCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        if (likesCount > 0) {
+            Text(
+                text = likesCount.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                color = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onClick) {
+            Icon(
+                painter = painterResource(
+                    if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined
+                ),
+                contentDescription = null,
+                tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
+        }
     }
 }
 
@@ -638,6 +690,8 @@ private fun RecipeContentScreenPreview() {
                         difficultyLabelRes = R.string.recipe_difficulty_medium,
                         roastLevelLabelRes = R.string.recipe_roast_level_medium,
                         beans = "Colombian Supremo",
+                        isLiked = true,
+                        likesCount = 42,
                         steps = listOf(
                             RecipeStepUiModel(
                                 order = 1,

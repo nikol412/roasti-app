@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.nikol.roasti.domain.recipe.RecipeRepository
-import org.nikol.roasti.domain.recipe.model.Recipe
-import org.nikol.roasti.domain.recipe.session.BrewingSession
-import org.nikol.roasti.domain.recipe.session.BrewingTimer
+import org.nikol.roasti.feature.recipe.domain.RecipeRepository
+import org.nikol.roasti.feature.recipe.domain.model.Recipe
+import org.nikol.roasti.feature.recipe.domain.session.BrewingSession
+import org.nikol.roasti.feature.recipe.domain.session.BrewingTimer
 import org.nikol.roasti.ui.features.recipesteps.mapper.toUiState
 
 internal class RecipeStepsViewModel(
