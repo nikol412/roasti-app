@@ -17,6 +17,7 @@ import org.nikol.roasti.data.network.ApiRoutes
 import org.nikol.roasti.data.network.AuthorizedRequestExecutor
 import org.nikol.roasti.data.recipe.remote.model.BrewMethodDto
 import org.nikol.roasti.data.recipe.remote.model.DifficultyDto
+import org.nikol.roasti.data.recipe.remote.model.RoastLevelDto
 import org.nikol.roasti.data.recipe.remote.model.request.CreateRecipeRequestDto
 import org.nikol.roasti.data.recipe.remote.model.response.RecipeResponseDto
 import org.nikol.roasti.data.recipe.remote.model.response.RecipesPageResponseDto
@@ -26,6 +27,7 @@ interface RecipesApiClient {
         authorId: String? = null,
         brewMethod: BrewMethodDto = BrewMethodDto.NONE,
         difficulty: DifficultyDto? = null,
+        roastLevel: RoastLevelDto? = null,
         limit: Int = 50,
         page: Int = 1
     ): Result<RecipesPageResponseDto>
@@ -47,6 +49,7 @@ class RecipesApiClientImpl(
         authorId: String?,
         brewMethod: BrewMethodDto,
         difficulty: DifficultyDto?,
+        roastLevel: RoastLevelDto?,
         limit: Int,
         page: Int
     ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { _ ->
@@ -54,6 +57,7 @@ class RecipesApiClientImpl(
             url {
                 parameters.append("brew_method", getSerialName(brewMethod))
                 difficulty?.let { parameters.append("difficulty", getSerialName(it)) }
+                roastLevel?.let { parameters.append("roast_level", getSerialName(it)) }
                 parameters.append("limit", limit.toString())
                 parameters.append("page", page.toString())
             }

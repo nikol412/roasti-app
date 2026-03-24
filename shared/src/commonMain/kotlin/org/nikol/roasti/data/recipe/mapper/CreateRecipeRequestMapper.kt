@@ -62,3 +62,12 @@ fun Difficulty?.toQueryDto(): DifficultyDto? = when (this) {
     Difficulty.Hard -> DifficultyDto.HARD
     null -> null
 }
+
+fun RoastLevel?.toQueryDto(): RoastLevelDto? = when (this) {
+    RoastLevel.Light -> RoastLevelDto.LIGHT
+    RoastLevel.MediumLight -> RoastLevelDto.MEDIUM_LIGHT
+    RoastLevel.Medium -> RoastLevelDto.MEDIUM
+    RoastLevel.MediumDark -> RoastLevelDto.MEDIUM_DARK
+    RoastLevel.Dark -> RoastLevelDto.DARK
+    RoastLevel.NONE, null -> null
+}

@@ -8,7 +8,7 @@
     <string name="recipe_start_brewing">Start Brewing</string>
     <string name="recipe_beans">Beans</string>
     <string name="recipe_brewing_steps">Brewing Steps</string>
-    <string name="recipe_roast_level">Roast Level</string>
+    <string name="recipe_roast_level">Roast</string>
     <string name="recipe_missing_value">N/A</string>
     <string name="recipe_brew_method">Brew Method</string>
     <string name="recipe_brew_method_all">All</string>

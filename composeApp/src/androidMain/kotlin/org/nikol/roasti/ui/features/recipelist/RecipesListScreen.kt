@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -40,12 +42,13 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
 import org.nikol.roasti.domain.recipe.model.BrewMethod
 import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.domain.recipe.model.RoastLevel
 import org.nikol.roasti.presentation.recipe.filter.RecipeFilterState
-import org.nikol.roasti.ui.features.recipelist.components.BrewMethodFilterRow
+import org.nikol.roasti.ui.features.recipelist.components.BrewMethodFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.DifficultyFilterChip
+import org.nikol.roasti.ui.features.recipelist.components.RoastLevelFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.RecipeCard
 import org.nikol.roasti.ui.features.recipelist.components.RecipeSearchBar
-import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
@@ -88,6 +91,7 @@ internal fun RecipesListScreen(
                 onRefresh = viewModel::reload,
                 onBrewMethodSelected = viewModel::filterByBrewMethod,
                 onDifficultySelected = viewModel::filterByDifficulty,
+                onRoastLevelSelected = viewModel::filterByRoastLevel,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
                 contentPadding = contentPadding,
@@ -129,6 +133,7 @@ private fun Content(
     onRefresh: () -> Unit,
     onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
+    onRoastLevelSelected: (RoastLevel?) -> Unit,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     contentPadding: PaddingValues,
@@ -163,6 +168,8 @@ private fun Content(
                     onSearch = onSearch,
                     onBrewMethodSelected = onBrewMethodSelected,
                     onDifficultySelected = onDifficultySelected,
+                    onRoastLevelSelected = onRoastLevelSelected,
+                    modifier = Modifier.animateItem(),
                 )
             }
 
@@ -179,7 +186,8 @@ private fun Content(
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         )
-                        .clickable { onClick(recipe.id) },
+                        .clickable { onClick(recipe.id) }
+                        .animateItem(),
                 )
             }
 
@@ -192,7 +200,7 @@ private fun Content(
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(32.dp).animateItem(),
                             color = MaterialTheme.colorScheme.secondary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
@@ -210,8 +218,10 @@ private fun FilterHeader(
     onSearch: (String) -> Unit,
     onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
+    onRoastLevelSelected: (RoastLevel?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = Modifier.fillMaxWidth()) {
+    Surface(modifier = modifier.fillMaxWidth()) {
         Column(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             modifier = Modifier.padding(vertical = Spacing.sm),
@@ -223,14 +233,21 @@ private fun FilterHeader(
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.lg),
             )
-            BrewMethodFilterRow(
-                selectedMethod = filtersState.brewMethod,
-                onMethodSelected = onBrewMethodSelected,
-            )
-            Row(modifier = Modifier.padding(horizontal = Spacing.lg)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = Spacing.lg),
+            ) {
+                BrewMethodFilterChip(
+                    selectedMethod = filtersState.brewMethod,
+                    onMethodSelected = onBrewMethodSelected,
+                )
                 DifficultyFilterChip(
                     selectedDifficulty = filtersState.difficulty,
                     onDifficultySelected = onDifficultySelected,
+                )
+                RoastLevelFilterChip(
+                    selectedRoastLevel = filtersState.roastLevel,
+                    onRoastLevelSelected = onRoastLevelSelected,
                 )
             }
         }

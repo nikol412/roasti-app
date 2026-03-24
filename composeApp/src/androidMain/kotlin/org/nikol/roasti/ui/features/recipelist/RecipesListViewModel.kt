@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import org.nikol.roasti.domain.recipe.RecipeRepository
 import org.nikol.roasti.domain.recipe.model.BrewMethod
 import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.domain.recipe.model.RoastLevel
 import org.nikol.roasti.presentation.recipe.filter.RecipeFilterState
 import org.nikol.roasti.presentation.recipe.filter.RecipeFilterStore
 import org.nikol.roasti.ui.features.recipelist.mapper.toUiModel
@@ -47,7 +48,9 @@ class RecipesListViewModel(
     init {
         viewModelScope.launch {
             filtersState.collectLatest { filters ->
-                _baseState.value = RecipesListState.Loading
+//                _baseState.update {
+//                    (it as? RecipesListState.Content)?.copy(isRefreshing = true) ?: it
+//                }
                 loadPage(page = FirstPage, filters = filters)
             }
         }
@@ -67,6 +70,7 @@ class RecipesListViewModel(
             val result = recipeRepository.getRecipes(
                 brewMethod = filtersState.value.brewMethod,
                 difficulty = filtersState.value.difficulty,
+                roastLevel = filtersState.value.roastLevel,
                 page = nextPage,
             ).getOrNull()
 
@@ -123,10 +127,15 @@ class RecipesListViewModel(
         filterStore.applyFilter(difficulty, difficulty != null)
     }
 
+    fun filterByRoastLevel(roastLevel: RoastLevel?) {
+        filterStore.applyFilter(roastLevel, roastLevel != null)
+    }
+
     private suspend fun loadPage(page: Int, filters: RecipeFilterState) {
         val result = recipeRepository.getRecipes(
             brewMethod = filters.brewMethod,
             difficulty = filters.difficulty,
+            roastLevel = filters.roastLevel,
             page = page,
         ).getOrNull()
 
