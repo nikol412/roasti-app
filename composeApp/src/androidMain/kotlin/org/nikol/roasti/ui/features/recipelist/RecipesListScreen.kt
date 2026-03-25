@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -31,16 +33,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
@@ -49,10 +51,11 @@ import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterState
 import org.nikol.roasti.ui.features.recipelist.components.BrewMethodFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.DifficultyFilterChip
-import org.nikol.roasti.ui.features.recipelist.components.RoastLevelFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.RecipeCard
-import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
+import org.nikol.roasti.ui.features.recipelist.components.RecipeCompactCard
 import org.nikol.roasti.ui.features.recipelist.components.RecipeSearchBar
+import org.nikol.roasti.ui.features.recipelist.components.RoastLevelFilterChip
+import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
@@ -71,6 +74,7 @@ internal fun RecipesListScreen(
     val viewModel: RecipesListViewModel = koinViewModel()
 
     val filtersState by viewModel.filtersState.collectAsStateWithLifecycle()
+    val favoriteState by viewModel.favoriteRecipesState.collectAsStateWithLifecycle()
     val state by viewModel.recipes.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
@@ -96,6 +100,7 @@ internal fun RecipesListScreen(
                 searchQuery = searchQuery,
                 filtersState = filtersState,
                 state = state as RecipesListState.Content,
+                favoritesState = favoriteState,
                 onClick = onRecipeClick,
                 onLikeClick = viewModel::likeRecipe,
                 onSearch = viewModel::search,
@@ -138,6 +143,7 @@ internal fun RecipesListScreen(
 private fun Content(
     searchQuery: String,
     filtersState: RecipeFilterState,
+    favoritesState: FavoritesRecipesState,
     state: RecipesListState.Content,
     onClick: (String) -> Unit,
     onLikeClick: (RecipeListItemUiModel) -> Unit,
@@ -186,6 +192,44 @@ private fun Content(
                 )
             }
 
+
+            item("FAVORITES_KEY") {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Text(
+                        stringResource(R.string.recipe_list_favorite_section_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = Spacing.lg)
+                    )
+                    LazyRow(
+                        state = rememberLazyListState(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        contentPadding = PaddingValues(horizontal = Spacing.lg),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (favoritesState is FavoritesRecipesState.Content) {
+                            items(favoritesState.items) { item ->
+                                RecipeCompactCard(
+                                    item = item,
+                                    modifier = Modifier.width(200.dp),
+                                    onClick = { onClick(item.id) },
+                                    onLikeClick = { onLikeClick(item) })
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            item {
+                Text(
+                    stringResource(R.string.recipe_list_all_section_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = Spacing.lg)
+                )
+            }
+
             items(state.recipes, key = { it.id }) { recipe ->
                 RecipeCard(
                     item = recipe,
@@ -214,7 +258,9 @@ private fun Content(
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp).animateItem(),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .animateItem(),
                             color = MaterialTheme.colorScheme.secondary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
@@ -249,7 +295,10 @@ private fun FilterHeader(
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = Spacing.lg),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.lg),
             ) {
                 BrewMethodFilterChip(
                     selectedMethod = filtersState.brewMethod,

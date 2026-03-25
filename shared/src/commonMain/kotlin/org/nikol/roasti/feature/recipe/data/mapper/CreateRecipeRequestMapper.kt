@@ -14,7 +14,7 @@ import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 fun RecipeDraft.toRequestDto() = CreateRecipeRequestDto(
     title = title,
     beans = beans,
-    brewMethod = brewMethod.toRequestDto(),
+    brewMethod = brewMethod.toRequestDto() ?: BrewMethodDto.NONE,
     description = description,
     note = note,
     difficulty = difficulty.toRequestDto(),
@@ -31,7 +31,7 @@ fun RecipeDraftStep.toRequestDto() = CreateRecipeStepRequestDto(
     title = title,
 )
 
-fun BrewMethod?.toRequestDto(): BrewMethodDto = when (this) {
+fun BrewMethod.toRequestDto(): BrewMethodDto? = when (this) {
     BrewMethod.V60 -> BrewMethodDto.V60
     BrewMethod.FrenchPress -> BrewMethodDto.FRENCH_PRESS
     BrewMethod.Aeropress -> BrewMethodDto.AEROPRESS
@@ -39,7 +39,7 @@ fun BrewMethod?.toRequestDto(): BrewMethodDto = when (this) {
     BrewMethod.ColdBrew -> BrewMethodDto.COLD_BREW
     BrewMethod.EspressoMachine -> BrewMethodDto.EXPRESSO_MACHINE
     BrewMethod.MokaPot -> BrewMethodDto.MOKA_POT
-    BrewMethod.NONE, null -> BrewMethodDto.NONE
+    BrewMethod.NONE -> null
 }
 
 fun Difficulty.toRequestDto(): DifficultyDto = when (this) {

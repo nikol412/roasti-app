@@ -26,7 +26,7 @@ class NetworkRecipeRepository(
     ): Result<RecipesPage> {
         return apiClient.getRecipes(
             authorId = authorId,
-            brewMethod = brewMethod.toRequestDto(),
+            brewMethod = brewMethod?.toRequestDto(),
             difficulty = difficulty.toQueryDto(),
             roastLevel = roastLevel.toQueryDto(),
             limit = limit,

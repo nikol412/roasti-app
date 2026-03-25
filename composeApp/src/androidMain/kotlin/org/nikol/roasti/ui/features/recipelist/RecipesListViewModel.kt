@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -35,12 +36,19 @@ class RecipesListViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    val favoriteRecipesState: StateFlow<FavoritesRecipesState> = flow {
+        val items = likesRepository.getUserLikedRecipes().getOrNull()
+        if (items != null) {
+            emit(FavoritesRecipesState.Content(items.items.map { it.recipe.toUiModel() }))
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FavoritesRecipesState.Empty)
+
     val recipes: StateFlow<RecipesListState> = combine(_baseState, _searchQuery) { state, query ->
         if (state is RecipesListState.Content && query.isNotBlank()) {
             state.copy(
                 recipes = state.recipes.filter { recipe ->
                     recipe.title.contains(query, ignoreCase = true) ||
-                        recipe.description.contains(query, ignoreCase = true)
+                            recipe.description.contains(query, ignoreCase = true)
                 }
             )
         } else {
@@ -76,7 +84,8 @@ class RecipesListViewModel(
 
             val current = _baseState.value as? RecipesListState.Content ?: return@launch
             _baseState.value = if (result != null) {
-                val mergedRecipes = (current.recipes + result.items.map { it.toUiModel() }).distinctBy { it.id }
+                val mergedRecipes =
+                    (current.recipes + result.items.map { it.toUiModel() }).distinctBy { it.id }
                 val pageAdvanced = result.currentPage >= nextPage
                 val newItemsAdded = mergedRecipes.size > current.recipes.size
                 val hasProgress = pageAdvanced || newItemsAdded
@@ -150,7 +159,10 @@ class RecipesListViewModel(
             if (state is RecipesListState.Content) {
                 state.copy(
                     recipes = state.recipes.map { item ->
-                        if (item.id == recipeId) item.copy(isLiked = isLiked, likesCount = likesCount)
+                        if (item.id == recipeId) item.copy(
+                            isLiked = isLiked,
+                            likesCount = likesCount
+                        )
                         else item
                     }
                 )
@@ -179,7 +191,8 @@ class RecipesListViewModel(
     }
 }
 
-private fun org.nikol.roasti.feature.recipe.domain.model.RecipesPage.hasNextPage(): Boolean = currentPage < lastPage
+private fun org.nikol.roasti.feature.recipe.domain.model.RecipesPage.hasNextPage(): Boolean =
+    currentPage < lastPage
 
 private fun org.nikol.roasti.feature.recipe.domain.model.RecipesPage.nextPageOrNull(): Int? =
     nextPage.takeIf { hasNextPage() }

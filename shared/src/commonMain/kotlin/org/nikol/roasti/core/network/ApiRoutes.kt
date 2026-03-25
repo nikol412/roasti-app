@@ -14,7 +14,7 @@ object ApiRoutes {
     const val ProfileMe = "$ApiV1Path/profiles/me"
 
     fun recipeLike(recipeId: String) = "$Recipes/$recipeId/like"
-    fun userLikedRecipes(userId: String) = "$UsersPrefix/$userId/likes"
+    fun userLikedRecipes(userId: String) = "$UsersPrefix$userId/likes"
 }
 
 object NetworkHeaders {

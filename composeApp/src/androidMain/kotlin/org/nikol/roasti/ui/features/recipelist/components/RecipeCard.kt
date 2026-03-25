@@ -96,36 +96,3 @@ internal fun RecipeCard(
     }
 }
 
-@Composable
-private fun LikeButton(
-    isLiked: Boolean,
-    likesCount: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier,
-    ) {
-        if (likesCount > 0) {
-            Text(
-                text = likesCount.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(32.dp),
-        ) {
-            Icon(
-                painter = painterResource(
-                    if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined
-                ),
-                contentDescription = null,
-                tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-    }
-}
