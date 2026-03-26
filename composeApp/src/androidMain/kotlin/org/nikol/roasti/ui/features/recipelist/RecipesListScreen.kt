@@ -105,7 +105,8 @@ internal fun RecipesListScreen(
                 onLikeClick = viewModel::likeRecipe,
                 onSearch = viewModel::search,
                 onLoadMore = viewModel::loadNextPage,
-                onRefresh = viewModel::reload,
+                onLoadMoreFavorites = viewModel::loadNextFavoritesPage,
+                onRefresh = { viewModel.reload(silent = false) },
                 onBrewMethodSelected = viewModel::filterByBrewMethod,
                 onDifficultySelected = viewModel::filterByDifficulty,
                 onRoastLevelSelected = viewModel::filterByRoastLevel,
@@ -149,6 +150,7 @@ private fun Content(
     onLikeClick: (RecipeListItemUiModel) -> Unit,
     onSearch: (String) -> Unit,
     onLoadMore: () -> Unit,
+    onLoadMoreFavorites: () -> Unit,
     onRefresh: () -> Unit,
     onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
@@ -177,7 +179,7 @@ private fun Content(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             contentPadding = PaddingValues(
                 top = Spacing.sm,
-                bottom = contentPadding.calculateBottomPadding() + Spacing.lg,
+                bottom = contentPadding.calculateBottomPadding() + Spacing.xxxxl,
             ),
         ) {
             stickyHeader(key = "filters") {
@@ -194,6 +196,18 @@ private fun Content(
 
 
             item("FAVORITES_KEY") {
+                val favoritesListState = rememberLazyListState()
+                LaunchedEffect(favoritesListState, favoritesState) {
+                    snapshotFlow {
+                        val lastVisible = favoritesListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                        val total = favoritesListState.layoutInfo.totalItemsCount
+                        val content = favoritesState as? FavoritesRecipesState.Content
+                        content != null && content.hasMore && !content.isLoadingMore && lastVisible >= total - 3
+                    }
+                        .distinctUntilChanged()
+                        .filter { it }
+                        .collect { onLoadMoreFavorites() }
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     Text(
                         stringResource(R.string.recipe_list_favorite_section_title),
@@ -202,7 +216,7 @@ private fun Content(
                         modifier = Modifier.padding(start = Spacing.lg)
                     )
                     LazyRow(
-                        state = rememberLazyListState(),
+                        state = favoritesListState,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         contentPadding = PaddingValues(horizontal = Spacing.lg),
                         modifier = Modifier.fillMaxWidth()

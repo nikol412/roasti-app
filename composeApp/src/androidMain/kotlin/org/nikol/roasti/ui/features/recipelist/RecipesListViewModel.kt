@@ -8,10 +8,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.nikol.roasti.feature.likes.domain.LikedRecipesPage
 import org.nikol.roasti.feature.likes.domain.LikesRepository
 import org.nikol.roasti.feature.recipe.domain.RecipeRepository
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
@@ -36,12 +36,8 @@ class RecipesListViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val favoriteRecipesState: StateFlow<FavoritesRecipesState> = flow {
-        val items = likesRepository.getUserLikedRecipes().getOrNull()
-        if (items != null) {
-            emit(FavoritesRecipesState.Content(items.items.map { it.recipe.toUiModel() }))
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FavoritesRecipesState.Empty)
+    private val _favoritesState = MutableStateFlow<FavoritesRecipesState>(FavoritesRecipesState.Empty)
+    val favoriteRecipesState: StateFlow<FavoritesRecipesState> = _favoritesState.asStateFlow()
 
     val recipes: StateFlow<RecipesListState> = combine(_baseState, _searchQuery) { state, query ->
         if (state is RecipesListState.Content && query.isNotBlank()) {
@@ -57,6 +53,7 @@ class RecipesListViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipesListState.Loading)
 
     init {
+        viewModelScope.launch { loadFavorites() }
         viewModelScope.launch {
             filtersState.collectLatest { filters ->
                 loadPage(page = FirstPage, filters = filters)
@@ -114,15 +111,41 @@ class RecipesListViewModel(
         }
     }
 
-    fun reload() {
+    fun loadNextFavoritesPage() {
+        val state = _favoritesState.value as? FavoritesRecipesState.Content ?: return
+        if (state.isLoadingMore || !state.hasMore) return
+        val nextPage = state.nextPage ?: return
+        _favoritesState.value = state.copy(isLoadingMore = true)
+        viewModelScope.launch {
+            val result = likesRepository.getUserLikedRecipes(page = nextPage).getOrNull()
+            val current = _favoritesState.value as? FavoritesRecipesState.Content ?: return@launch
+            _favoritesState.value = if (result != null) {
+                val merged = (current.items + result.items.map { it.recipe.toUiModel() }).distinctBy { it.id }
+                current.copy(
+                    items = merged,
+                    isLoadingMore = false,
+                    hasMore = result.hasNextPage(),
+                    currentPage = maxOf(current.currentPage, result.currentPage),
+                    nextPage = result.nextPageOrNull(),
+                )
+            } else {
+                current.copy(isLoadingMore = false, hasMore = false)
+            }
+        }
+    }
+
+    fun reload(silent: Boolean = true) {
         viewModelScope.launch {
             val isContentState = _baseState.value is RecipesListState.Content
             if (isContentState) {
-                _baseState.update {
-                    if (it is RecipesListState.Content) it.copy(isRefreshing = true)
-                    else RecipesListState.Loading
+                if (!silent) {
+                    _baseState.update {
+                        if (it is RecipesListState.Content) it.copy(isRefreshing = true)
+                        else RecipesListState.Loading
+                    }
                 }
                 loadPage(page = FirstPage, filters = filtersState.value)
+                loadFavorites()
             }
         }
     }
@@ -145,12 +168,25 @@ class RecipesListViewModel(
         val optimisticCount = recipe.likesCount + if (optimisticLiked) 1 else -1
 
         updateRecipeLikeState(recipe.id, optimisticLiked, optimisticCount)
+        updateFavoritesLikeState(recipe, optimisticLiked)
 
         viewModelScope.launch {
             likesRepository.toggleLikeOnRecipe(recipe.id)
                 .onFailure {
                     updateRecipeLikeState(recipe.id, recipe.isLiked, recipe.likesCount)
+                    updateFavoritesLikeState(recipe, recipe.isLiked)
                 }
+        }
+    }
+
+    private fun updateFavoritesLikeState(recipe: RecipeListItemUiModel, isLiked: Boolean) {
+        val current = _favoritesState.value as? FavoritesRecipesState.Content ?: return
+        _favoritesState.value = if (isLiked) {
+            val alreadyExists = current.items.any { it.id == recipe.id }
+            if (alreadyExists) current
+            else current.copy(items = listOf(recipe.copy(isLiked = true)) + current.items)
+        } else {
+            current.copy(items = current.items.filter { it.id != recipe.id })
         }
     }
 
@@ -167,6 +203,20 @@ class RecipesListViewModel(
                     }
                 )
             } else state
+        }
+    }
+
+    private suspend fun loadFavorites() {
+        val result = likesRepository.getUserLikedRecipes(page = FirstPage).getOrNull()
+        _favoritesState.value = if (result != null) {
+            FavoritesRecipesState.Content(
+                items = result.items.map { it.recipe.toUiModel() },
+                hasMore = result.hasNextPage(),
+                currentPage = result.currentPage,
+                nextPage = result.nextPageOrNull(),
+            )
+        } else {
+            FavoritesRecipesState.Empty
         }
     }
 
@@ -196,3 +246,7 @@ private fun org.nikol.roasti.feature.recipe.domain.model.RecipesPage.hasNextPage
 
 private fun org.nikol.roasti.feature.recipe.domain.model.RecipesPage.nextPageOrNull(): Int? =
     nextPage.takeIf { hasNextPage() }
+
+private fun LikedRecipesPage.hasNextPage(): Boolean = currentPage < lastPage
+
+private fun LikedRecipesPage.nextPageOrNull(): Int? = nextPage.takeIf { hasNextPage() }

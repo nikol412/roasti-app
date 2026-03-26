@@ -59,7 +59,7 @@ internal fun RecipeCompactCard(
                     .align(Alignment.BottomCenter),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.labelLarge,

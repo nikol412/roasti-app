@@ -18,5 +18,11 @@ sealed interface RecipesListState {
 
 sealed interface FavoritesRecipesState {
     object Empty : FavoritesRecipesState
-    data class Content(val items: List<RecipeListItemUiModel>) : FavoritesRecipesState
+    data class Content(
+        val items: List<RecipeListItemUiModel>,
+        val isLoadingMore: Boolean = false,
+        val hasMore: Boolean = true,
+        val currentPage: Int = 1,
+        val nextPage: Int? = null,
+    ) : FavoritesRecipesState
 }
