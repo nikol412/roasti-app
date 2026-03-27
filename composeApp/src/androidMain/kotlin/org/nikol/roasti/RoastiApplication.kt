@@ -11,6 +11,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.nikol.roasti.core.di.coreDatabaseModule
 import org.nikol.roasti.core.di.coreNetworkModule
+import org.nikol.roasti.core.di.recipePagingModule
 import org.nikol.roasti.di.platformModule
 import org.nikol.roasti.di.viewModelsModule
 import org.nikol.roasti.feature.auth.di.authModule
@@ -28,6 +29,7 @@ class RoastiApplication : Application() {
                 platformModule,
                 coreDatabaseModule,
                 coreNetworkModule,
+                recipePagingModule,
                 authModule,
                 uploadModule,
                 likesModule,

@@ -18,6 +18,7 @@ class NetworkRecipeRepository(
 
     override suspend fun getRecipes(
         authorId: String?,
+        query: String?,
         brewMethod: BrewMethod?,
         difficulty: Difficulty?,
         roastLevel: RoastLevel?,
@@ -26,6 +27,7 @@ class NetworkRecipeRepository(
     ): Result<RecipesPage> {
         return apiClient.getRecipes(
             authorId = authorId,
+            query = query?.takeIf { it.isNotBlank() },
             brewMethod = brewMethod?.toRequestDto(),
             difficulty = difficulty.toQueryDto(),
             roastLevel = roastLevel.toQueryDto(),

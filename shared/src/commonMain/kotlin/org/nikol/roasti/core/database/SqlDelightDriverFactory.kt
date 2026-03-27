@@ -1,6 +1,8 @@
 package org.nikol.roasti.core.database
 
 import app.cash.sqldelight.db.SqlDriver
+import org.nikol.roasti.FavoriteRecipe
+import org.nikol.roasti.Recipe
 import org.nikol.roasti.RoastiDatabaseCache
 
 expect class SqlDelightDriverFactory {
@@ -9,5 +11,17 @@ expect class SqlDelightDriverFactory {
 
 fun createDatabase(driverFactory: SqlDelightDriverFactory): RoastiDatabaseCache {
     val driver = driverFactory.createDriver()
-    return RoastiDatabaseCache(driver)
+    return RoastiDatabaseCache(
+        driver = driver,
+        FavoriteRecipeAdapter = FavoriteRecipe.Adapter(
+            brew_methodAdapter = brewMethodColumnAdapter,
+            difficultyAdapter = difficultyColumnAdapter,
+            roast_levelAdapter = roastLevelColumnAdapter,
+        ),
+        RecipeAdapter = Recipe.Adapter(
+            brew_methodAdapter = brewMethodColumnAdapter,
+            difficultyAdapter = difficultyColumnAdapter,
+            roast_levelAdapter = roastLevelColumnAdapter,
+        ),
+    )
 }

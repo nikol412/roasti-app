@@ -25,6 +25,7 @@ import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPageRes
 interface RecipesApiClient {
     suspend fun getRecipes(
         authorId: String? = null,
+        query: String? = null,
         brewMethod: BrewMethodDto? = null,
         difficulty: DifficultyDto? = null,
         roastLevel: RoastLevelDto? = null,
@@ -47,6 +48,7 @@ class RecipesApiClientImpl(
 
     override suspend fun getRecipes(
         authorId: String?,
+        query: String?,
         brewMethod: BrewMethodDto?,
         difficulty: DifficultyDto?,
         roastLevel: RoastLevelDto?,
@@ -55,6 +57,8 @@ class RecipesApiClientImpl(
     ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { _ ->
         httpClient.get(ApiRoutes.Recipes) {
             url {
+                authorId?.let { parameters.append("author_id", it) }
+                query?.takeIf { it.isNotBlank() }?.let { parameters.append("query", it) }
                 brewMethod?.let { parameters.append("brew_method", getSerialName(brewMethod)) }
                 difficulty?.let { parameters.append("difficulty", getSerialName(it)) }
                 roastLevel?.let { parameters.append("roast_level", getSerialName(it)) }

@@ -31,18 +31,21 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
@@ -60,6 +63,7 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 
+private const val FavoritesSectionKey = "favorite_recipes_section"
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -73,40 +77,50 @@ internal fun RecipesListScreen(
 ) {
     val viewModel: RecipesListViewModel = koinViewModel()
 
-    val filtersState by viewModel.filtersState.collectAsStateWithLifecycle()
-    val favoriteState by viewModel.favoriteRecipesState.collectAsStateWithLifecycle()
-    val state by viewModel.recipes.collectAsStateWithLifecycle()
-    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val filtersState by viewModel.filtersState.collectAsStateWithLifecycle(RecipeFilterState())
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle("")
+    val recipes = viewModel.pagingRecipesState.collectAsLazyPagingItems()
+    val favorites = viewModel.pagingFavoritesState.collectAsLazyPagingItems()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
+    var hasEnteredResumedState by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(lifecycleOwner, recipes, favorites) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            viewModel.reload()
+            if (hasEnteredResumedState) {
+                recipes.refresh()
+                favorites.refresh()
+            } else {
+                hasEnteredResumedState = true
+            }
         }
     }
 
+    val recipesRefreshState = recipes.loadState.refresh
     Box(modifier = Modifier.fillMaxSize()) {
-        when (state) {
-            RecipesListState.Loading -> LoadingStub(Modifier.align(Alignment.Center))
+        when {
+            recipesRefreshState is LoadState.Loading && recipes.itemCount == 0 -> {
+                LoadingStub(Modifier.align(Alignment.Center))
+            }
 
-            RecipesListState.Error -> ErrorStub(
+            recipesRefreshState is LoadState.Error && recipes.itemCount == 0 -> ErrorStub(
                 stringResource(R.string.recipes_load_error),
                 modifier = Modifier.padding(contentPadding)
             )
 
-            is RecipesListState.Content -> Content(
+            else -> Content(
                 searchQuery = searchQuery,
                 filtersState = filtersState,
-                state = state as RecipesListState.Content,
-                favoritesState = favoriteState,
+                recipes = recipes,
+                favorites = favorites,
                 onClick = onRecipeClick,
                 onLikeClick = viewModel::likeRecipe,
                 onSearch = viewModel::search,
-                onLoadMore = viewModel::loadNextPage,
-                onLoadMoreFavorites = viewModel::loadNextFavoritesPage,
-                onRefresh = { viewModel.reload(silent = false) },
+                onRefresh = {
+                    recipes.refresh()
+                    favorites.refresh()
+                },
                 onBrewMethodSelected = viewModel::filterByBrewMethod,
                 onDifficultySelected = viewModel::filterByDifficulty,
                 onRoastLevelSelected = viewModel::filterByRoastLevel,
@@ -144,13 +158,11 @@ internal fun RecipesListScreen(
 private fun Content(
     searchQuery: String,
     filtersState: RecipeFilterState,
-    favoritesState: FavoritesRecipesState,
-    state: RecipesListState.Content,
+    recipes: LazyPagingItems<RecipeListItemUiModel>,
+    favorites: LazyPagingItems<RecipeListItemUiModel>,
     onClick: (String) -> Unit,
     onLikeClick: (RecipeListItemUiModel) -> Unit,
     onSearch: (String) -> Unit,
-    onLoadMore: () -> Unit,
-    onLoadMoreFavorites: () -> Unit,
     onRefresh: () -> Unit,
     onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
@@ -161,19 +173,11 @@ private fun Content(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    val isRefreshing =
+        recipes.loadState.refresh is LoadState.Loading ||
+                favorites.loadState.refresh is LoadState.Loading
 
-    LaunchedEffect(listState, state.isLoadingMore, state.hasMore) {
-        snapshotFlow {
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-            val total = listState.layoutInfo.totalItemsCount
-            state.hasMore && !state.isLoadingMore && lastVisible >= total - 4
-        }
-            .distinctUntilChanged()
-            .filter { it }
-            .collect { onLoadMore() }
-    }
-
-    PullToRefreshBox(isRefreshing = state.isRefreshing, onRefresh = onRefresh, modifier) {
+    PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = modifier) {
         LazyColumn(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -194,48 +198,17 @@ private fun Content(
                 )
             }
 
-
-            item("FAVORITES_KEY") {
-                val favoritesListState = rememberLazyListState()
-                LaunchedEffect(favoritesListState, favoritesState) {
-                    snapshotFlow {
-                        val lastVisible = favoritesListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-                        val total = favoritesListState.layoutInfo.totalItemsCount
-                        val content = favoritesState as? FavoritesRecipesState.Content
-                        content != null && content.hasMore && !content.isLoadingMore && lastVisible >= total - 3
-                    }
-                        .distinctUntilChanged()
-                        .filter { it }
-                        .collect { onLoadMoreFavorites() }
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    Text(
-                        stringResource(R.string.recipe_list_favorite_section_title),
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        modifier = Modifier.padding(start = Spacing.lg)
+            if (favorites.itemCount > 0 || favorites.loadState.refresh is LoadState.Loading) {
+                item(FavoritesSectionKey) {
+                    FavoritesSection(
+                        favorites = favorites,
+                        onClick = onClick,
+                        onLikeClick = onLikeClick,
                     )
-                    LazyRow(
-                        state = favoritesListState,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        contentPadding = PaddingValues(horizontal = Spacing.lg),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (favoritesState is FavoritesRecipesState.Content) {
-                            items(favoritesState.items) { item ->
-                                RecipeCompactCard(
-                                    item = item,
-                                    modifier = Modifier.width(200.dp),
-                                    onClick = { onClick(item.id) },
-                                    onLikeClick = { onLikeClick(item) })
-                            }
-                        }
-                    }
                 }
             }
 
-
-            item {
+            item("all_recipes_title") {
                 Text(
                     stringResource(R.string.recipe_list_all_section_title),
                     style = MaterialTheme.typography.titleSmall,
@@ -244,7 +217,11 @@ private fun Content(
                 )
             }
 
-            items(state.recipes, key = { it.id }) { recipe ->
+            items(
+                count = recipes.itemCount,
+                key = { index -> recipes[index]?.id ?: "recipe_$index" },
+            ) { index ->
+                val recipe = recipes[index] ?: return@items
                 RecipeCard(
                     item = recipe,
                     onLikeClick = { onLikeClick(recipe) },
@@ -263,8 +240,20 @@ private fun Content(
                 )
             }
 
-            if (state.isLoadingMore) {
-                item {
+            if (recipes.itemCount == 0 && recipes.loadState.refresh is LoadState.NotLoading) {
+                item("recipes_empty_state") {
+                    Text(
+                        text = stringResource(R.string.recipes_empty_state),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .fillParentMaxWidth()
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.xl),
+                    )
+                }
+            }
+
+            if (recipes.loadState.append is LoadState.Loading) {
+                item("recipes_append_loading") {
                     Box(
                         modifier = Modifier
                             .fillParentMaxWidth()
@@ -275,6 +264,64 @@ private fun Content(
                             modifier = Modifier
                                 .size(32.dp)
                                 .animateItem(),
+                            color = MaterialTheme.colorScheme.secondary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FavoritesSection(
+    favorites: LazyPagingItems<RecipeListItemUiModel>,
+    onClick: (String) -> Unit,
+    onLikeClick: (RecipeListItemUiModel) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val favoritesListState = rememberLazyListState()
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        modifier = modifier,
+    ) {
+        Text(
+            stringResource(R.string.recipe_list_favorite_section_title),
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
+            modifier = Modifier.padding(start = Spacing.lg)
+        )
+        LazyRow(
+            state = favoritesListState,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            contentPadding = PaddingValues(horizontal = Spacing.lg),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(
+                count = favorites.itemCount,
+                key = { index -> favorites[index]?.id ?: "favorite_$index" },
+            ) { index ->
+                val item = favorites[index] ?: return@items
+                RecipeCompactCard(
+                    item = item,
+                    modifier = Modifier.width(200.dp),
+                    onClick = { onClick(item.id) },
+                    onLikeClick = { onLikeClick(item) },
+                )
+            }
+
+            if (favorites.loadState.append is LoadState.Loading) {
+                item(key = "favorite_append_loading") {
+                    Box(
+                        modifier = Modifier
+                            .width(200.dp)
+                            .padding(vertical = Spacing.lg),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
                             color = MaterialTheme.colorScheme.secondary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )

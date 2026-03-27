@@ -1,0 +1,49 @@
+CREATE TABLE Recipe (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL
+   ,
+   description TEXT NOT NULL,
+   image_id TEXT,
+   brew_method TEXT AS org.nikol.roasti.feature.recipe.domain.model.BrewMethod NOT NULL,
+   difficulty TEXT AS org.nikol.roasti.feature.recipe.domain.model.Difficulty NOT NULL,
+   roast_level TEXT AS org.nikol.roasti.feature.recipe.domain.model.RoastLevel NOT NULL,
+   beans TEXT,
+   is_liked INTEGER NOT NULL DEFAULT 0,
+   likes_count INTEGER NOT NULL DEFAULT 0,
+   author_id TEXT,
+   author_name TEXT,
+   author_image_id TEXT,
+   created_at TEXT
+);
+
+-- Insert or update a recipe (used by RemoteMediator when saving network data)
+insertRecipe:
+INSERT OR REPLACE INTO Recipe(
+    id, title, description, image_id, brew_method, difficulty,
+    roast_level, beans, is_liked, likes_count, author_id, author_name,
+    author_image_id, created_at
+) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get all recipes, newest first, with pagination
+  -- LIMIT = how many items per page
+  -- OFFSET = how many items to skip (page * pageSize)
+getAllRecipes:
+SELECT * FROM Recipe
+ORDER BY created_at DESC
+LIMIT ? OFFSET ?;
+
+-- Count total recipes (needed by QueryPagingSource)
+countAllRecipes:
+SELECT COUNT(*) FROM Recipe;
+
+toggleLike:
+UPDATE Recipe
+SET is_liked = CASE WHEN is_liked = 1 THEN 0 ELSE 1 END,
+    likes_count = CASE WHEN is_liked = 1 THEN likes_count - 1 ELSE likes_count + 1 END
+    WHERE id = ?;
+
+clearAllRecipes:
+DELETE FROM Recipe;
+
+getRecipeById:
+SELECT * FROM Recipe WHERE id = ?;

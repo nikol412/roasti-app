@@ -10,6 +10,7 @@ import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 interface RecipeRepository {
     suspend fun getRecipes(
         authorId: String? = null,
+        query: String? = null,
         brewMethod: BrewMethod? = null,
         difficulty: Difficulty? = null,
         roastLevel: RoastLevel? = null,

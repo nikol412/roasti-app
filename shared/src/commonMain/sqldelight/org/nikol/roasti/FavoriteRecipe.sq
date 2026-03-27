@@ -1,0 +1,40 @@
+CREATE TABLE FavoriteRecipe (
+      id              TEXT PRIMARY KEY NOT NULL,
+      title           TEXT NOT NULL,
+      description     TEXT NOT NULL,
+      image_id        TEXT,
+      brew_method     TEXT AS org.nikol.roasti.feature.recipe.domain.model.BrewMethod NOT NULL,
+      difficulty      TEXT AS org.nikol.roasti.feature.recipe.domain.model.Difficulty NOT NULL,
+      roast_level     TEXT AS org.nikol.roasti.feature.recipe.domain.model.RoastLevel NOT NULL,
+      beans           TEXT,
+      likes_count     INTEGER NOT NULL DEFAULT 0,
+      author_id       TEXT,
+      author_name     TEXT,
+      author_image_id TEXT,
+      liked_at        TEXT,
+      created_at      TEXT
+  );
+
+getAllFavoriteRecipes:
+  SELECT * FROM FavoriteRecipe
+  ORDER BY liked_at DESC
+  LIMIT ? OFFSET ?;
+
+getFavoriteRecipeById:
+SELECT * FROM FavoriteRecipe WHERE id = ?;
+
+countAllFavoriteRecipes:
+SELECT COUNT(*) FROM FavoriteRecipe;
+
+insertFavoriteRecipe:
+INSERT OR REPLACE INTO FavoriteRecipe(
+    id, title, description, image_id, brew_method, difficulty,
+    roast_level, beans, likes_count, author_id, author_name,
+    author_image_id, liked_at, created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteFavoriteRecipe:
+DELETE FROM FavoriteRecipe WHERE id = ?;
+
+clearAllFavoriteRecipes:
+DELETE FROM FavoriteRecipe;
