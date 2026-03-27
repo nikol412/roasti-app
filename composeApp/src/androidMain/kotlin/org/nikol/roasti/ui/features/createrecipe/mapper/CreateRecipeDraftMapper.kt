@@ -1,15 +1,16 @@
 package org.nikol.roasti.ui.features.createrecipe.mapper
 
-import org.nikol.roasti.domain.recipe.model.BrewMethod
-import org.nikol.roasti.domain.recipe.model.RecipeDraft
-import org.nikol.roasti.domain.recipe.model.RecipeDraftStep
-import org.nikol.roasti.domain.recipe.model.RoastLevel
+import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
+import org.nikol.roasti.feature.recipe.domain.model.RecipeDraft
+import org.nikol.roasti.feature.recipe.domain.model.RecipeDraftStep
+import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeStepUiModel
 import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeUiState
 
 internal fun CreateRecipeUiState.toRecipeDraft() = RecipeDraft(
     title = name,
     description = description,
+    note = null,
     imageId = imageId,
     brewMethod = brewMethod ?: BrewMethod.NONE,
     difficulty = difficulty,

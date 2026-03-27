@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.nikol.roasti.auth.domain.repository.AuthRepository
+import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 import org.nikol.roasti.ui.features.auth.toAuthUiMessage
 
 private const val EmptyUsernameMessage = "Enter your username."

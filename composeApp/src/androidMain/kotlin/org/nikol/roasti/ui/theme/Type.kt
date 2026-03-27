@@ -77,16 +77,16 @@ val RoastiTypography = Typography(
     labelLarge = TextStyle(
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Normal,
     ),
     labelMedium = TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Normal,
     ),
     labelSmall = TextStyle(
         fontSize = 12.sp,
         lineHeight = 16.sp,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Normal,
     ),
 )

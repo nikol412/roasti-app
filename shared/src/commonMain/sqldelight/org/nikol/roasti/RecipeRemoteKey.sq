@@ -1,0 +1,13 @@
+CREATE TABLE RecipeRemoteKey (
+     id         TEXT PRIMARY KEY NOT NULL,
+     next_page  INTEGER
+  );
+
+getRemoteKey:
+SELECT * FROM RecipeRemoteKey WHERE id = ?;
+
+insertRemoteKey:
+INSERT OR REPLACE INTO RecipeRemoteKey(id, next_page) VALUES (?, ?);
+
+clearRemoteKeys:
+DELETE FROM RecipeRemoteKey WHERE id = ?;

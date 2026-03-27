@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.nikol.roasti.auth.domain.model.AuthState
-import org.nikol.roasti.auth.domain.model.User
-import org.nikol.roasti.auth.domain.repository.AuthRepository
+import org.nikol.roasti.feature.auth.domain.model.AuthState
+import org.nikol.roasti.feature.auth.domain.model.User
+import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 
 private const val SessionExpiredMessage = "Your session has ended. Please sign in again."
 

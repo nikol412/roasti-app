@@ -10,15 +10,15 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.nikol.roasti.domain.recipe.RecipeRepository
-import org.nikol.roasti.domain.upload.UploadRepository
+import org.nikol.roasti.feature.recipe.domain.RecipeRepository
+import org.nikol.roasti.feature.upload.domain.UploadRepository
 import org.nikol.roasti.ui.features.createrecipe.mapper.toRecipeDraft
 import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeEvent
 import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeStepUiModel
 import org.nikol.roasti.ui.features.createrecipe.model.CreateRecipeUiState
-import org.nikol.roasti.domain.recipe.model.BrewMethod
-import org.nikol.roasti.domain.recipe.model.Difficulty
-import org.nikol.roasti.domain.recipe.model.RoastLevel
+import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
+import org.nikol.roasti.feature.recipe.domain.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 
 class CreateRecipeViewModel(
     private val repository: RecipeRepository,

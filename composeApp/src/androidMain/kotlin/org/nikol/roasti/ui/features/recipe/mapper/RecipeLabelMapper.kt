@@ -2,9 +2,9 @@ package org.nikol.roasti.ui.features.recipe.mapper
 
 import androidx.annotation.StringRes
 import org.nikol.roasti.R
-import org.nikol.roasti.domain.recipe.model.BrewMethod
-import org.nikol.roasti.domain.recipe.model.Difficulty
-import org.nikol.roasti.domain.recipe.model.RoastLevel
+import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
+import org.nikol.roasti.feature.recipe.domain.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 
 @StringRes
 internal fun BrewMethod.labelRes(): Int = when (this) {

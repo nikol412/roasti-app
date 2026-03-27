@@ -46,6 +46,8 @@ kotlin {
             implementation(projects.shared)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            implementation(libs.paging.runtime)
+            implementation(libs.paging.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

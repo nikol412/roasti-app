@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.nikol.roasti.auth.domain.model.AuthState
-import org.nikol.roasti.auth.domain.repository.AuthRepository
+import org.nikol.roasti.feature.auth.domain.model.AuthState
+import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 
 class AppNavigationViewModel(
     private val authRepository: AuthRepository,

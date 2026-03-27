@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import org.nikol.roasti.R
-import org.nikol.roasti.domain.recipe.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.ui.features.recipe.mapper.labelRes
 
 @Composable

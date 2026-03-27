@@ -1,11 +1,11 @@
 package org.nikol.roasti.ui.features.editrecipe.mapper
 
-import org.nikol.roasti.domain.recipe.model.BrewStep
-import org.nikol.roasti.domain.recipe.model.Recipe
+import org.nikol.roasti.feature.recipe.domain.model.BrewStep
+import org.nikol.roasti.feature.recipe.domain.model.Recipe
 import org.nikol.roasti.ui.features.editrecipe.model.EditRecipeUiState
 import org.nikol.roasti.ui.features.recipeform.model.RecipeFormFields
 import org.nikol.roasti.ui.features.recipeform.model.RecipeFormStepUiModel
-import org.nikol.roasti.utils.imageUrl
+import org.nikol.roasti.core.utils.imageUrl
 
 internal fun Recipe.toEditState() = EditRecipeUiState(
     isLoading = false,
@@ -25,7 +25,7 @@ internal fun Recipe.toEditState() = EditRecipeUiState(
 private fun BrewStep.toFormStep() = RecipeFormStepUiModel(
     order = order,
     title = title,
-    description = description ?: "",
+    description = description,
     durationSeconds = durationSeconds,
     imageId = imageId,
 )

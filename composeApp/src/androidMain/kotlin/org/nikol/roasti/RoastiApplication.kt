@@ -9,10 +9,15 @@ import io.ktor.client.HttpClient
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
-import org.nikol.roasti.di.dbSharedModule
-import org.nikol.roasti.di.sharedModule
+import org.nikol.roasti.core.di.coreDatabaseModule
+import org.nikol.roasti.core.di.coreNetworkModule
+import org.nikol.roasti.core.di.recipePagingModule
 import org.nikol.roasti.di.platformModule
 import org.nikol.roasti.di.viewModelsModule
+import org.nikol.roasti.feature.auth.di.authModule
+import org.nikol.roasti.feature.likes.di.likesModule
+import org.nikol.roasti.feature.recipe.di.recipeModule
+import org.nikol.roasti.feature.upload.di.uploadModule
 
 @OptIn(ExperimentalCoilApi::class)
 class RoastiApplication : Application() {
@@ -20,7 +25,17 @@ class RoastiApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@RoastiApplication)
-            modules(platformModule, dbSharedModule, sharedModule, viewModelsModule)
+            modules(
+                platformModule,
+                coreDatabaseModule,
+                coreNetworkModule,
+                recipePagingModule,
+                authModule,
+                uploadModule,
+                likesModule,
+                recipeModule,
+                viewModelsModule
+            )
         }
 
         initCoilHttpClient()

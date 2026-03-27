@@ -12,4 +12,5 @@ object Spacing {
     val xl  = 20.dp  // spacing * 5
     val xxl = 24.dp  // spacing * 6
     val xxxl = 32.dp // spacing * 8
+    val xxxxl = 64.dp// spacing * 16
 }
