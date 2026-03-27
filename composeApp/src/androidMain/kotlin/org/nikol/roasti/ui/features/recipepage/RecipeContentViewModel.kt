@@ -2,6 +2,7 @@ package org.nikol.roasti.ui.features.recipepage
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,11 +31,8 @@ class RecipeContentViewModel(
     init {
         viewModelScope.launch {
             try {
-                val recipe = repository.getById(recipeId).getOrNull()?.toUiModel()
-                _state.value = if (recipe != null) {
-                    RecipeContentState.Content(recipe)
-                } else {
-                    RecipeContentState.NotFound
+                repository.getByIdFlow(recipeId).collectLatest { recipe ->
+                    _state.value = RecipeContentState.Content(recipe.toUiModel())
                 }
             } catch (_: Exception) {
                 _state.value = RecipeContentState.Error

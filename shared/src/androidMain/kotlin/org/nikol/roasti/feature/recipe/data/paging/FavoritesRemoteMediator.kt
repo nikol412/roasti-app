@@ -9,7 +9,7 @@ import org.nikol.roasti.FavoriteRecipe
 import org.nikol.roasti.RoastiDatabaseCache
 import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 import org.nikol.roasti.feature.likes.data.LikesApiClient
-import org.nikol.roasti.feature.recipe.data.mapper.toDomain
+import org.nikol.roasti.feature.recipe.data.mapper.upsertFavoriteRecipe
 
 @OptIn(ExperimentalPagingApi::class)
 class FavoritesRemoteMediator(
@@ -17,6 +17,10 @@ class FavoritesRemoteMediator(
     private val authRepository: AuthRepository,
     private val db: RoastiDatabaseCache,
 ) : RemoteMediator<Int, FavoriteRecipe>() {  // FavoriteRecipe = SQLDelight entity
+
+    override suspend fun initialize(): RemoteMediator.InitializeAction {
+        return RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH
+    }
 
     override suspend fun load(
         loadType: LoadType,
@@ -57,22 +61,9 @@ class FavoritesRemoteMediator(
                 }
 
                 items.forEach { likedItem ->
-                    val dto = likedItem.recipe
-                    db.favoriteRecipeQueries.insertFavoriteRecipe(
-                        id = dto.id,
-                        title = dto.title,
-                        description = dto.description,
-                        image_id = dto.imageId,
-                        brew_method = dto.brewMethod.toDomain(),
-                        difficulty = dto.difficulty.toDomain(),
-                        roast_level = dto.roastLevel.toDomain(),
-                        beans = dto.beans,
-                        likes_count = dto.likesCount.toLong(),
-                        author_id = dto.author?.id,
-                        author_name = dto.author?.username,
-                        author_image_id = dto.author?.avatarId,
-                        liked_at = likedItem.likedAt,
-                        created_at = dto.createdAt
+                    db.upsertFavoriteRecipe(
+                        recipe = likedItem.recipe,
+                        likedAt = likedItem.likedAt,
                     )
                 }
 

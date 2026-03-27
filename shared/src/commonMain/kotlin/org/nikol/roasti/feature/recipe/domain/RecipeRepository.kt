@@ -1,5 +1,6 @@
 package org.nikol.roasti.feature.recipe.domain
 
+import kotlinx.coroutines.flow.Flow
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.Recipe
@@ -19,6 +20,8 @@ interface RecipeRepository {
     ): Result<RecipesPage>
 
     suspend fun getById(id: String): Result<Recipe>
+
+    fun getByIdFlow(id: String): Flow<Recipe>
 
     suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe>
 

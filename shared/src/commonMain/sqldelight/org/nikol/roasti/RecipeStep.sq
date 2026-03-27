@@ -1,0 +1,25 @@
+CREATE TABLE RecipeStep (
+    recipe_id TEXT NOT NULL,
+    step_order INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    duration_seconds INTEGER,
+    image_id TEXT,
+    PRIMARY KEY (recipe_id, step_order)
+);
+
+insertRecipeStep:
+INSERT OR REPLACE INTO RecipeStep(
+    recipe_id, step_order, title, description, duration_seconds, image_id
+) VALUES (?, ?, ?, ?, ?, ?);
+
+deleteRecipeStepsByRecipeId:
+DELETE FROM RecipeStep WHERE recipe_id = ?;
+
+clearAllRecipeSteps:
+DELETE FROM RecipeStep;
+
+getRecipeStepsByRecipeId:
+SELECT * FROM RecipeStep
+WHERE recipe_id = ?
+ORDER BY step_order ASC;

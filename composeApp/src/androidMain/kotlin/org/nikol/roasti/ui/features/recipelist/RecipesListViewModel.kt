@@ -9,12 +9,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.nikol.roasti.feature.recipe.data.paging.PagingRecipeRepository
 import org.nikol.roasti.feature.recipe.data.paging.RecipesPagingQuery
@@ -33,16 +36,32 @@ class RecipesListViewModel(
     private val filterStore: RecipeFilterStore,
     private val pagingRepository: PagingRecipeRepository,
 ) : ViewModel() {
+    val hasCachedRecipes: StateFlow<Boolean> =
+        pagingRepository.observeHasCachedRecipes()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = false,
+            )
 
     val filtersState: Flow<RecipeFilterState> = filterStore.state
 
     private val searchQueryMutable = MutableStateFlow("")
     val searchQuery: Flow<String> = searchQueryMutable.asStateFlow()
 
+    private val manualRefreshMutable = MutableStateFlow(false)
+    val isManualRefresh: StateFlow<Boolean> = manualRefreshMutable.asStateFlow()
+
     private val recipesQuery: Flow<RecipesPagingQuery> =
         combine(
             searchQueryMutable
-                .debounce(SearchQueryDebounceMillis)
+                .debounce { query ->
+                    if (query.isBlank()) {
+                        0L
+                    } else {
+                        SearchQueryDebounceMillis
+                    }
+                }
                 .map(String::trim)
                 .distinctUntilChanged(),
             filterStore.state,
@@ -55,10 +74,26 @@ class RecipesListViewModel(
             )
         }.distinctUntilChanged()
 
+    val isDefaultFeedMode: StateFlow<Boolean> =
+        recipesQuery
+            .map { query -> query.isDefaultFeed }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = true,
+            )
+
     val pagingRecipesState: Flow<PagingData<RecipeListItemUiModel>> =
         recipesQuery
-            .flatMapLatest(pagingRepository::getRecipesPager)
-            .map { pagingData -> pagingData.map { it.toUiModel() } }
+            .flatMapLatest { query ->
+                if (query.isDefaultFeed) {
+                    pagingRepository.getOfflineFirstAllRecipesPager()
+                        .map { pagingData -> pagingData.map { it.toUiModel() } }
+                } else {
+                    pagingRepository.getRemoteSearchPager(query)
+                        .map { pagingData -> pagingData.map { it.toUiModel() } }
+                }
+            }
             .cachedIn(viewModelScope)
 
     val pagingFavoritesState: Flow<PagingData<RecipeListItemUiModel>> =
@@ -86,5 +121,13 @@ class RecipesListViewModel(
         viewModelScope.launch {
             pagingRepository.toggleLike(recipe.id)
         }
+    }
+
+    fun startManualRefresh() {
+        manualRefreshMutable.value = true
+    }
+
+    fun finishManualRefresh() {
+        manualRefreshMutable.value = false
     }
 }

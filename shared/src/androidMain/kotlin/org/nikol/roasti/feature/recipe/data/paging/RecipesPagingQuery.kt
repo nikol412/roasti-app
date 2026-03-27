@@ -9,4 +9,10 @@ data class RecipesPagingQuery(
     val brewMethod: BrewMethod? = null,
     val difficulty: Difficulty? = null,
     val roastLevel: RoastLevel? = null,
-)
+) {
+    val isDefaultFeed: Boolean
+        get() = query.isBlank() &&
+                brewMethod == null &&
+                difficulty == null &&
+                roastLevel == null
+}

@@ -12,14 +12,18 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -31,18 +35,13 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -59,12 +58,16 @@ import org.nikol.roasti.ui.features.recipelist.components.RecipeCompactCard
 import org.nikol.roasti.ui.features.recipelist.components.RecipeSearchBar
 import org.nikol.roasti.ui.features.recipelist.components.RoastLevelFilterChip
 import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
+import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 
 private const val FavoritesSectionKey = "favorite_recipes_section"
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
+private val FavoriteCardWidth = 200.dp
+private val RecipeCardHeight = 130.dp
+private val FavoriteCardHeight = 150.dp
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -79,32 +82,42 @@ internal fun RecipesListScreen(
 
     val filtersState by viewModel.filtersState.collectAsStateWithLifecycle(RecipeFilterState())
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle("")
+    val hasCachedRecipes by viewModel.hasCachedRecipes.collectAsStateWithLifecycle()
+    val isDefaultFeedMode by viewModel.isDefaultFeedMode.collectAsStateWithLifecycle()
+    val isManualRefresh by viewModel.isManualRefresh.collectAsStateWithLifecycle()
     val recipes = viewModel.pagingRecipesState.collectAsLazyPagingItems()
     val favorites = viewModel.pagingFavoritesState.collectAsLazyPagingItems()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var hasEnteredResumedState by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(lifecycleOwner, recipes, favorites) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            if (hasEnteredResumedState) {
-                recipes.refresh()
-                favorites.refresh()
-            } else {
-                hasEnteredResumedState = true
-            }
+    LaunchedEffect(isManualRefresh, recipes.loadState.refresh, favorites.loadState.refresh) {
+        val recipesDone = recipes.loadState.refresh !is LoadState.Loading
+        val favoritesDone = favorites.loadState.refresh !is LoadState.Loading
+        if (isManualRefresh && recipesDone && favoritesDone) {
+            viewModel.finishManualRefresh()
         }
     }
 
     val recipesRefreshState = recipes.loadState.refresh
+    val shouldShowFullScreenLoader =
+        if (isDefaultFeedMode) {
+            !hasCachedRecipes && recipesRefreshState is LoadState.Loading
+        } else {
+            recipesRefreshState is LoadState.Loading && recipes.itemCount == 0
+        }
+    val shouldShowFullScreenError =
+        if (isDefaultFeedMode) {
+            !hasCachedRecipes && recipesRefreshState is LoadState.Error
+        } else {
+            recipesRefreshState is LoadState.Error && recipes.itemCount == 0
+        }
     Box(modifier = Modifier.fillMaxSize()) {
         when {
-            recipesRefreshState is LoadState.Loading && recipes.itemCount == 0 -> {
+            shouldShowFullScreenLoader -> {
                 LoadingStub(Modifier.align(Alignment.Center))
             }
 
-            recipesRefreshState is LoadState.Error && recipes.itemCount == 0 -> ErrorStub(
+            shouldShowFullScreenError -> ErrorStub(
                 stringResource(R.string.recipes_load_error),
                 modifier = Modifier.padding(contentPadding)
             )
@@ -118,9 +131,11 @@ internal fun RecipesListScreen(
                 onLikeClick = viewModel::likeRecipe,
                 onSearch = viewModel::search,
                 onRefresh = {
+                    viewModel.startManualRefresh()
                     recipes.refresh()
                     favorites.refresh()
                 },
+                isManualRefresh = isManualRefresh,
                 onBrewMethodSelected = viewModel::filterByBrewMethod,
                 onDifficultySelected = viewModel::filterByDifficulty,
                 onRoastLevelSelected = viewModel::filterByRoastLevel,
@@ -164,6 +179,7 @@ private fun Content(
     onLikeClick: (RecipeListItemUiModel) -> Unit,
     onSearch: (String) -> Unit,
     onRefresh: () -> Unit,
+    isManualRefresh: Boolean,
     onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
     onRoastLevelSelected: (RoastLevel?) -> Unit,
@@ -173,11 +189,8 @@ private fun Content(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
-    val isRefreshing =
-        recipes.loadState.refresh is LoadState.Loading ||
-                favorites.loadState.refresh is LoadState.Loading
 
-    PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = modifier) {
+    PullToRefreshBox(isRefreshing = isManualRefresh, onRefresh = onRefresh, modifier = modifier) {
         LazyColumn(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -198,14 +211,12 @@ private fun Content(
                 )
             }
 
-            if (favorites.itemCount > 0 || favorites.loadState.refresh is LoadState.Loading) {
-                item(FavoritesSectionKey) {
-                    FavoritesSection(
-                        favorites = favorites,
-                        onClick = onClick,
-                        onLikeClick = onLikeClick,
-                    )
-                }
+            item(FavoritesSectionKey) {
+                FavoritesSection(
+                    favorites = favorites,
+                    onClick = onClick,
+                    onLikeClick = onLikeClick,
+                )
             }
 
             item("all_recipes_title") {
@@ -242,12 +253,12 @@ private fun Content(
 
             if (recipes.itemCount == 0 && recipes.loadState.refresh is LoadState.NotLoading) {
                 item("recipes_empty_state") {
-                    Text(
+                    RecipesEmptyPlaceholderCard(
                         text = stringResource(R.string.recipes_empty_state),
-                        style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier
-                            .fillParentMaxWidth()
-                            .padding(horizontal = Spacing.lg, vertical = Spacing.xl),
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg)
+                            .animateItem(),
                     )
                 }
             }
@@ -299,6 +310,17 @@ private fun FavoritesSection(
             contentPadding = PaddingValues(horizontal = Spacing.lg),
             modifier = Modifier.fillMaxWidth()
         ) {
+            if (favorites.itemCount == 0 && favorites.loadState.refresh is LoadState.NotLoading) {
+                item(key = "favorite_empty_placeholder") {
+                    FavoritesEmptyPlaceholderCard(
+                        text = stringResource(R.string.recipe_list_favorite_empty_state),
+                        modifier = Modifier
+                            .width(FavoriteCardWidth)
+                            .animateItem(),
+                    )
+                }
+            }
+
             items(
                 count = favorites.itemCount,
                 key = { index -> favorites[index]?.id ?: "favorite_$index" },
@@ -306,7 +328,7 @@ private fun FavoritesSection(
                 val item = favorites[index] ?: return@items
                 RecipeCompactCard(
                     item = item,
-                    modifier = Modifier.width(200.dp),
+                    modifier = Modifier.width(FavoriteCardWidth).animateItem(),
                     onClick = { onClick(item.id) },
                     onLikeClick = { onLikeClick(item) },
                 )
@@ -316,7 +338,7 @@ private fun FavoritesSection(
                 item(key = "favorite_append_loading") {
                     Box(
                         modifier = Modifier
-                            .width(200.dp)
+                            .width(FavoriteCardWidth)
                             .padding(vertical = Spacing.lg),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -328,6 +350,58 @@ private fun FavoritesSection(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FavoritesEmptyPlaceholderCard(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.height(FavoriteCardHeight),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(Spacing.md),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipesEmptyPlaceholderCard(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(RecipeCardHeight),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = Spacing.lg),
+            )
         }
     }
 }
@@ -391,6 +465,28 @@ private fun recipeSharedBoundsModifier(
         Modifier.sharedBounds(
             sharedContentState = rememberSharedContentState(key = "$RecipeScreenKeyPrefix$recipeId"),
             animatedVisibilityScope = animatedVisibilityScope,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun FavoritesEmptyPlaceholderCardPreview() {
+    RoastiTheme {
+        FavoritesEmptyPlaceholderCard(
+            text = "You don't have favorites yet",
+            modifier = Modifier.width(FavoriteCardWidth),
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun RecipesEmptyPlaceholderCardPreview() {
+    RoastiTheme {
+        RecipesEmptyPlaceholderCard(
+            text = "No recipes found",
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

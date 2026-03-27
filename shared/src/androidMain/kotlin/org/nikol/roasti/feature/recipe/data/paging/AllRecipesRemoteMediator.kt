@@ -8,10 +8,8 @@ import kotlinx.coroutines.flow.first
 import org.nikol.roasti.Recipe
 import org.nikol.roasti.RoastiDatabaseCache
 import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
-import org.nikol.roasti.feature.recipe.data.mapper.toDomain
-import org.nikol.roasti.feature.recipe.data.mapper.toQueryDto
-import org.nikol.roasti.feature.recipe.data.mapper.toRequestDto
 import org.nikol.roasti.feature.recipe.data.network.RecipesApiClient
+import org.nikol.roasti.feature.recipe.data.mapper.upsertRecipe
 
 private const val AllRecipesRemoteKeyId = "all_recipes"
 
@@ -20,10 +18,13 @@ class AllRecipesRemoteMediator(
     private val authRepository: AuthRepository,
     private val recipesApiClient: RecipesApiClient,
     private val db: RoastiDatabaseCache,
-    private val query: RecipesPagingQuery,
 ) : RemoteMediator<Int, Recipe>() {
 
     private var userId: String? = null
+
+    override suspend fun initialize(): RemoteMediator.InitializeAction {
+        return RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH
+    }
 
     override suspend fun load(loadType: LoadType, state: PagingState<Int, Recipe>): MediatorResult {
         val page = when (loadType) {
@@ -44,10 +45,6 @@ class AllRecipesRemoteMediator(
         return try {
             val response = recipesApiClient.getRecipes(
                 authorId = assignCurrentUser(),
-                query = query.query.takeIf { it.isNotBlank() },
-                brewMethod = query.brewMethod?.toRequestDto(),
-                difficulty = query.difficulty.toQueryDto(),
-                roastLevel = query.roastLevel.toQueryDto(),
                 page = page,
                 limit = state.config.pageSize,
             ).getOrThrow()
@@ -63,22 +60,7 @@ class AllRecipesRemoteMediator(
                 }
 
                 recipes.forEach { dto ->
-                    db.recipeQueries.insertRecipe(
-                        id = dto.id,
-                        title = dto.title,
-                        description = dto.description,
-                        image_id = dto.imageId,
-                        brew_method = dto.brewMethod.toDomain(),
-                        difficulty = dto.difficulty.toDomain(),
-                        roast_level = dto.roastLevel.toDomain(),
-                        beans = dto.beans,
-                        is_liked = if (dto.isLiked) 1L else 0L,
-                        likes_count = dto.likesCount.toLong(),
-                        author_id = dto.author?.id,
-                        author_name = dto.author?.username,
-                        author_image_id = dto.author?.avatarId,
-                        created_at = dto.createdAt,
-                    )
+                    db.upsertRecipe(dto)
                 }
 
                 db.recipeRemoteKeyQueries.insertRemoteKey(

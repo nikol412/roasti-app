@@ -4,14 +4,18 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToOne
 import app.cash.sqldelight.paging3.QueryPagingSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.nikol.roasti.FavoriteRecipe
 import org.nikol.roasti.Recipe
 import org.nikol.roasti.RoastiDatabaseCache
 import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 import org.nikol.roasti.feature.recipe.data.network.RecipesApiClient
+import org.nikol.roasti.feature.recipe.domain.model.Recipe as DomainRecipe
 import org.nikol.roasti.feature.likes.domain.LikesRepository
 
 private const val RecipesPageSize = 20
@@ -24,14 +28,19 @@ class PagingRecipeRepository(
     private val favoritesRemoteMediator: FavoritesRemoteMediator,
     private val likesRepository: LikesRepository,
 ) {
-    fun getRecipesPager(query: RecipesPagingQuery): Flow<PagingData<Recipe>> {
+    fun observeHasCachedRecipes(): Flow<Boolean> =
+        db.recipeQueries.countAllRecipes()
+            .asFlow()
+            .mapToOne(chooseDispatcher())
+            .map { count -> count > 0L }
+
+    fun getOfflineFirstAllRecipesPager(): Flow<PagingData<Recipe>> {
         return Pager(
             config = createPagingConfig(),
             remoteMediator = AllRecipesRemoteMediator(
                 authRepository = authRepository,
                 recipesApiClient = recipesApiClient,
                 db = db,
-                query = query,
             ),
             pagingSourceFactory = {
                 QueryPagingSource(
@@ -41,6 +50,19 @@ class PagingRecipeRepository(
                     queryProvider = { limit, offset ->
                         db.recipeQueries.getAllRecipes(limit, offset)
                     }
+                )
+            }
+        ).flow
+    }
+
+    fun getRemoteSearchPager(query: RecipesPagingQuery): Flow<PagingData<DomainRecipe>> {
+        return Pager(
+            config = createPagingConfig(),
+            pagingSourceFactory = {
+                RemoteRecipesPagingSource(
+                    recipesApiClient = recipesApiClient,
+                    authRepository = authRepository,
+                    query = query,
                 )
             }
         ).flow
@@ -87,6 +109,7 @@ class PagingRecipeRepository(
                         id = r.id,
                         title = r.title,
                         description = r.description,
+                        note = r.note,
                         image_id = r.image_id,
                         brew_method = r.brew_method,
                         difficulty = r.difficulty,
@@ -96,8 +119,14 @@ class PagingRecipeRepository(
                         author_id = r.author_id,
                         author_name = r.author_name,
                         author_image_id = r.author_image_id,
+                        origin_recipe_id = r.origin_recipe_id,
+                        origin_author_id = r.origin_author_id,
+                        origin_author_name = r.origin_author_name,
+                        origin_author_image_id = r.origin_author_image_id,
+                        is_public = r.is_public,
                         liked_at = null,
-                        created_at = r.created_at
+                        created_at = r.created_at,
+                        updated_at = r.updated_at,
                     )
                 }
             }
@@ -115,6 +144,7 @@ class PagingRecipeRepository(
                             id = favoriteRecipe.id,
                             title = favoriteRecipe.title,
                             description = favoriteRecipe.description,
+                            note = favoriteRecipe.note,
                             image_id = favoriteRecipe.image_id,
                             brew_method = favoriteRecipe.brew_method,
                             difficulty = favoriteRecipe.difficulty,
@@ -124,8 +154,14 @@ class PagingRecipeRepository(
                             author_id = favoriteRecipe.author_id,
                             author_name = favoriteRecipe.author_name,
                             author_image_id = favoriteRecipe.author_image_id,
+                            origin_recipe_id = favoriteRecipe.origin_recipe_id,
+                            origin_author_id = favoriteRecipe.origin_author_id,
+                            origin_author_name = favoriteRecipe.origin_author_name,
+                            origin_author_image_id = favoriteRecipe.origin_author_image_id,
+                            is_public = favoriteRecipe.is_public,
                             liked_at = favoriteRecipe.liked_at,
-                            created_at = favoriteRecipe.created_at
+                            created_at = favoriteRecipe.created_at,
+                            updated_at = favoriteRecipe.updated_at,
                         )
                     }
                 } else {
