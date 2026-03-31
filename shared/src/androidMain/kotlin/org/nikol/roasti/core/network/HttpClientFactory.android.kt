@@ -27,10 +27,9 @@ actual fun createHttpClient(
     expectSuccess = true
 
     defaultRequest {
-        host = AppConfig.HOST
-        port = AppConfig.PORT
+        host = AppConfig.BASE_HOST
         url {
-            protocol = URLProtocol.HTTP
+            protocol = URLProtocol.HTTPS
         }
 
         contentType(ContentType.Application.Json)
@@ -55,6 +54,6 @@ actual fun createHttpClient(
                 Log.d(KtorLogTag, message)
             }
         }
-        level = LogLevel.BODY
+        level = LogLevel.ALL
     }
 }
