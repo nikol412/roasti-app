@@ -2,11 +2,13 @@ package org.nikol.roasti.ui.features.recipelist.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Bold
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.bold.ArrowDown
+import com.adamglin.phosphoricons.fill.ArrowDown
+import com.adamglin.phosphoricons.regular.ArrowDown
 import org.nikol.roasti.R
 
 @Composable
@@ -38,10 +47,10 @@ internal fun FilterChipDropdown(
             onClick = { dropdownOpened = true },
             label = { Text(text = labelText, style = MaterialTheme.typography.labelMedium) },
             trailingIcon = {
-                Text(
-                    text = "▲",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.rotate(animatedRotationDegree)
+                Icon(
+                    imageVector = PhosphorIcons.Bold.ArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp).rotate(animatedRotationDegree)
                 )
             },
             shape = RoundedCornerShape(16.dp),

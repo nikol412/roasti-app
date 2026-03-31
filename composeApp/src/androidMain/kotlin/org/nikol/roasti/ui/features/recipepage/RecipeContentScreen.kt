@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,12 +24,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,8 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,29 +53,32 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Pencil
+import com.adamglin.phosphoricons.regular.Trash
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.nikol.roasti.R
+import org.nikol.roasti.ui.features.recipelist.components.LikeButton
 import org.nikol.roasti.ui.features.recipepage.model.RecipeDetailsUiModel
 import org.nikol.roasti.ui.features.recipepage.model.RecipeStepUiModel
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ActionButtonPrimary
+import org.nikol.roasti.ui.uikit.AppIcons
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
-private val HeaderHeight = 220.dp
+private val HeaderHeight = 260.dp
 private val HeaderOverlap = 40.dp
 private val MetaChipShape = RoundedCornerShape(18.dp)
 private val StepNumberSize = 28.dp
 private val StepDurationShape = RoundedCornerShape(10.dp)
-private val HeaderActionButtonHeight = 40.dp
 private val ContentShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-private val HeaderActionShape = RoundedCornerShape(20.dp)
-private const val BackLabel = "<"
 
 private data class RecipeMetaItem(
     val title: String,
@@ -103,15 +104,12 @@ fun RecipeContentRoute(
     var showRemoveDialogConfirmation: Boolean by remember { mutableStateOf(false) }
 
     if (showRemoveDialogConfirmation) {
-        RemoveConfirmationDialog(
-            onConfirmRemove = {
-                viewModel.onRemoveRecipe()
-                showRemoveDialogConfirmation = false
-            },
-            onDismiss = {
-                showRemoveDialogConfirmation = false
-            }
-        )
+        RemoveConfirmationDialog(onConfirmRemove = {
+            viewModel.onRemoveRecipe()
+            showRemoveDialogConfirmation = false
+        }, onDismiss = {
+            showRemoveDialogConfirmation = false
+        })
     }
 
     LaunchedEffect(Unit) {
@@ -183,19 +181,21 @@ private fun RecipeContentScreen(
             )
         },
     ) { innerPadding ->
-        Box(
-            modifier = recipeScreenModifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            RecipeHeaderImage(imageUrl = recipe.imageUrl)
-            RecipeContentList(
-                recipe = recipe,
-                stepModifiers = stepModifiers,
-                onLikeClick = onLikeClick,
-                bottomContentPadding = innerPadding.calculateBottomPadding(),
-                modifier = Modifier.fillMaxSize(),
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = recipeScreenModifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                RecipeHeaderImage(imageUrl = recipe.imageUrl)
+                RecipeContentList(
+                    recipe = recipe,
+                    stepModifiers = stepModifiers,
+                    onLikeClick = onLikeClick,
+                    bottomContentPadding = innerPadding.calculateBottomPadding(),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
             RecipeTopBar(
                 onBackClick = onBackClick,
                 onEditClick = onEditClick,
@@ -289,7 +289,8 @@ private fun RecipeMainContent(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            RecipeLikeButton(
+
+            LikeButton(
                 isLiked = recipe.isLiked,
                 likesCount = recipe.likesCount,
                 onClick = onLikeClick,
@@ -324,58 +325,44 @@ private fun RecipeTopBar(
             .padding(horizontal = Spacing.lg, vertical = Spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HeaderActionButton(
-            text = BackLabel,
+
+        ActionButton(
+            image = AppIcons.Regular.ArrowLeft,
             onClick = onBackClick,
-            modifier = Modifier.size(HeaderActionButtonHeight),
+            contentDescription = stringResource(R.string.back_label)
         )
-
         Spacer(Modifier.weight(1f))
-        HeaderActionButton(
-            text = stringResource(R.string.recipe_edit),
+        ActionButton(
+            image = AppIcons.Regular.Pencil,
             onClick = onEditClick,
-            modifier = Modifier
-                .height(HeaderActionButtonHeight)
-                .padding(end = 16.dp),
+            contentDescription = stringResource(R.string.recipe_edit),
         )
 
-        HeaderActionButton(
-            text = stringResource(R.string.recipe_remove),
+        ActionButton(
+            image = AppIcons.Regular.Trash,
             onClick = onRemoveClick,
-            modifier = Modifier.height(HeaderActionButtonHeight),
-            highlightDangerous = true,
+            contentDescription = stringResource(R.string.recipe_remove),
         )
     }
 }
 
 @Composable
-private fun HeaderActionButton(
-    text: String,
+private fun ActionButton(
+    image: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    highlightDangerous: Boolean = false,
+    contentDescription: String? = null,
+    tint: Color = MaterialTheme.colorScheme.tertiary
 ) {
-    Surface(
-        modifier = modifier
-            .clip(HeaderActionShape)
-            .clickable(onClick = onClick),
-        shape = HeaderActionShape,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-        tonalElevation = 2.dp,
-        shadowElevation = 6.dp,
-    ) {
-        Box(
+    IconButton(onClick, modifier) {
+        Icon(
+            imageVector = image,
+            contentDescription = contentDescription,
             modifier = Modifier
-                .defaultMinSize(minWidth = HeaderActionButtonHeight)
-                .padding(horizontal = Spacing.lg),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (highlightDangerous) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            )
-        }
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(8.dp),
+            tint = tint
+        )
     }
 }
 
@@ -466,37 +453,6 @@ private fun RecipeMetaChip(
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
-    }
-}
-
-@Composable
-private fun RecipeLikeButton(
-    isLiked: Boolean,
-    likesCount: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier,
-    ) {
-        if (likesCount > 0) {
-            Text(
-                text = likesCount.toString(),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        IconButton(onClick = onClick) {
-            Icon(
-                painter = painterResource(
-                    if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined
-                ),
-                contentDescription = null,
-                tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
-        }
     }
 }
 
