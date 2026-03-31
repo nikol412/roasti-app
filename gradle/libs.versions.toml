@@ -21,6 +21,7 @@ kotlinx-serialization = "1.10.0"
 ktor = "3.4.1"
 sqldelight = "2.0.1"
 paging = "3.4.2"
+phosphor-icon = "1.0.0"
 
 [libraries]
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
@@ -61,6 +62,8 @@ paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pag
 paging-common = { module = "androidx.paging:paging-common", version.ref = "paging" }
 paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
 sqldelight-paging = { module = "app.cash.sqldelight:androidx-paging3-extensions", version.ref = "sqldelight" }
+
+phosphor-icons = { module = "com.adamglin:phosphor-icon", version.ref = "phosphor-icon" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

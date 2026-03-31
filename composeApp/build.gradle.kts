@@ -48,6 +48,7 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.paging.runtime)
             implementation(libs.paging.compose)
+            implementation(libs.phosphor.icons)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

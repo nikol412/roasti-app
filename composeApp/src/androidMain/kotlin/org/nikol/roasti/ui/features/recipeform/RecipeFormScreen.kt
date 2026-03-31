@@ -35,6 +35,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -55,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -64,6 +67,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Camera
+import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.FloppyDiskBack
+import com.adamglin.phosphoricons.regular.Pencil
+import com.adamglin.phosphoricons.regular.TrashSimple
 import org.nikol.roasti.R
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
@@ -74,12 +84,10 @@ import org.nikol.roasti.ui.features.recipeform.model.RecipeFormFields
 import org.nikol.roasti.ui.features.recipeform.model.RecipeFormStepUiModel
 import org.nikol.roasti.ui.theme.ShapeXxl
 import org.nikol.roasti.ui.theme.Spacing
+import org.nikol.roasti.ui.uikit.AppIcons
 import org.nikol.roasti.utils.compressImage
 import java.util.UUID
 
-private const val IconCamera = "📷"
-private const val IconEdit = "✎"
-private const val IconDelete = "✕"
 private const val IconCheck = "✓"
 
 internal val RecipeFormHeaderHeight = 220.dp
@@ -127,12 +135,13 @@ internal fun RecipeFormScreen(
     BackHandler { showDiscardDialog = true }
 
     val context = LocalContext.current
-    val imageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            val bytes = compressImage(context.contentResolver, it)
-            onUploadImage("${UUID.randomUUID()}.jpg", bytes)
+    val imageLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                val bytes = compressImage(context.contentResolver, it)
+                onUploadImage("${UUID.randomUUID()}.jpg", bytes)
+            }
         }
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -197,6 +206,7 @@ internal fun RecipeFormScreen(
             onSelect = { onBrewMethodChange(it); visibleEnumSheet = null },
             onDismiss = { visibleEnumSheet = null },
         )
+
         EnumSheet.Difficulty -> OptionPickerBottomSheet(
             title = stringResource(R.string.recipe_difficulty),
             options = difficultyOptions,
@@ -204,6 +214,7 @@ internal fun RecipeFormScreen(
             onSelect = { onDifficultyChange(it); visibleEnumSheet = null },
             onDismiss = { visibleEnumSheet = null },
         )
+
         EnumSheet.RoastLevel -> OptionPickerBottomSheet(
             title = stringResource(R.string.recipe_roast_level),
             options = roastLevelOptions,
@@ -211,6 +222,7 @@ internal fun RecipeFormScreen(
             onSelect = { onRoastLevelChange(it); visibleEnumSheet = null },
             onDismiss = { visibleEnumSheet = null },
         )
+
         null -> Unit
     }
 
@@ -304,14 +316,15 @@ internal fun RecipeFormHeaderImage(
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                    modifier = Modifier.size(48.dp),
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = IconCamera,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                    }
+                    Icon(
+                        imageVector = AppIcons.Regular.Camera,
+                        contentDescription = "choose photo",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(24.dp),
+                    )
                 }
             }
         }
@@ -333,46 +346,40 @@ internal fun RecipeFormTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HeaderActionButton(
-            text = "<",
+
+        ActionButton(
+            image = AppIcons.Regular.ArrowLeft,
             onClick = onBackClick,
-            modifier = Modifier.size(HeaderActionButtonHeight),
+            contentDescription = stringResource(R.string.back_label)
         )
-        HeaderActionButton(
-            text = if (isSaving) "…" else stringResource(R.string.edit_recipe_save),
+
+        ActionButton(
+            image = AppIcons.Regular.FloppyDiskBack,
             onClick = onSaveClick,
-            modifier = Modifier.height(HeaderActionButtonHeight),
+            contentDescription = stringResource(R.string.back_label),
+            enabled = !isSaving,
         )
     }
 }
 
 @Composable
-private fun HeaderActionButton(
-    text: String,
+private fun ActionButton(
+    image: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentDescription: String? = null,
+    tint: Color = MaterialTheme.colorScheme.tertiary
 ) {
-    Surface(
-        modifier = modifier
-            .clip(HeaderActionShape)
-            .clickable(onClick = onClick),
-        shape = HeaderActionShape,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-        tonalElevation = 2.dp,
-        shadowElevation = 6.dp,
-    ) {
-        Box(
+    IconButton(onClick, modifier, enabled = enabled) {
+        Icon(
+            imageVector = image,
+            contentDescription = contentDescription,
             modifier = Modifier
-                .defaultMinSize(minWidth = HeaderActionButtonHeight)
-                .padding(horizontal = Spacing.lg),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(8.dp),
+            tint = tint
+        )
     }
 }
 
@@ -444,7 +451,10 @@ private fun RecipeFormMainContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.xl),
     ) {
         RecipeFormTitleField(title = form.title, onTitleChange = onTitleChange)
-        RecipeFormDescriptionField(description = form.description, onDescriptionChange = onDescriptionChange)
+        RecipeFormDescriptionField(
+            description = form.description,
+            onDescriptionChange = onDescriptionChange
+        )
         RecipeFormMetaSection(
             form = form,
             onBeansChange = onBeansChange,
@@ -593,10 +603,13 @@ private fun EditableEnumChip(
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                text = IconEdit,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+
+            Icon(
+                imageVector = AppIcons.Regular.Pencil,
+                contentDescription = "edit",
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(16.dp)
             )
         }
     }
@@ -726,16 +739,17 @@ private fun EditableStepItem(
         }
         Box(
             modifier = Modifier
-                .size(StepNumberSize)
                 .clip(CircleShape)
                 .clickable(onClick = onDeleteClick)
                 .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = IconDelete,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
+            Icon(
+                imageVector = AppIcons.Regular.TrashSimple,
+                contentDescription = "remove step",
+                modifier = Modifier
+                    .padding(8.dp)
+                    .size(16.dp)
             )
         }
     }
@@ -883,10 +897,10 @@ internal fun <T> OptionPickerBottomSheet(
                         },
                     )
                     if (value == selected) {
-                        Text(
-                            text = IconCheck,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
+                        Icon(
+                            imageVector = AppIcons.Regular.Check,
+                            contentDescription = "checked",
+                            modifier = Modifier.size(22.dp),
                         )
                     }
                 }
@@ -941,7 +955,11 @@ internal fun StepEditBottomSheet(
             ) {
                 OutlinedTextField(
                     value = sheet.durationMinutes,
-                    onValueChange = { if (it.length <= 2 && it.all(Char::isDigit)) onDurationMinutesChange(it) },
+                    onValueChange = {
+                        if (it.length <= 2 && it.all(Char::isDigit)) onDurationMinutesChange(
+                            it
+                        )
+                    },
                     label = { Text(stringResource(R.string.edit_recipe_step_duration_min)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
@@ -949,7 +967,11 @@ internal fun StepEditBottomSheet(
                 )
                 OutlinedTextField(
                     value = sheet.durationSeconds,
-                    onValueChange = { if (it.length <= 2 && it.all(Char::isDigit)) onDurationSecondsChange(it) },
+                    onValueChange = {
+                        if (it.length <= 2 && it.all(Char::isDigit)) onDurationSecondsChange(
+                            it
+                        )
+                    },
                     label = { Text(stringResource(R.string.edit_recipe_step_duration_sec)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,

@@ -16,16 +16,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -45,6 +45,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Bold
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.bold.Plus
+import com.adamglin.phosphoricons.regular.Plus
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
@@ -154,9 +159,14 @@ internal fun RecipesListScreen(
                     end = Spacing.lg,
                     bottom = contentPadding.calculateBottomPadding() + Spacing.lg,
                 ),
-            containerColor = MaterialTheme.colorScheme.primary,
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
         ) {
-            Text("+", style = MaterialTheme.typography.headlineMedium)
+            Icon(
+                imageVector = PhosphorIcons.Bold.Plus,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(22.dp)
+            )
         }
 
         SnackbarHost(
@@ -328,7 +338,9 @@ private fun FavoritesSection(
                 val item = favorites[index] ?: return@items
                 RecipeCompactCard(
                     item = item,
-                    modifier = Modifier.width(FavoriteCardWidth).animateItem(),
+                    modifier = Modifier
+                        .width(FavoriteCardWidth)
+                        .animateItem(),
                     onClick = { onClick(item.id) },
                     onLikeClick = { onLikeClick(item) },
                 )
