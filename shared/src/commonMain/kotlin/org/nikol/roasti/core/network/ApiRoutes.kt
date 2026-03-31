@@ -1,17 +1,17 @@
 package org.nikol.roasti.core.network
 
 object ApiRoutes {
-    private const val ApiV1Path = "/api/v1"
-    const val AuthPathPrefix = "$ApiV1Path/auth/"
-    const val UsersPrefix = "$ApiV1Path/users/"
+    private const val ApiPath = "/api/v1"
+    const val AuthPathPrefix = "$ApiPath/auth/"
+    const val UsersPrefix = "$ApiPath/users/"
     const val Login = "${AuthPathPrefix}login"
     const val Register = "${AuthPathPrefix}register"
     const val Logout = "${AuthPathPrefix}logout"
     const val Refresh = "${AuthPathPrefix}refresh"
-    const val Recipes = "$ApiV1Path/recipes"
+    const val Recipes = "$ApiPath/recipes"
     fun recipeById(id: String) = "$Recipes/$id"
-    const val UploadsImages = "$ApiV1Path/uploads/images"
-    const val ProfileMe = "$ApiV1Path/profiles/me"
+    const val UploadsImages = "$ApiPath/uploads/images"
+    const val ProfileMe = "$ApiPath/profiles/me"
 
     fun recipeLike(recipeId: String) = "$Recipes/$recipeId/like"
     fun userLikedRecipes(userId: String) = "$UsersPrefix$userId/likes"
