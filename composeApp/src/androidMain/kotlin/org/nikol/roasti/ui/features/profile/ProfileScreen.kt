@@ -62,7 +62,7 @@ private fun ProfileScreen(
 @Composable
 private fun ProfileRootPreview() {
     ProfileScreen(uiState = ProfileState(), listener = object : ProfileRowListener {
-        override fun onImageClick() {}
+        override fun onImagePicked(fileName: String, bytes: ByteArray) {}
         override fun onEditClick() {}
         override fun onSettingsClick() {}
         override fun onLogoutClick() {}

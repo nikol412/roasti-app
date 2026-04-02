@@ -20,7 +20,8 @@ data class ProfileUserUiModel(
     val imageId: String? = null,
     val nickname: String,
     val bio: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val isImageUploadInProgress: Boolean = false,
 ) {
     companion object {
         fun empty() = ProfileUserUiModel(nickname = "")

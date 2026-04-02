@@ -13,11 +13,13 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.nikol.roasti.feature.auth.domain.model.User
 import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 import org.nikol.roasti.feature.likes.domain.LikesRepository
 import org.nikol.roasti.feature.recipe.data.paging.PagingRecipeRepository
+import org.nikol.roasti.feature.upload.domain.UploadRepository
 import org.nikol.roasti.ui.features.recipelist.mapper.toUiModel
 import org.nikol.roasti.utils.stateInWhileSubscribe
 
@@ -37,6 +39,7 @@ sealed interface ProfileUiState {
 class ProfileViewModel(
     private val authRepository: AuthRepository,
     private val pagingRecipeRepository: PagingRecipeRepository,
+    private val uploadRepository: UploadRepository,
     private val likesRepository: LikesRepository,
 ) : ViewModel(), ProfileRowListener {
 
@@ -46,9 +49,12 @@ class ProfileViewModel(
     private val userStatisticsState: StateFlow<ProfileStatisticsUiModel> =
         MutableStateFlow(ProfileStatisticsUiModel.empty()).asStateFlow()
 
+    private val isUserImageUploadProgressFlow = MutableStateFlow(false)
+
     private val userState = authRepository.getUser()
         .filterNotNull()
-        .map { it.toUi() }
+        .combine(isUserImageUploadProgressFlow, ::Pair)
+        .map { it.first.toUi(it.second) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProfileUserUiModel.empty())
 
     private val favoritesState = authRepository.getUser().flatMapLatest { user ->
@@ -102,26 +108,36 @@ class ProfileViewModel(
         // to be implemented
     }
 
-    override fun onImageClick() {
-        // to be implemented
+    override fun onImagePicked(fileName: String, bytes: ByteArray) {
+        viewModelScope.launch {
+            isUserImageUploadProgressFlow.update { true }
+            uploadImage(fileName, bytes)
+            isUserImageUploadProgressFlow.update { false }
+        }
     }
 
     override fun onLogoutClick() {
         logout()
     }
+
+    private suspend fun uploadImage(fileName: String, bytes: ByteArray) {
+        val imageId = uploadRepository.uploadImage(fileName, bytes).getOrNull() ?: return
+        authRepository.updateProfile(imageId.id)
+    }
 }
 
 interface ProfileRowListener {
-    fun onImageClick()
+    fun onImagePicked(fileName: String, bytes: ByteArray)
     fun onEditClick()
     fun onSettingsClick()
 
     fun onLogoutClick()
 }
 
-private fun User.toUi() = ProfileUserUiModel(
+private fun User.toUi(isImageLoading: Boolean) = ProfileUserUiModel(
     imageId = this.avatarId,
     nickname = this.username,
     bio = this.bio,
     email = this.email,
+    isImageUploadInProgress = isImageLoading,
 )
