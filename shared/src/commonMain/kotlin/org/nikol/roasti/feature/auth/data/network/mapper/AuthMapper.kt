@@ -11,6 +11,7 @@ fun UserDto.toDomain(): User = User(
     bio = bio,
     id = id,
     username = username,
+    email = email,
 )
 
 fun AuthResponseDto.toDomain(): UserSession = UserSession(

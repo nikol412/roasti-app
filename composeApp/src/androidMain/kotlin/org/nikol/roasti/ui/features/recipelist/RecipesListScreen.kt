@@ -47,9 +47,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Bold
-import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.bold.Plus
-import com.adamglin.phosphoricons.regular.Plus
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
@@ -67,6 +65,7 @@ import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
+import org.nikol.roasti.ui.uikit.TextCard
 
 private const val FavoritesSectionKey = "favorite_recipes_section"
 private const val RecipeScreenKeyPrefix = "recipe_screen_"
@@ -322,11 +321,11 @@ private fun FavoritesSection(
         ) {
             if (favorites.itemCount == 0 && favorites.loadState.refresh is LoadState.NotLoading) {
                 item(key = "favorite_empty_placeholder") {
-                    FavoritesEmptyPlaceholderCard(
+                    TextCard(
                         text = stringResource(R.string.recipe_list_favorite_empty_state),
                         modifier = Modifier
-                            .width(FavoriteCardWidth)
-                            .animateItem(),
+                            .size(width = 200.dp, height = 150.dp)
+                            .animateItem()
                     )
                 }
             }
@@ -362,31 +361,6 @@ private fun FavoritesSection(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun FavoritesEmptyPlaceholderCard(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.height(FavoriteCardHeight),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(Spacing.md),
-            )
         }
     }
 }
@@ -485,9 +459,9 @@ private fun recipeSharedBoundsModifier(
 @Composable
 private fun FavoritesEmptyPlaceholderCardPreview() {
     RoastiTheme {
-        FavoritesEmptyPlaceholderCard(
-            text = "You don't have favorites yet",
-            modifier = Modifier.width(FavoriteCardWidth),
+        TextCard(
+            text = stringResource(R.string.recipe_list_favorite_empty_state),
+            modifier = Modifier.size(width = 200.dp, height = 150.dp)
         )
     }
 }

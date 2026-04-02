@@ -110,6 +110,7 @@ class AuthRepositoryImpl(
             imageId = user.avatarId,
             bio = user.bio,
             username = user.username,
+            email = user.email,
         )
     }
 
@@ -122,5 +123,6 @@ class AuthRepositoryImpl(
         username = username,
         bio = bio,
         avatarId = image_id,
+        email = email,
     )
 }

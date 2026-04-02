@@ -66,4 +66,10 @@
     <string name="dialog_remove_label">Remove</string>
     <string name="dialog_dismiss_label">Dismiss</string>
 
+    // Profile
+    <string name="profile_statistics_brew_count">Brews</string>
+    <string name="profile_statistics_likes">Likes</string>
+    <string name="profile_statistics_posts">Posts</string>
+
+
 </resources>

@@ -34,7 +34,7 @@ import org.nikol.roasti.ui.uikit.ImageSize
 @Composable
 internal fun RecipeCompactCard(
     item: RecipeListItemUiModel,
-    modifier: Modifier = Modifier.width(300.dp),
+    modifier: Modifier = Modifier.width(200.dp),
     onClick: () -> Unit = {},
     onLikeClick: () -> Unit = {},
 ) {
