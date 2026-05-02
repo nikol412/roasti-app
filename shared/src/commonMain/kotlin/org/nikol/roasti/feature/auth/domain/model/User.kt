@@ -13,4 +13,6 @@ data class User(
     val id: String,
     @SerialName("username")
     val username: String,
+    @SerialName("email")
+    val email: String,
 )

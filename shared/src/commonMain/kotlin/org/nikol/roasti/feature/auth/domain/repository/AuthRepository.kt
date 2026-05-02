@@ -28,4 +28,6 @@ interface AuthRepository {
     suspend fun logout()
 
     suspend fun syncProfile(): Result<User>
+
+    suspend fun updateProfile(imageId: String? = null, bio: String? = null, username: String? = null): Result<User>
 }

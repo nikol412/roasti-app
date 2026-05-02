@@ -6,6 +6,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -45,6 +47,7 @@ internal fun LikeButton(
     ) {
         var skipAnimation by remember { mutableStateOf(true) }
         SideEffect { skipAnimation = false }
+        val likeCountAlpha by animateFloatAsState(if(likesCount == 0) 0f else 1f)
 
         AnimatedContent(
             targetState = likesCount,
@@ -67,6 +70,7 @@ internal fun LikeButton(
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
+                modifier = Modifier.alpha(likeCountAlpha)
             )
         }
 

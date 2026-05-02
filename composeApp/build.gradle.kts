@@ -2,7 +2,6 @@ import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
 }
@@ -24,41 +23,21 @@ val releaseKeyAlias = signingProperty("RELEASE_KEY_ALIAS")
 val releaseKeyPassword = signingProperty("RELEASE_KEY_PASSWORD")
 
 kotlin {
-    androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
-
-    sourceSets {
-        androidMain.dependencies {
-            implementation(libs.androidx.activity.compose)
-            implementation(libs.navigation.compose)
-            implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.ui)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.koin.android)
-            implementation(libs.koin.compose.viewmodel)
-            implementation(projects.shared)
-            implementation(libs.coil.compose)
-            implementation(libs.coil.network.ktor)
-            implementation(libs.paging.runtime)
-            implementation(libs.paging.compose)
-            implementation(libs.phosphor.icons)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-        }
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+        freeCompilerArgs.add("-Xcontext-parameters")
     }
 }
 
 android {
     namespace = "org.nikol.roasti"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+
+    sourceSets["main"].apply {
+        manifest.srcFile("src/androidMain/AndroidManifest.xml")
+        kotlin.directories.add("src/androidMain/kotlin")
+        res.directories.add("src/androidMain/res")
+    }
 
     signingConfigs {
         create("release") {
@@ -80,6 +59,12 @@ android {
         versionName = "1.0"
         resValue("string", "app_name", "Roasti")
     }
+
+    buildFeatures {
+        compose = true
+        resValues = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -106,5 +91,22 @@ android {
 }
 
 dependencies {
+    implementation(projects.shared)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.navigation.compose)
+    implementation(libs.compose.runtime)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.uiToolingPreview)
+    implementation(libs.androidx.lifecycle.viewmodelCompose)
+    implementation(libs.androidx.lifecycle.runtimeCompose)
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose.viewmodel)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.ktor)
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
+    implementation(libs.phosphor.icons)
     debugImplementation(libs.compose.uiTooling)
 }

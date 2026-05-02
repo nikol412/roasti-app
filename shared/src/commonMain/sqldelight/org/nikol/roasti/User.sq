@@ -6,7 +6,8 @@ CREATE TABLE User (
     id        TEXT NOT NULL,
     image_id  TEXT,
     bio       TEXT,
-    username  TEXT NOT NULL
+    username  TEXT NOT NULL,
+    email     TEXT NOT NULL
 );
 
 -- Получить юзера (всегда максимум один)
@@ -16,8 +17,8 @@ SELECT * FROM User LIMIT 1;
 -- Вставить юзера или заменить существующего (upsert).
 -- cache_key всегда передаём как 'me' — INSERT OR REPLACE заменит строку если она есть.
 upsertUser:
-INSERT OR REPLACE INTO User(cache_key, id, image_id, bio, username)
-VALUES ('me', ?, ?, ?, ?);
+INSERT OR REPLACE INTO User(cache_key, id, image_id, bio, username, email)
+VALUES ('me', ?, ?, ?, ?, ?);
 
 -- Обновить только bio
 updateBio:

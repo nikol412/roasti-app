@@ -11,7 +11,7 @@ object ApiRoutes {
     const val Recipes = "$ApiPath/recipes"
     fun recipeById(id: String) = "$Recipes/$id"
     const val UploadsImages = "$ApiPath/uploads/images"
-    const val ProfileMe = "$ApiPath/profiles/me"
+    const val UsersMe = "$ApiPath/users/me"
 
     fun recipeLike(recipeId: String) = "$Recipes/$recipeId/like"
     fun userLikedRecipes(userId: String) = "$UsersPrefix$userId/likes"
