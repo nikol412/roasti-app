@@ -23,6 +23,8 @@ sealed class Screen(val route: String) {
     object CreateRecipe : Screen("recipe/create")
 
     object Profile : Screen("profile")
+
+    object Settings : Screen("settings")
 }
 
 // Screens that show the bottom navigation bar

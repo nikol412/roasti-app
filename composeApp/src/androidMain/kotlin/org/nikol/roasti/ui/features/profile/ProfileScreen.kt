@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -20,11 +21,25 @@ import org.nikol.roasti.ui.features.profile.widgets.ProfileHeaderRow
 import org.nikol.roasti.ui.features.profile.widgets.StatisticsRow
 
 @Composable
-internal fun ProfileRoute(contentPadding: PaddingValues = PaddingValues()) {
+internal fun ProfileRoute(
+    onNavigateToSettings: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues(),
+) {
     val viewModel: ProfileViewModel = koinViewModel()
     val uiState by viewModel.state.collectAsStateWithLifecycle()
 
-    ProfileScreen(uiState, viewModel)
+    val listener = remember(viewModel, onNavigateToSettings) {
+        object : ProfileRowListener {
+            override fun onImagePicked(fileName: String, bytes: ByteArray) =
+                viewModel.onImagePicked(fileName, bytes)
+
+            override fun onEditClick() = viewModel.onEditClick()
+            override fun onSettingsClick() = onNavigateToSettings()
+            override fun onLogoutClick() = viewModel.onLogoutClick()
+        }
+    }
+
+    ProfileScreen(uiState, listener)
 }
 
 @Composable

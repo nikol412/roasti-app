@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Roasti</string>
+    <string name="error_generic">Что-то пошло не так</string>
+    <string name="recipes_load_error">Не удалось загрузить рецепты</string>
+    <string name="recipe_not_found">Не найдено</string>
+    <string name="back_label">Назад</string>
+    <string name="recipe_edit">Редактировать</string>
+    <string name="recipe_remove">Удалить</string>
+    <string name="recipe_start_brewing">Начать заваривать</string>
+    <string name="recipe_beans">Зёрна</string>
+    <string name="recipe_brewing_steps">Шаги заваривания</string>
+    <string name="recipe_roast_level">Обжарка</string>
+    <string name="recipe_missing_value">Н/Д</string>
+    <string name="recipe_list_favorite_section_title">Избранное</string>
+    <string name="recipe_list_favorite_empty_state">У вас пока нет избранных</string>
+    <string name="recipe_list_all_section_title">Все</string>
+    <string name="recipe_brew_method">Способ заваривания</string>
+    <string name="recipe_brew_method_all">Все</string>
+    <string name="recipes_search_hint">Поиск смесей, обжарок…</string>
+    <string name="recipes_empty_state">Рецепты не найдены</string>
+    <string name="filter_clear">Очистить</string>
+    <string name="recipe_roaster">Обжарщик</string>
+    <string name="recipe_difficulty">Сложность</string>
+    <string name="recipe_brew_method_v60">V60</string>
+    <string name="recipe_brew_method_french_press">French Press</string>
+    <string name="recipe_brew_method_aeropress">Aeropress</string>
+    <string name="recipe_brew_method_chemex">Chemex</string>
+    <string name="recipe_brew_method_cold_brew">Cold Brew</string>
+    <string name="recipe_brew_method_espresso_machine">Espresso Machine</string>
+    <string name="recipe_brew_method_moka_pot">Moka Pot</string>
+    <string name="recipe_difficulty_easy">Лёгкий</string>
+    <string name="recipe_difficulty_medium">Средний</string>
+    <string name="recipe_difficulty_hard">Сложный</string>
+    <string name="recipe_roast_level_light">Светлая</string>
+    <string name="recipe_roast_level_medium_light">Средне-светлая</string>
+    <string name="recipe_roast_level_medium">Средняя</string>
+    <string name="recipe_roast_level_medium_dark">Средне-тёмная</string>
+    <string name="recipe_roast_level_dark">Тёмная</string>
+    <!-- Create Recipe Screen -->
+    <string name="create_recipe_create">Создать рецепт</string>
+    <!-- Edit Recipe -->
+    <string name="edit_recipe_save">Сохранить</string>
+    <string name="edit_recipe_save_changes">Сохранить изменения</string>
+    <string name="edit_recipe_title_hint">Название рецепта…</string>
+    <string name="edit_recipe_description_hint">Опишите этот рецепт…</string>
+    <string name="edit_recipe_beans_hint">напр. Эфиопия Иргачеффе</string>
+    <string name="edit_recipe_add_step">+ Добавить шаг</string>
+    <string name="edit_recipe_save_error">Не удалось сохранить. Попробуйте ещё раз.</string>
+    <string name="edit_recipe_discard_title">Отменить изменения?</string>
+    <string name="edit_recipe_discard_message">Несохранённые изменения будут потеряны.</string>
+    <string name="edit_recipe_discard_confirm">Отменить</string>
+    <string name="edit_recipe_keep_editing">Продолжить редактирование</string>
+    <string name="edit_recipe_step_add_title">Добавить шаг</string>
+    <string name="edit_recipe_step_edit_title">Редактировать шаг</string>
+    <string name="edit_recipe_step_title_label">Название</string>
+    <string name="edit_recipe_step_description_label">Описание (необязательно)</string>
+    <string name="edit_recipe_step_duration_min">мин</string>
+    <string name="edit_recipe_step_duration_sec">сек</string>
+    <string name="edit_recipe_step_save">Сохранить шаг</string>
+
+    <string name="steps_step_counter">Шаг %1$d из %2$d</string>
+    <string name="steps_brew_ready">Ваш напиток готов!</string>
+    <string name="steps_finish">Завершить</string>
+
+    <string name="dialog_confirm_title">Подтвердите действие</string>
+    <string name="dialog_remove_label">Удалить</string>
+    <string name="dialog_dismiss_label">Отмена</string>
+
+    <!-- Profile -->
+    <string name="profile_statistics_brew_count">Заварки</string>
+    <string name="profile_statistics_likes">Лайки</string>
+    <string name="profile_statistics_posts">Посты</string>
+
+    <!-- Bottom navigation -->
+    <string name="bottom_nav_feed">Лента</string>
+    <string name="bottom_nav_recipes">Рецепты</string>
+    <string name="bottom_nav_profile">Профиль</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_language_system_default">Системный</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_open_system_language">Открыть системные настройки языка</string>
+    <string name="language_sheet_title">Выберите язык</string>
+</resources>

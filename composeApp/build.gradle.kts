@@ -92,6 +92,7 @@ android {
 
 dependencies {
     implementation(projects.shared)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
     implementation(libs.navigation.compose)
     implementation(libs.compose.runtime)
