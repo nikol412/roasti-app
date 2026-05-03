@@ -66,10 +66,22 @@
     <string name="dialog_remove_label">Remove</string>
     <string name="dialog_dismiss_label">Dismiss</string>
 
-    // Profile
+    <!-- Profile -->
     <string name="profile_statistics_brew_count">Brews</string>
     <string name="profile_statistics_likes">Likes</string>
     <string name="profile_statistics_posts">Posts</string>
 
+    <!-- Bottom navigation -->
+    <string name="bottom_nav_feed">Feed</string>
+    <string name="bottom_nav_recipes">Recipes</string>
+    <string name="bottom_nav_profile">Profile</string>
 
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system_default">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_open_system_language">Open system language settings</string>
+    <string name="language_sheet_title">Choose language</string>
 </resources>

@@ -31,6 +31,7 @@ import org.nikol.roasti.ui.features.auth.register.RegisterRoute
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeRoute
 import org.nikol.roasti.ui.features.editrecipe.EditRecipeRoute
 import org.nikol.roasti.ui.features.profile.ProfileRoute
+import org.nikol.roasti.ui.features.settings.SettingsRoute
 import org.nikol.roasti.ui.features.recipepage.RecipeContentRoute
 import org.nikol.roasti.ui.features.recipesteps.RecipeStepsRoute
 import org.nikol.roasti.ui.screens.FeedRoute
@@ -127,7 +128,17 @@ private fun MainNavHost(
                 }
 
                 composable(Screen.Profile.route) {
-                    ProfileRoute(contentPadding = mainScreenContentPadding)
+                    ProfileRoute(
+                        onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                        contentPadding = mainScreenContentPadding,
+                    )
+                }
+
+                composable(Screen.Settings.route) {
+                    SettingsRoute(
+                        onBackClick = { navController.popBackStack() },
+                        contentPadding = mainScreenContentPadding,
+                    )
                 }
 
                 composable(

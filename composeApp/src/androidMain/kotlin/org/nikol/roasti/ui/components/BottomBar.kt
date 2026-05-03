@@ -11,21 +11,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.BookOpenText
 import com.adamglin.phosphoricons.regular.Rows
 import com.adamglin.phosphoricons.regular.User
+import org.nikol.roasti.R
 import org.nikol.roasti.navigation.Screen
 import org.nikol.roasti.navigation.bottomNavScreens
 
-// Labels for each tab
-private val labels = mapOf(
-    Screen.Feed.route to "Feed",
-    Screen.Recipes.route to "Recipes",
-    Screen.Profile.route to "Profile",
-)
+private fun labelResFor(route: String): Int = when (route) {
+    Screen.Feed.route -> R.string.bottom_nav_feed
+    Screen.Recipes.route -> R.string.bottom_nav_recipes
+    Screen.Profile.route -> R.string.bottom_nav_profile
+    else -> R.string.app_name
+}
 
 @Composable
 fun BottomBar(
@@ -75,7 +77,11 @@ fun BottomBar(
                     }
                 },
                 label = {
-                    Text(labels[screen.route] ?: "", style = MaterialTheme.typography.labelSmall, color = color)
+                    Text(
+                        text = stringResource(labelResFor(screen.route)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color,
+                    )
                 },
             )
         }
