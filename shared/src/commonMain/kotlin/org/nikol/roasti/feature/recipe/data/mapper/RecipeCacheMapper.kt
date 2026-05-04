@@ -1,5 +1,6 @@
 package org.nikol.roasti.feature.recipe.data.mapper
 
+import kotlinx.datetime.Instant
 import org.nikol.roasti.FavoriteRecipe as CachedFavoriteRecipe
 import org.nikol.roasti.Recipe as CachedRecipe
 import org.nikol.roasti.RecipeStep as CachedRecipeStep
@@ -31,8 +32,8 @@ internal fun RoastiDatabaseCache.upsertRecipe(recipe: RecipeResponseDto) {
         origin_author_name = recipe.origin?.author?.username,
         origin_author_image_id = recipe.origin?.author?.avatarId,
         is_public = if (recipe.isPublic) 1L else 0L,
-        created_at = recipe.createdAt,
-        updated_at = recipe.updatedAt,
+        created_at = recipe.createdAt?.toString(),
+        updated_at = recipe.updatedAt?.toString(),
     )
 
     recipeStepQueries.deleteRecipeStepsByRecipeId(recipe.id)
@@ -72,8 +73,8 @@ internal fun RoastiDatabaseCache.upsertFavoriteRecipe(
         origin_author_image_id = recipe.origin?.author?.avatarId,
         is_public = if (recipe.isPublic) 1L else 0L,
         liked_at = likedAt,
-        created_at = recipe.createdAt,
-        updated_at = recipe.updatedAt,
+        created_at = recipe.createdAt?.toString(),
+        updated_at = recipe.updatedAt?.toString(),
     )
 
     recipeStepQueries.deleteRecipeStepsByRecipeId(recipe.id)
@@ -110,8 +111,8 @@ internal fun CachedRecipe.toDomain(steps: List<CachedRecipeStep>): Recipe = Reci
         authorImageId = origin_author_image_id,
     ),
     isPublic = is_public == 1L,
-    createdAt = created_at,
-    updatedAt = updated_at,
+    createdAt = created_at?.let { Instant.parse(it) },
+    updatedAt = updated_at?.let { Instant.parse(it) },
 )
 
 internal fun CachedFavoriteRecipe.toDomain(steps: List<CachedRecipeStep>): Recipe = Recipe(
@@ -135,8 +136,8 @@ internal fun CachedFavoriteRecipe.toDomain(steps: List<CachedRecipeStep>): Recip
         authorImageId = origin_author_image_id,
     ),
     isPublic = is_public == 1L,
-    createdAt = created_at,
-    updatedAt = updated_at,
+    createdAt = created_at?.let { Instant.parse(it) },
+    updatedAt = updated_at?.let { Instant.parse(it) },
 )
 
 private fun CachedRecipeStep.toDomain(): BrewStep = BrewStep(

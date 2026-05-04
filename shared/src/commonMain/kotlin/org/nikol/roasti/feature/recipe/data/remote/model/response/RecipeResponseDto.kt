@@ -1,5 +1,6 @@
 package org.nikol.roasti.feature.recipe.data.remote.model.response
 
+import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.nikol.roasti.feature.recipe.data.remote.model.BrewMethodDto
@@ -41,7 +42,7 @@ data class RecipeResponseDto(
     @SerialName("public")
     val isPublic: Boolean = true,
     @SerialName("created_at")
-    val createdAt: String? = null,
+    val createdAt: Instant? = null,
     @SerialName("updated_at")
-    val updatedAt: String? = null,
+    val updatedAt: Instant? = null,
 )

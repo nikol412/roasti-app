@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -58,6 +59,7 @@ fun PostRatingBar(
         modifier
             .clip(RoundedCornerShape(50))
             .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(50)),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         UpVoteButton(value.userReaction.isUpVote()) {
             val intent = if (value.userReaction.isUpVote()) {
@@ -93,12 +95,13 @@ private fun PostRatingCount(
     val text = formatValue(value)
     Text(
         text = text,
-        modifier = modifier.padding(vertical = 6.dp),
+        modifier = modifier,
+        style = MaterialTheme.typography.labelMedium,
         color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
-private fun formatValue(value: Int): String {
+internal fun formatValue(value: Int): String {
     val absoluteValue = abs(value.toLong())
     val sign = if (value < 0) "-" else ""
 
