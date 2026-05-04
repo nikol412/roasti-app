@@ -59,14 +59,28 @@ fun PostRatingBar(
             .clip(RoundedCornerShape(50))
             .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(50)),
     ) {
-        UpVoteButton(value.userReaction.isUpVote()) { onClick(PostUserReaction.UP) }
+        UpVoteButton(value.userReaction.isUpVote()) {
+            val intent = if (value.userReaction.isUpVote()) {
+                PostUserReaction.NONE
+            } else {
+                PostUserReaction.UP
+            }
+            onClick(intent)
+        }
 
         PostRatingCount(
             value.postRating,
             value.userReaction.isVoted()
-        ) { onClick(PostUserReaction.NONE) }
+        )
 
-        DownVoteButton(value.userReaction.isDownVote()) { onClick(PostUserReaction.DOWN) }
+        DownVoteButton(value.userReaction.isDownVote()) {
+            val intent = if (value.userReaction.isDownVote()) {
+                PostUserReaction.NONE
+            } else {
+                PostUserReaction.DOWN
+            }
+            onClick(intent)
+        }
     }
 }
 
@@ -75,15 +89,11 @@ private fun PostRatingCount(
     value: Int,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
 ) {
     val text = formatValue(value)
     Text(
         text = text,
-        modifier = modifier
-            .clip(RoundedCornerShape(25f))
-            .clickable { onClick() }
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+        modifier = modifier.padding(vertical = 6.dp),
         color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
@@ -142,7 +152,7 @@ private fun UpVoteButton(
         modifier = modifier
             .clip(StartCircleEndRoundedShape())
             .clickable(enabled) { onClick() }
-            .padding(start = 5.dp, top = 5.dp, bottom = 5.dp),
+            .padding(end = 4.dp, start = 5.dp, top = 5.dp, bottom = 5.dp),
         tint = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
@@ -160,7 +170,7 @@ private fun DownVoteButton(
         modifier = modifier
             .clip(StartRoundedEndCircleShape())
             .clickable(enabled) { onClick() }
-            .padding(end = 5.dp, top = 5.dp, bottom = 5.dp),
+            .padding(start = 4.dp, end = 5.dp, top = 5.dp, bottom = 5.dp),
         tint = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
