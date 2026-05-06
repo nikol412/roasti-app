@@ -26,6 +26,7 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
 import org.nikol.roasti.ui.uikit.AuthorRowWithTime
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 @Composable
 fun PostCard(
@@ -119,7 +120,7 @@ private fun PostCardPreview() {
             PostCard(
                 authorImageUrl = "",
                 authorName = "u/sarah_j",
-                postedAt = Clock.System.now() - 2.hours,
+                postedAt = Clock.System.now() - 0.5.hours - 2.minutes,
                 title = "Dialing in the new Ethiopian Yirgacheffe this morning",
                 body = "The floral notes are absolutely singing with a slightly coarser grind and a lower water temp (around 92°C). Definitely worth the extra few minutes of prep...",
                 postImageUrl = "",

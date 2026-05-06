@@ -16,6 +16,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.nikol.roasti.R
+import org.nikol.roasti.ui.theme.Spacing
 
 interface PostOptionsRowClickListener {
     fun onChangeRating(newRatingIntent: PostUserReaction)
@@ -36,9 +37,18 @@ fun PostOptionsRow(
     modifier: Modifier = Modifier,
     listener: PostOptionsRowClickListener = EmptyListener,
 ) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        PostRatingBar(ratingValue, onClick = { listener.onChangeRating(it) })
-        PostCommentsButton(commentsCount, onClick = { listener.onCommentsClick() })
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PostRatingBar(ratingValue, onClick = { listener.onChangeRating(it) })
+            PostCommentsButton(commentsCount, onClick = { listener.onCommentsClick() })
+        }
         PostShareButton { listener.onShareClick() }
     }
 }

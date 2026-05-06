@@ -3,4 +3,10 @@ package org.nikol.roasti.core.config
 object AppConfig {
     const val BASE_HOST = "api.roasti.ru"
     const val BASE_URL = "https://$BASE_HOST"
+
+    /**
+     * When true, the Posts feed runs against [MockPostsApiClient] instead of hitting the network.
+     * Flip to false once the real backend is wired up.
+     */
+    const val USE_MOCK_POSTS_API = true
 }

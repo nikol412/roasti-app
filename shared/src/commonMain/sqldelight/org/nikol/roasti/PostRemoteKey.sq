@@ -1,0 +1,13 @@
+CREATE TABLE PostRemoteKey (
+    id        TEXT PRIMARY KEY NOT NULL,
+    next_page INTEGER
+);
+
+getRemoteKey:
+SELECT * FROM PostRemoteKey WHERE id = ?;
+
+insertRemoteKey:
+INSERT OR REPLACE INTO PostRemoteKey(id, next_page) VALUES (?, ?);
+
+clearRemoteKeys:
+DELETE FROM PostRemoteKey WHERE id = ?;

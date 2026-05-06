@@ -15,6 +15,10 @@ object ApiRoutes {
 
     fun recipeLike(recipeId: String) = "$Recipes/$recipeId/like"
     fun userLikedRecipes(userId: String) = "$UsersPrefix$userId/likes"
+
+    const val Posts = "$ApiPath/posts"
+    fun postById(id: String) = "$Posts/$id"
+    fun postVote(id: String) = "$Posts/$id/vote"
 }
 
 object NetworkHeaders {
