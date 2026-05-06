@@ -1,0 +1,38 @@
+CREATE TABLE CommentEntity (
+    id                TEXT PRIMARY KEY NOT NULL,
+    post_id           TEXT NOT NULL,
+    parent_id         TEXT,
+    is_deleted        INTEGER NOT NULL DEFAULT 0,
+    author_id         TEXT,
+    author_username   TEXT,
+    author_avatar_id  TEXT,
+    text              TEXT NOT NULL DEFAULT '',
+    created_at        TEXT NOT NULL,
+    updated_at        TEXT NOT NULL,
+    position          INTEGER NOT NULL
+);
+
+CREATE INDEX CommentEntity_post_position ON CommentEntity(post_id, parent_id, position);
+
+upsertComment:
+INSERT OR REPLACE INTO CommentEntity(
+    id, post_id, parent_id, is_deleted, author_id, author_username, author_avatar_id,
+    text, created_at, updated_at, position
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectRootByPostIdPaged:
+SELECT * FROM CommentEntity
+WHERE post_id = ? AND parent_id IS NULL
+ORDER BY position ASC
+LIMIT ? OFFSET ?;
+
+countRootByPostId:
+SELECT COUNT(*) FROM CommentEntity WHERE post_id = ? AND parent_id IS NULL;
+
+selectRepliesByParentId:
+SELECT * FROM CommentEntity
+WHERE parent_id = ?
+ORDER BY position ASC;
+
+deleteByPostId:
+DELETE FROM CommentEntity WHERE post_id = ?;

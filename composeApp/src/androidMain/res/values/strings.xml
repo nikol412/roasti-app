@@ -76,6 +76,18 @@
     <string name="bottom_nav_recipes">Recipes</string>
     <string name="bottom_nav_profile">Profile</string>
 
+    <!-- Post detail / comments -->
+    <string name="post_detail_close_label">Close</string>
+    <string name="post_detail_more_options">More options</string>
+    <string name="post_detail_load_error">Failed to load post</string>
+    <string name="comments_section_title">Comments</string>
+    <string name="comments_input_placeholder">Join the conversation</string>
+    <string name="comments_empty_title">Be the first to comment</string>
+    <string name="comments_empty_subtitle">Nobody\'s responded to this post yet. Add your thoughts and get the conversation going.</string>
+    <string name="comments_load_error">Failed to load comments</string>
+    <string name="comments_deleted_placeholder">[deleted]</string>
+    <string name="comments_deleted_body">Comment removed</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>

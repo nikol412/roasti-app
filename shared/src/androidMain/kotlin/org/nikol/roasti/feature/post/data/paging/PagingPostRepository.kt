@@ -12,11 +12,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.nikol.roasti.Post as CachedPost
 import org.nikol.roasti.RoastiDatabaseCache
+import org.nikol.roasti.feature.post.data.mapper.toDomain
 import org.nikol.roasti.feature.post.data.mapper.toUserReaction
 import org.nikol.roasti.feature.post.data.mapper.toWireString
+import org.nikol.roasti.feature.post.data.mapper.upsertPost
 import org.nikol.roasti.feature.post.data.network.PostsApiClient
 import org.nikol.roasti.feature.post.data.remote.model.request.VoteRequestDto
 import org.nikol.roasti.feature.post.data.mapper.toDto
+import org.nikol.roasti.feature.post.domain.model.Post
 import org.nikol.roasti.feature.post.domain.model.UserReaction
 
 private const val PostsPageSize = 20
@@ -33,6 +36,16 @@ class PagingPostRepository(
             .asFlow()
             .mapToOne(Dispatchers.IO)
             .map { count -> count > 0L }
+
+    fun observePostById(id: String): Flow<Post?> =
+        db.postQueries.getPostById(id)
+            .asFlow()
+            .map { query -> query.executeAsOneOrNull()?.toDomain() }
+
+    suspend fun refreshPostById(id: String): Result<Unit> =
+        postsApiClient.getPost(id).map { dto ->
+            db.transaction { db.upsertPost(dto) }
+        }
 
     fun getOfflineFirstPostsPager(): Flow<PagingData<CachedPost>> = Pager(
         config = pagingConfig(),

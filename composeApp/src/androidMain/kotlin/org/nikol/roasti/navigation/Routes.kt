@@ -25,6 +25,11 @@ sealed class Screen(val route: String) {
     object Profile : Screen("profile")
 
     object Settings : Screen("settings")
+
+    object PostDetail : Screen("post/{id}") {
+        const val ARG_ID = "id"
+        fun createRoute(id: String) = "post/$id"
+    }
 }
 
 // Screens that show the bottom navigation bar

@@ -39,6 +39,7 @@ fun PostCard(
     ratingState: PostRatingStateUi,
     commentsCount: Int,
     modifier: Modifier = Modifier,
+    isExpanded: Boolean = false,
     onClick: () -> Unit = {},
     onRatingChange: (PostUserReaction) -> Unit = {},
     onCommentsClick: () -> Unit = {},
@@ -50,10 +51,16 @@ fun PostCard(
 
     var isBodyOverflowing by remember { mutableStateOf(false) }
 
-    Column(
+    val rootModifier = if (isExpanded) {
+        modifier.padding(horizontal = Spacing.lg, vertical = Spacing.lg)
+    } else {
         modifier
             .clickable { onClick() }
-            .padding(horizontal = Spacing.lg, vertical = Spacing.lg),
+            .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
+    }
+
+    Column(
+        rootModifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         AuthorRowWithTime(
@@ -73,11 +80,11 @@ fun PostCard(
                     text = body,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
+                    maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                    overflow = if (isExpanded) TextOverflow.Visible else TextOverflow.Ellipsis,
                     onTextLayout = { isBodyOverflowing = it.hasVisualOverflow },
                 )
-                if (isBodyOverflowing) {
+                if (!isExpanded && isBodyOverflowing) {
                     Text(
                         text = "Read More",
                         style = MaterialTheme.typography.bodyMedium,

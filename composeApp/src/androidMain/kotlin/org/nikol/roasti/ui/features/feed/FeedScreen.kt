@@ -1,5 +1,8 @@
 package org.nikol.roasti.ui.features.feed
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,12 +45,16 @@ import org.nikol.roasti.ui.uikit.LoadingStub
 import org.nikol.roasti.ui.uikit.SearchInput
 import org.nikol.roasti.ui.uikit.post.PostCard
 import org.nikol.roasti.ui.uikit.post.PostUserReaction
+import org.nikol.roasti.ui.util.postCardSharedBoundsModifier
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun FeedScreen(
     contentPadding: PaddingValues,
+    onPostClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val viewModel: FeedViewModel = koinViewModel()
 
@@ -108,8 +115,11 @@ fun FeedScreen(
                     posts.refresh()
                 },
                 onRatingChange = viewModel::onRatingChange,
+                onPostClick = onPostClick,
                 topInset = innerPadding.calculateTopPadding(),
                 bottomInset = contentPadding.calculateBottomPadding(),
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
             )
         }
     }
@@ -146,6 +156,7 @@ private fun FeedTopBar(
     )
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun FeedContent(
     posts: LazyPagingItems<PostUiModel>,
@@ -153,8 +164,11 @@ private fun FeedContent(
     isManualRefresh: Boolean,
     onRefresh: () -> Unit,
     onRatingChange: (PostUiModel, PostUserReaction) -> Unit,
+    onPostClick: (String) -> Unit,
     topInset: androidx.compose.ui.unit.Dp,
     bottomInset: androidx.compose.ui.unit.Dp,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
     modifier: Modifier = Modifier,
 ) {
     PullToRefreshBox(
@@ -188,7 +202,17 @@ private fun FeedContent(
                     ratingState = post.ratingState,
                     commentsCount = post.commentsCount,
                     onRatingChange = { intent -> onRatingChange(post, intent) },
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onPostClick(post.id) },
+                    onCommentsClick = { onPostClick(post.id) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            postCardSharedBoundsModifier(
+                                postId = post.id,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        ),
                 )
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.surfaceVariant,

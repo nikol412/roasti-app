@@ -35,6 +35,7 @@ import org.nikol.roasti.ui.features.settings.SettingsRoute
 import org.nikol.roasti.ui.features.recipepage.RecipeContentRoute
 import org.nikol.roasti.ui.features.recipesteps.RecipeStepsRoute
 import org.nikol.roasti.ui.screens.FeedRoute
+import org.nikol.roasti.ui.screens.PostDetailRoute
 import org.nikol.roasti.ui.screens.RecipesRoute
 import org.nikol.roasti.ui.uikit.LoadingStub
 
@@ -130,7 +131,14 @@ private fun MainNavHost(
                     startDestination = Screen.Feed.route,
                 ) {
                     tabComposable(Screen.Feed.route) {
-                        FeedRoute(contentPadding = innerPadding)
+                        FeedRoute(
+                            contentPadding = innerPadding,
+                            onPostClick = { postId ->
+                                navController.navigate(Screen.PostDetail.createRoute(postId))
+                            },
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = this,
+                        )
                     }
 
                 tabComposable(Screen.Recipes.route) {
@@ -188,6 +196,20 @@ private fun MainNavHost(
                     EditRecipeRoute(
                         id = id,
                         onBackClick = { navController.popBackStack() },
+                    )
+                }
+
+                composable(
+                    route = Screen.PostDetail.route,
+                    arguments = listOf(navArgument(Screen.PostDetail.ARG_ID) { type = NavType.StringType }),
+                ) { entry ->
+                    val id = entry.arguments?.getString(Screen.PostDetail.ARG_ID) ?: return@composable
+                    PostDetailRoute(
+                        postId = id,
+                        contentPadding = innerPadding,
+                        onClose = { navController.popBackStack() },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable,
                     )
                 }
 

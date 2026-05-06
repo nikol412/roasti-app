@@ -1,0 +1,13 @@
+CREATE TABLE CommentRemoteKey (
+    post_id   TEXT PRIMARY KEY NOT NULL,
+    next_page INTEGER
+);
+
+getRemoteKey:
+SELECT * FROM CommentRemoteKey WHERE post_id = ?;
+
+upsertRemoteKey:
+INSERT OR REPLACE INTO CommentRemoteKey(post_id, next_page) VALUES (?, ?);
+
+deleteByPostId:
+DELETE FROM CommentRemoteKey WHERE post_id = ?;

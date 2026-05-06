@@ -8,19 +8,21 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import org.nikol.roasti.ui.features.feed.FeedScreen
+import org.nikol.roasti.ui.features.postdetail.PostDetailScreen
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun FeedRoute(
+fun PostDetailRoute(
+    postId: String,
     contentPadding: PaddingValues = PaddingValues(),
-    onPostClick: (String) -> Unit = {},
+    onClose: () -> Unit,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
-    FeedScreen(
+    PostDetailScreen(
+        postId = postId,
         contentPadding = contentPadding,
-        onPostClick = onPostClick,
+        onClose = onClose,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier

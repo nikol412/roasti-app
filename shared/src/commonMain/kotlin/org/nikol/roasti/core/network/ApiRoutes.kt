@@ -19,6 +19,8 @@ object ApiRoutes {
     const val Posts = "$ApiPath/posts"
     fun postById(id: String) = "$Posts/$id"
     fun postVote(id: String) = "$Posts/$id/vote"
+    fun postComments(postId: String) = "$Posts/$postId/comments"
+    fun commentById(commentId: String) = "$ApiPath/comments/$commentId"
 }
 
 object NetworkHeaders {

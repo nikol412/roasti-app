@@ -77,6 +77,18 @@
     <string name="bottom_nav_recipes">Рецепты</string>
     <string name="bottom_nav_profile">Профиль</string>
 
+    <!-- Post detail / comments -->
+    <string name="post_detail_close_label">Закрыть</string>
+    <string name="post_detail_more_options">Ещё</string>
+    <string name="post_detail_load_error">Не удалось загрузить пост</string>
+    <string name="comments_section_title">Комментарии</string>
+    <string name="comments_input_placeholder">Присоединиться к обсуждению</string>
+    <string name="comments_empty_title">Будьте первым, кто прокомментирует</string>
+    <string name="comments_empty_subtitle">Никто ещё не ответил на этот пост. Поделитесь своим мнением и начните обсуждение.</string>
+    <string name="comments_load_error">Не удалось загрузить комментарии</string>
+    <string name="comments_deleted_placeholder">[удалено]</string>
+    <string name="comments_deleted_body">Комментарий удалён</string>
+
     <!-- Settings -->
     <string name="settings_title">Настройки</string>
     <string name="settings_language">Язык</string>
