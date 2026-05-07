@@ -4,9 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,13 +18,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import org.nikol.roasti.R
 import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
@@ -40,10 +47,12 @@ fun PostCard(
     commentsCount: Int,
     modifier: Modifier = Modifier,
     isExpanded: Boolean = false,
+    isOwn: Boolean = false,
     onClick: () -> Unit = {},
     onRatingChange: (PostUserReaction) -> Unit = {},
     onCommentsClick: () -> Unit = {},
     onShareClick: () -> Unit = {},
+    onOwnerOptionsClick: () -> Unit = {},
 ) {
     val ratingHandler = onRatingChange
     val commentsHandler = onCommentsClick
@@ -63,11 +72,29 @@ fun PostCard(
         rootModifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        AuthorRowWithTime(
-            imageUrl = authorImageUrl,
-            name = authorName,
-            postedAt = postedAt,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AuthorRowWithTime(
+                imageUrl = authorImageUrl,
+                name = authorName,
+                postedAt = postedAt,
+                modifier = Modifier.weight(1f),
+            )
+            if (isOwn) {
+                IconButton(
+                    onClick = onOwnerOptionsClick,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_three_dots),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
 
         Text(
             text = title,

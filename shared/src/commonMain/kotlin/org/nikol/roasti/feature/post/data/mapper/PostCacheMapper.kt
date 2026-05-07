@@ -6,23 +6,24 @@ import kotlinx.serialization.json.Json
 import org.nikol.roasti.RoastiDatabaseCache
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 
-private val photosJson = Json { ignoreUnknownKeys = true }
-private val photosSerializer = ListSerializer(String.serializer())
+private val imagesJson = Json { ignoreUnknownKeys = true }
+private val imagesSerializer = ListSerializer(String.serializer())
 
-fun List<String>.encodePhotos(): String =
-    photosJson.encodeToString(photosSerializer, this)
+fun List<String>.encodeImages(): String =
+    imagesJson.encodeToString(imagesSerializer, this)
 
-fun String.parsePhotos(): List<String> =
-    if (isBlank()) emptyList() else photosJson.decodeFromString(photosSerializer, this)
+fun String.parseImages(): List<String> =
+    if (isBlank()) emptyList() else imagesJson.decodeFromString(imagesSerializer, this)
 
 fun RoastiDatabaseCache.upsertPost(dto: PostResponseDto) {
     postQueries.insertPost(
         id = dto.id,
         text = dto.text,
-        photos_json = dto.photos.encodePhotos(),
-        recipe_id = dto.recipeId,
+        images_json = dto.images.encodeImages(),
+        recipe_id = dto.recipe?.id,
+        recipe_status = dto.recipe?.status?.toDomain()?.toWireString(),
         rating = dto.rating.toLong(),
-        user_reaction = dto.userReaction,
+        user_vote = dto.userVote.toDomain().toWireString(),
         comments_count = dto.commentsCount.toLong(),
         author_id = dto.author.id,
         author_name = dto.author.username,

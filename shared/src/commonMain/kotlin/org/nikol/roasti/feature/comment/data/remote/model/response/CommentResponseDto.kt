@@ -9,11 +9,11 @@ data class CommentResponseDto(
     @SerialName("id")
     val id: String,
     @SerialName("is_deleted")
-    val isDeleted: Boolean = false,
+    val isDeleted: Boolean,
     @SerialName("author")
     val author: CommentAuthorDto? = null,
     @SerialName("text")
-    val text: String = "",
+    val text: String,
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("updated_at")

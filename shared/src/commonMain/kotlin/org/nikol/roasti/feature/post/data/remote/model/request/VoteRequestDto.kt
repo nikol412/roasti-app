@@ -2,10 +2,10 @@ package org.nikol.roasti.feature.post.data.remote.model.request
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.nikol.roasti.feature.post.data.remote.model.ReactionDto
+import org.nikol.roasti.feature.post.data.remote.model.VoteDirectionDto
 
 @Serializable
 data class VoteRequestDto(
-    @SerialName("reaction")
-    val reaction: ReactionDto,
+    @SerialName("type")
+    val type: VoteDirectionDto,
 )

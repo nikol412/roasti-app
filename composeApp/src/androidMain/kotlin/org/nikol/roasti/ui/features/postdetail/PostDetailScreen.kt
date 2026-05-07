@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,12 +34,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -53,15 +60,17 @@ import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 import org.nikol.roasti.ui.uikit.comment.CommentItem
 import org.nikol.roasti.ui.uikit.comment.CommentsEmptyState
+import org.nikol.roasti.ui.uikit.post.DeletePostConfirmDialog
 import org.nikol.roasti.ui.uikit.post.PostCard
+import org.nikol.roasti.ui.uikit.post.PostOwnerActionsSheet
 import org.nikol.roasti.ui.util.postCardSharedBoundsModifier
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun PostDetailScreen(
     postId: String,
-    contentPadding: PaddingValues,
     onClose: () -> Unit,
+    onEditPost: (String) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -71,15 +80,31 @@ fun PostDetailScreen(
     val comments = viewModel.commentsPager.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
 
+    val isOwn = (headerState as? PostDetailViewModel.HeaderState.Content)?.post?.isOwn == true
+    var showOwnerSheet by rememberSaveable { mutableStateOf(false) }
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                PostDetailViewModel.PostDetailEvent.DeleteSuccess -> onClose()
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0),
-        topBar = { PostDetailTopBar(onClose = onClose) },
-        bottomBar = {
-            CommentInputBar(
-                modifier = Modifier.padding(bottom = contentPadding.calculateBottomPadding()),
+        topBar = {
+            PostDetailTopBar(
+                onClose = onClose,
+                showOwnerOptions = isOwn,
+                onOwnerOptionsClick = { showOwnerSheet = true },
             )
+        },
+        bottomBar = {
+            CommentInputBar()
         },
     ) { innerPadding ->
         when (val state = headerState) {
@@ -114,12 +139,38 @@ fun PostDetailScreen(
             )
         }
     }
+
+    if (showOwnerSheet) {
+        PostOwnerActionsSheet(
+            onEdit = {
+                showOwnerSheet = false
+                onEditPost(postId)
+            },
+            onDelete = {
+                showOwnerSheet = false
+                showDeleteDialog = true
+            },
+            onDismiss = { showOwnerSheet = false },
+        )
+    }
+
+    if (showDeleteDialog) {
+        DeletePostConfirmDialog(
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.onDeletePost()
+            },
+            onDismiss = { showDeleteDialog = false },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PostDetailTopBar(
     onClose: () -> Unit,
+    showOwnerOptions: Boolean,
+    onOwnerOptionsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     TopAppBar(
@@ -130,7 +181,6 @@ private fun PostDetailTopBar(
         title = {},
         navigationIcon = {
             IconButton(onClick = onClose) {
-
                 Icon(
                     painter = painterResource(R.drawable.ic_close),
                     contentDescription = stringResource(R.string.post_detail_close_label),
@@ -138,12 +188,13 @@ private fun PostDetailTopBar(
             }
         },
         actions = {
-            IconButton(onClick = { /* TODO: post detail more menu when actions are defined */ }) {
-                // TODO: replace placeholder with proper more-options icon (Phosphor DotsThree / MoreVert)
-                Icon(
-                    painter = painterResource(R.drawable.ic_three_dots),
-                    contentDescription = stringResource(R.string.post_detail_more_options),
-                )
+            if (showOwnerOptions) {
+                IconButton(onClick = onOwnerOptionsClick) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_three_dots),
+                        contentDescription = stringResource(R.string.post_detail_more_options),
+                    )
+                }
             }
         },
     )
@@ -352,6 +403,7 @@ private fun CommentInputBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         ) {
             Box(

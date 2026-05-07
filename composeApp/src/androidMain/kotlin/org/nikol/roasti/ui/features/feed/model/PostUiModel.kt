@@ -7,6 +7,7 @@ import org.nikol.roasti.ui.uikit.post.PostRatingStateUi
 @Immutable
 data class PostUiModel(
     val id: String,
+    val authorId: String,
     val authorName: String,
     val authorImageUrl: String?,
     val postedAt: Instant,
@@ -15,4 +16,5 @@ data class PostUiModel(
     val postImageUrl: String?,
     val ratingState: PostRatingStateUi,
     val commentsCount: Int,
+    val isOwn: Boolean,
 )

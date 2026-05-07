@@ -89,7 +89,14 @@ class RecipeRepositoryImpl(
         }
     }
 
-    override suspend fun removeRecipe(id: String): Result<Unit> = apiClient.removeRecipe(id)
+    override suspend fun removeRecipe(id: String): Result<Unit> =
+        apiClient.removeRecipe(id).onSuccess {
+            db.transaction {
+                db.recipeQueries.deleteRecipe(id)
+                db.recipeStepQueries.deleteRecipeStepsByRecipeId(id)
+                db.favoriteRecipeQueries.deleteFavoriteRecipe(id)
+            }
+        }
 
     private fun cachedRecipeById(id: String): Recipe? {
         val cachedRecipe = db.recipeQueries.getRecipeById(id).executeAsOneOrNull()

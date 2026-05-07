@@ -11,3 +11,6 @@ INSERT OR REPLACE INTO PostRemoteKey(id, next_page) VALUES (?, ?);
 
 clearRemoteKeys:
 DELETE FROM PostRemoteKey WHERE id = ?;
+
+clearAllRemoteKeys:
+DELETE FROM PostRemoteKey;

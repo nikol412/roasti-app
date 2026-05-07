@@ -9,6 +9,8 @@ data class CommentAuthorDto(
     val id: String,
     @SerialName("username")
     val username: String,
+    @SerialName("name")
+    val name: String? = null,
     @SerialName("avatar_id")
     val avatarId: String? = null,
 )

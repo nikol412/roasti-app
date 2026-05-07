@@ -17,7 +17,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -28,9 +31,16 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -43,7 +53,11 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 import org.nikol.roasti.ui.uikit.SearchInput
+import org.nikol.roasti.R
+import org.nikol.roasti.ui.components.LocalBottomBarScrollBehavior
+import org.nikol.roasti.ui.uikit.post.DeletePostConfirmDialog
 import org.nikol.roasti.ui.uikit.post.PostCard
+import org.nikol.roasti.ui.uikit.post.PostOwnerActionsSheet
 import org.nikol.roasti.ui.uikit.post.PostUserReaction
 import org.nikol.roasti.ui.util.postCardSharedBoundsModifier
 
@@ -52,13 +66,14 @@ import org.nikol.roasti.ui.util.postCardSharedBoundsModifier
 fun FeedScreen(
     contentPadding: PaddingValues,
     onPostClick: (String) -> Unit,
+    onCreatePost: () -> Unit,
+    onEditPost: (String) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val viewModel: FeedViewModel = koinViewModel()
 
-    val hasCachedPosts by viewModel.hasCachedPosts.collectAsStateWithLifecycle()
     val isManualRefresh by viewModel.isManualRefresh.collectAsStateWithLifecycle()
     val posts = viewModel.pagingPostsState.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
@@ -70,10 +85,18 @@ fun FeedScreen(
     }
 
     val refreshState = posts.loadState.refresh
-    val showFullScreenLoader = !hasCachedPosts && refreshState is LoadState.Loading
-    val showFullScreenError = !hasCachedPosts && refreshState is LoadState.Error
+    val isInitialIdle = refreshState is LoadState.NotLoading && !refreshState.endOfPaginationReached
+    val hasItems = posts.itemCount > 0
+    val showFullScreenLoader =
+        !hasItems && (refreshState is LoadState.Loading || isInitialIdle)
+    val showFullScreenError = !hasItems && refreshState is LoadState.Error
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    var ownerActionsFor by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingDeletePostId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val bottomBarBehavior = LocalBottomBarScrollBehavior.current
 
     Scaffold(
         modifier = modifier
@@ -82,6 +105,24 @@ fun FeedScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0),
         topBar = { FeedTopBar(scrollBehavior = scrollBehavior) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onCreatePost,
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier
+                    .padding(bottom = contentPadding.calculateBottomPadding())
+                    .graphicsLayer {
+                        translationY = -(bottomBarBehavior?.heightOffsetPx ?: 0f)
+                    },
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_chat),
+                    contentDescription = stringResource(R.string.post_create_fab_label),
+                )
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End,
     ) { innerPadding ->
         // LazyColumn fills the full body and pads its FIRST item below the TopAppBar via
         // contentPadding.top — so as the user scrolls, items pass under the bar and (once
@@ -116,12 +157,39 @@ fun FeedScreen(
                 },
                 onRatingChange = viewModel::onRatingChange,
                 onPostClick = onPostClick,
+                onOwnerOptionsClick = { post -> ownerActionsFor = post.id },
                 topInset = innerPadding.calculateTopPadding(),
                 bottomInset = contentPadding.calculateBottomPadding(),
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
             )
         }
+    }
+
+    val activeOwnerPostId = ownerActionsFor
+    if (activeOwnerPostId != null) {
+        PostOwnerActionsSheet(
+            onEdit = {
+                ownerActionsFor = null
+                onEditPost(activeOwnerPostId)
+            },
+            onDelete = {
+                ownerActionsFor = null
+                pendingDeletePostId = activeOwnerPostId
+            },
+            onDismiss = { ownerActionsFor = null },
+        )
+    }
+
+    val deletingId = pendingDeletePostId
+    if (deletingId != null) {
+        DeletePostConfirmDialog(
+            onConfirm = {
+                viewModel.onDeletePost(deletingId)
+                pendingDeletePostId = null
+            },
+            onDismiss = { pendingDeletePostId = null },
+        )
     }
 }
 
@@ -165,6 +233,7 @@ private fun FeedContent(
     onRefresh: () -> Unit,
     onRatingChange: (PostUiModel, PostUserReaction) -> Unit,
     onPostClick: (String) -> Unit,
+    onOwnerOptionsClick: (PostUiModel) -> Unit,
     topInset: androidx.compose.ui.unit.Dp,
     bottomInset: androidx.compose.ui.unit.Dp,
     sharedTransitionScope: SharedTransitionScope?,
@@ -201,9 +270,11 @@ private fun FeedContent(
                     postImageUrl = post.postImageUrl,
                     ratingState = post.ratingState,
                     commentsCount = post.commentsCount,
+                    isOwn = post.isOwn,
                     onRatingChange = { intent -> onRatingChange(post, intent) },
                     onClick = { onPostClick(post.id) },
                     onCommentsClick = { onPostClick(post.id) },
+                    onOwnerOptionsClick = { onOwnerOptionsClick(post) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(
@@ -220,7 +291,10 @@ private fun FeedContent(
                 )
             }
 
-            if (posts.itemCount == 0 && posts.loadState.refresh is LoadState.NotLoading) {
+            val refresh = posts.loadState.refresh
+            val isTrulyEmpty = posts.itemCount == 0 &&
+                refresh is LoadState.NotLoading && refresh.endOfPaginationReached
+            if (isTrulyEmpty) {
                 item("feed_empty") {
                     Box(
                         modifier = Modifier

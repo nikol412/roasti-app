@@ -88,6 +88,31 @@
     <string name="comments_deleted_placeholder">[deleted]</string>
     <string name="comments_deleted_body">Comment removed</string>
 
+    <!-- Post compose -->
+    <string name="post_compose_title_create">New post</string>
+    <string name="post_compose_title_edit">Edit post</string>
+    <string name="post_compose_submit_create">Post</string>
+    <string name="post_compose_submit_update">Save</string>
+    <string name="post_compose_title_hint">Title</string>
+    <string name="post_compose_body_hint">body text (optional)</string>
+    <string name="post_compose_save_error">Failed to save post</string>
+    <string name="post_compose_attach_photo">Attach photo</string>
+    <string name="post_compose_remove_photo">Remove photo</string>
+    <string name="post_compose_photo_uploading">Uploading…</string>
+    <string name="post_compose_photo_upload_error">Failed to upload photo</string>
+
+    <!-- Post owner actions -->
+    <string name="post_media_source_title">Choose photo source</string>
+    <string name="post_media_source_camera">Take photo</string>
+    <string name="post_media_source_gallery">Choose from gallery</string>
+    <string name="post_owner_menu_title">Manage post</string>
+    <string name="post_owner_menu_edit">Edit</string>
+    <string name="post_owner_menu_delete">Delete</string>
+    <string name="post_delete_confirm_title">Delete post?</string>
+    <string name="post_delete_confirm_message">This action can\'t be undone.</string>
+    <string name="post_delete_confirm_action">Delete</string>
+    <string name="post_create_fab_label">Create post</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>

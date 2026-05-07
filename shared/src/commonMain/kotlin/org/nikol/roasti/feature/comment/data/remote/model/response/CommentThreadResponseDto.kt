@@ -9,11 +9,11 @@ data class CommentThreadResponseDto(
     @SerialName("id")
     val id: String,
     @SerialName("is_deleted")
-    val isDeleted: Boolean = false,
+    val isDeleted: Boolean,
     @SerialName("author")
     val author: CommentAuthorDto? = null,
     @SerialName("text")
-    val text: String = "",
+    val text: String,
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("updated_at")
@@ -21,5 +21,5 @@ data class CommentThreadResponseDto(
     @SerialName("parent_id")
     val parentId: String? = null,
     @SerialName("replies")
-    val replies: List<CommentResponseDto> = emptyList(),
+    val replies: List<CommentResponseDto>,
 )

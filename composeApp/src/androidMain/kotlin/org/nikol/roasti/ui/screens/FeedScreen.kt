@@ -15,12 +15,16 @@ import org.nikol.roasti.ui.features.feed.FeedScreen
 fun FeedRoute(
     contentPadding: PaddingValues = PaddingValues(),
     onPostClick: (String) -> Unit = {},
+    onCreatePost: () -> Unit = {},
+    onEditPost: (String) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     FeedScreen(
         contentPadding = contentPadding,
         onPostClick = onPostClick,
+        onCreatePost = onCreatePost,
+        onEditPost = onEditPost,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier

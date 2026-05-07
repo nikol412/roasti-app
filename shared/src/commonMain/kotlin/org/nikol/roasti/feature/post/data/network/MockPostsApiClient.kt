@@ -5,16 +5,18 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import org.nikol.roasti.feature.post.data.mapper.toUserReaction
-import org.nikol.roasti.feature.post.data.mapper.toWireString
-import org.nikol.roasti.feature.post.data.remote.model.ReactionDto
+import org.nikol.roasti.feature.post.data.mapper.toDomain
+import org.nikol.roasti.feature.post.data.remote.model.VoteDirectionDto
+import org.nikol.roasti.feature.post.data.remote.model.request.CreatePostRequestDto
+import org.nikol.roasti.feature.post.data.remote.model.request.UpdatePostRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.request.VoteRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostAuthorDto
+import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeRefDto
+import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeStatusDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostVoteResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostsPageResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostsPaginationResponseDto
-import org.nikol.roasti.feature.post.domain.model.UserReaction
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -24,7 +26,15 @@ import kotlin.time.Duration.Companion.minutes
 private const val SimulatedLatencyMillis = 300L
 private const val MockPostsCount = 50
 
-class MockPostsApiClient : PostsApiClient {
+internal val CurrentMockAuthor: PostAuthorDto = PostAuthorDto(
+    id = "u_current",
+    username = "u/you",
+    avatarId = "https://picsum.photos/seed/avatar_current/96/96",
+)
+
+class MockPostsApiClient(
+    private val currentAuthorProvider: () -> PostAuthorDto = { CurrentMockAuthor },
+) : PostsApiClient {
 
     private val mutex = Mutex()
     private val posts: MutableList<PostResponseDto> = generateMockPosts().toMutableList()
@@ -38,23 +48,17 @@ class MockPostsApiClient : PostsApiClient {
     override suspend fun getPosts(
         page: Int,
         limit: Int,
-        query: String?,
     ): Result<PostsPageResponseDto> {
         delay(SimulatedLatencyMillis)
         if (consumeFailureFlag()) return Result.failure(IllegalStateException("Simulated failure"))
 
         return mutex.withLock {
-            val filtered = if (query.isNullOrBlank()) {
-                posts
-            } else {
-                posts.filter { it.text.contains(query, ignoreCase = true) }
-            }
-            val total = filtered.size
+            val total = posts.size
             val lastPage = max(1, ceil(total.toDouble() / limit).toInt())
             val safePage = page.coerceAtLeast(1)
             val from = (safePage - 1) * limit
             val to = min(from + limit, total)
-            val items = if (from in 0..<total) filtered.subList(from, to) else emptyList()
+            val items = if (from in 0..<total) posts.subList(from, to) else emptyList()
             val nextPage = if (safePage < lastPage) safePage + 1 else safePage
 
             Result.success(
@@ -82,6 +86,68 @@ class MockPostsApiClient : PostsApiClient {
         }
     }
 
+    override suspend fun createPost(request: CreatePostRequestDto): Result<PostResponseDto> {
+        delay(SimulatedLatencyMillis)
+        if (consumeFailureFlag()) return Result.failure(IllegalStateException("Simulated failure"))
+
+        return mutex.withLock {
+            val now = Clock.System.now()
+            val newId = "post_local_${now.toEpochMilliseconds()}"
+            val dto = PostResponseDto(
+                id = newId,
+                author = currentAuthorProvider(),
+                text = request.text.orEmpty(),
+                images = request.images,
+                recipe = request.recipeId?.let {
+                    PostRecipeRefDto(id = it, status = PostRecipeStatusDto.AVAILABLE)
+                },
+                rating = 0,
+                userVote = VoteDirectionDto.NONE,
+                commentsCount = 0,
+                createdAt = now,
+                updatedAt = now,
+            )
+            posts.add(0, dto)
+            Result.success(dto)
+        }
+    }
+
+    override suspend fun updatePost(
+        id: String,
+        request: UpdatePostRequestDto,
+    ): Result<PostResponseDto> {
+        delay(SimulatedLatencyMillis)
+        if (consumeFailureFlag()) return Result.failure(IllegalStateException("Simulated failure"))
+
+        return mutex.withLock {
+            val index = posts.indexOfFirst { it.id == id }
+            if (index < 0) {
+                return@withLock Result.failure(NoSuchElementException("Post $id not found"))
+            }
+            val current = posts[index]
+            val updated = current.copy(
+                text = request.text.orEmpty(),
+                images = request.images,
+                recipe = request.recipeId?.let {
+                    PostRecipeRefDto(id = it, status = PostRecipeStatusDto.AVAILABLE)
+                },
+                updatedAt = Clock.System.now(),
+            )
+            posts[index] = updated
+            Result.success(updated)
+        }
+    }
+
+    override suspend fun deletePost(id: String): Result<Unit> {
+        delay(SimulatedLatencyMillis)
+        if (consumeFailureFlag()) return Result.failure(IllegalStateException("Simulated failure"))
+
+        return mutex.withLock {
+            posts.removeAll { it.id == id }
+            Result.success(Unit)
+        }
+    }
+
     override suspend fun vote(
         id: String,
         request: VoteRequestDto,
@@ -95,18 +161,18 @@ class MockPostsApiClient : PostsApiClient {
                 return@withLock Result.failure(NoSuchElementException("Post $id not found"))
             }
             val current = posts[index]
-            val previous = current.userReaction.toUserReaction()
-            val target = request.reaction.toDomain()
+            val previous = current.userVote.toDomain()
+            val target = request.type.toDomain()
             val delta = previous.deltaTo(target)
             val updated = current.copy(
                 rating = current.rating + delta,
-                userReaction = target.toWireString().takeUnless { target == UserReaction.NONE },
+                userVote = request.type,
             )
             posts[index] = updated
             Result.success(
                 PostVoteResponseDto(
                     rating = updated.rating,
-                    userReaction = updated.userReaction,
+                    userVote = updated.userVote,
                 )
             )
         }
@@ -117,12 +183,6 @@ class MockPostsApiClient : PostsApiClient {
         failNextRequest = false
         return true
     }
-}
-
-private fun ReactionDto.toDomain(): UserReaction = when (this) {
-    ReactionDto.LIKE -> UserReaction.LIKE
-    ReactionDto.DISLIKE -> UserReaction.DISLIKE
-    ReactionDto.NONE -> UserReaction.NONE
 }
 
 private fun generateMockPosts(): List<PostResponseDto> {
@@ -167,19 +227,21 @@ private fun generateMockPosts(): List<PostResponseDto> {
         val author = authors[i % authors.size]
         val photoId = photoIds[i % photoIds.size]
         val recipeId = recipeIds[i % recipeIds.size]
-        val initialReaction = when (i % 5) {
-            1 -> "like"
-            4 -> "dislike"
-            else -> null
+        val initialVote = when (i % 5) {
+            1 -> VoteDirectionDto.UP
+            4 -> VoteDirectionDto.DOWN
+            else -> VoteDirectionDto.NONE
         }
         PostResponseDto(
             id = "post_$i",
             author = author,
             text = text,
-            photos = listOfNotNull(photoId),
-            recipeId = recipeId,
+            images = listOfNotNull(photoId),
+            recipe = recipeId?.let {
+                PostRecipeRefDto(id = it, status = PostRecipeStatusDto.AVAILABLE)
+            },
             rating = (i * 7 % 200) - 30,
-            userReaction = initialReaction,
+            userVote = initialVote,
             commentsCount = (i * 3) % 50,
             createdAt = createdAt,
             updatedAt = createdAt,

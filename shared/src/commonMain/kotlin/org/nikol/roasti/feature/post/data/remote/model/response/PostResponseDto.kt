@@ -3,6 +3,7 @@ package org.nikol.roasti.feature.post.data.remote.model.response
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.nikol.roasti.feature.post.data.remote.model.VoteDirectionDto
 
 @Serializable
 data class PostResponseDto(
@@ -12,14 +13,14 @@ data class PostResponseDto(
     val author: PostAuthorDto,
     @SerialName("text")
     val text: String = "",
-    @SerialName("photos")
-    val photos: List<String> = emptyList(),
-    @SerialName("recipe_id")
-    val recipeId: String? = null,
+    @SerialName("images")
+    val images: List<String> = emptyList(),
+    @SerialName("recipe")
+    val recipe: PostRecipeRefDto? = null,
     @SerialName("rating")
     val rating: Int = 0,
-    @SerialName("user_reaction")
-    val userReaction: String? = null,
+    @SerialName("user_vote")
+    val userVote: VoteDirectionDto,
     @SerialName("comments_count")
     val commentsCount: Int = 0,
     @SerialName("created_at")

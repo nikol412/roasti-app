@@ -5,10 +5,10 @@ import kotlinx.datetime.Instant
 data class Post(
     val id: String,
     val text: String,
-    val photos: List<String>,
-    val recipeId: String?,
+    val images: List<String>,
+    val recipe: PostRecipeRef?,
     val rating: Int,
-    val userReaction: UserReaction,
+    val userVote: VoteDirection,
     val commentsCount: Int,
     val author: PostAuthor,
     val createdAt: Instant,

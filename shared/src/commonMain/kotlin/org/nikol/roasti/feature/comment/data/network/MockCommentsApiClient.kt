@@ -6,6 +6,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentRequestDto
+import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentThreadResponseDto
@@ -93,6 +94,87 @@ class MockCommentsApiClient : CommentsApiClient {
                 }
             }
             Result.success(newComment)
+        }
+    }
+
+    override suspend fun updateComment(
+        commentId: String,
+        request: UpdateCommentRequestDto,
+    ): Result<CommentResponseDto> {
+        delay(SimulatedLatencyMillis)
+        return mutex.withLock {
+            for ((postId, threads) in storage) {
+                val rootIndex = threads.indexOfFirst { it.id == commentId }
+                if (rootIndex >= 0) {
+                    val updated = threads[rootIndex].copy(
+                        text = request.text,
+                        updatedAt = Clock.System.now(),
+                    )
+                    threads[rootIndex] = updated
+                    return@withLock Result.success(
+                        CommentResponseDto(
+                            id = updated.id,
+                            isDeleted = updated.isDeleted,
+                            author = updated.author,
+                            text = updated.text,
+                            createdAt = updated.createdAt,
+                            updatedAt = updated.updatedAt,
+                            parentId = updated.parentId,
+                        )
+                    )
+                }
+                for (i in threads.indices) {
+                    val thread = threads[i]
+                    val replyIndex = thread.replies.indexOfFirst { it.id == commentId }
+                    if (replyIndex >= 0) {
+                        val replies = thread.replies.toMutableList()
+                        val updatedReply = replies[replyIndex].copy(
+                            text = request.text,
+                            updatedAt = Clock.System.now(),
+                        )
+                        replies[replyIndex] = updatedReply
+                        threads[i] = thread.copy(replies = replies)
+                        return@withLock Result.success(updatedReply)
+                    }
+                }
+                postId // unused
+            }
+            Result.failure(NoSuchElementException("Comment $commentId not found"))
+        }
+    }
+
+    override suspend fun deleteComment(commentId: String): Result<Unit> {
+        delay(SimulatedLatencyMillis)
+        return mutex.withLock {
+            for ((_, threads) in storage) {
+                val rootIndex = threads.indexOfFirst { it.id == commentId }
+                if (rootIndex >= 0) {
+                    val current = threads[rootIndex]
+                    threads[rootIndex] = current.copy(
+                        isDeleted = true,
+                        text = "",
+                        author = null,
+                        updatedAt = Clock.System.now(),
+                    )
+                    return@withLock Result.success(Unit)
+                }
+                for (i in threads.indices) {
+                    val thread = threads[i]
+                    val replyIndex = thread.replies.indexOfFirst { it.id == commentId }
+                    if (replyIndex >= 0) {
+                        val replies = thread.replies.toMutableList()
+                        replies[replyIndex] = replies[replyIndex].copy(
+                            isDeleted = true,
+                            text = "",
+                            author = null,
+                            updatedAt = Clock.System.now(),
+                        )
+                        threads[i] = thread.copy(replies = replies)
+                        return@withLock Result.success(Unit)
+                    }
+                }
+            }
+            Result.failure(NoSuchElementException("Comment $commentId not found"))
         }
     }
 }

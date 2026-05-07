@@ -2,7 +2,9 @@ package org.nikol.roasti.feature.comment.data.network
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -10,6 +12,7 @@ import io.ktor.http.contentType
 import org.nikol.roasti.core.network.ApiRoutes
 import org.nikol.roasti.core.network.AuthorizedRequestExecutor
 import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentRequestDto
+import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPageResponseDto
 
@@ -24,6 +27,13 @@ interface CommentsApiClient {
         postId: String,
         request: CreateCommentRequestDto,
     ): Result<CommentResponseDto>
+
+    suspend fun updateComment(
+        commentId: String,
+        request: UpdateCommentRequestDto,
+    ): Result<CommentResponseDto>
+
+    suspend fun deleteComment(commentId: String): Result<Unit>
 }
 
 class CommentsApiClientImpl(
@@ -53,4 +63,20 @@ class CommentsApiClientImpl(
             setBody(request)
         }.body<CommentResponseDto>()
     }
+
+    override suspend fun updateComment(
+        commentId: String,
+        request: UpdateCommentRequestDto,
+    ): Result<CommentResponseDto> = authorizedRequestExecutor.execute {
+        httpClient.patch(ApiRoutes.commentById(commentId)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body<CommentResponseDto>()
+    }
+
+    override suspend fun deleteComment(commentId: String): Result<Unit> =
+        authorizedRequestExecutor.execute {
+            httpClient.delete(ApiRoutes.commentById(commentId))
+            Unit
+        }
 }

@@ -22,5 +22,5 @@ val authModule = module {
     single<AuthApiClient> { AuthApiClientImpl(get()) }
     single<ProfileApiClient> { ProfileApiClientImpl(get(), get()) }
     single<SessionRefresher> { TokenRefreshCoordinator(get(), get()) }
-    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }
+    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get(), get()) }
 }

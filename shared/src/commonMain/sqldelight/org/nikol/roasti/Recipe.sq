@@ -53,5 +53,8 @@ SET is_liked = CASE WHEN is_liked = 1 THEN 0 ELSE 1 END,
 clearAllRecipes:
 DELETE FROM Recipe;
 
+deleteRecipe:
+DELETE FROM Recipe WHERE id = ?;
+
 getRecipeById:
 SELECT * FROM Recipe WHERE id = ?;

@@ -30,6 +30,12 @@ sealed class Screen(val route: String) {
         const val ARG_ID = "id"
         fun createRoute(id: String) = "post/$id"
     }
+
+    object PostCompose : Screen("post/compose?postId={postId}") {
+        const val ARG_POST_ID = "postId"
+        fun createRoute(postId: String? = null): String =
+            if (postId == null) "post/compose" else "post/compose?postId=$postId"
+    }
 }
 
 // Screens that show the bottom navigation bar

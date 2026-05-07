@@ -36,3 +36,26 @@ ORDER BY position ASC;
 
 deleteByPostId:
 DELETE FROM CommentEntity WHERE post_id = ?;
+
+clearAllComments:
+DELETE FROM CommentEntity;
+
+updateCommentContent:
+UPDATE CommentEntity
+SET text = ?,
+    updated_at = ?,
+    is_deleted = ?,
+    author_id = ?,
+    author_username = ?,
+    author_avatar_id = ?
+WHERE id = ?;
+
+softDeleteComment:
+UPDATE CommentEntity
+SET is_deleted = 1,
+    text = '',
+    author_id = NULL,
+    author_username = NULL,
+    author_avatar_id = NULL,
+    updated_at = ?
+WHERE id = ?;

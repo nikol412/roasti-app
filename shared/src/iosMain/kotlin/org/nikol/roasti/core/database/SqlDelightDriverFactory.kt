@@ -6,6 +6,6 @@ import org.nikol.roasti.RoastiDatabaseCache
 
 actual class SqlDelightDriverFactory {
     actual fun createDriver() : SqlDriver {
-        return NativeSqliteDriver(RoastiDatabaseCache.Schema, "roasti.db")
+        return NativeSqliteDriver(RoastiDatabaseCache.Schema, "roasti_v2.db")
     }
 }

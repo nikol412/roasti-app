@@ -1,0 +1,14 @@
+package org.nikol.roasti.feature.post.data.remote.model.request
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class CreatePostRequestDto(
+    @SerialName("text")
+    val text: String? = null,
+    @SerialName("images")
+    val images: List<String> = emptyList(),
+    @SerialName("recipe_id")
+    val recipeId: String? = null,
+)

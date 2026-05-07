@@ -11,3 +11,6 @@ INSERT OR REPLACE INTO CommentRemoteKey(post_id, next_page) VALUES (?, ?);
 
 deleteByPostId:
 DELETE FROM CommentRemoteKey WHERE post_id = ?;
+
+clearAllRemoteKeys:
+DELETE FROM CommentRemoteKey;

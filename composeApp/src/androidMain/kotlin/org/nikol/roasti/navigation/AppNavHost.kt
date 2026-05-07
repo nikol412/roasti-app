@@ -2,6 +2,9 @@ package org.nikol.roasti.navigation
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,9 +38,12 @@ import org.nikol.roasti.ui.features.settings.SettingsRoute
 import org.nikol.roasti.ui.features.recipepage.RecipeContentRoute
 import org.nikol.roasti.ui.features.recipesteps.RecipeStepsRoute
 import org.nikol.roasti.ui.screens.FeedRoute
+import org.nikol.roasti.ui.screens.PostComposeRoute
 import org.nikol.roasti.ui.screens.PostDetailRoute
 import org.nikol.roasti.ui.screens.RecipesRoute
 import org.nikol.roasti.ui.uikit.LoadingStub
+
+private const val VerticalSlideDurationMillis = 280
 
 @Composable
 fun AppNavHost(
@@ -136,6 +142,12 @@ private fun MainNavHost(
                             onPostClick = { postId ->
                                 navController.navigate(Screen.PostDetail.createRoute(postId))
                             },
+                            onCreatePost = {
+                                navController.navigate(Screen.PostCompose.createRoute())
+                            },
+                            onEditPost = { postId ->
+                                navController.navigate(Screen.PostCompose.createRoute(postId))
+                            },
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = this,
                         )
@@ -200,14 +212,45 @@ private fun MainNavHost(
                 }
 
                 composable(
+                    route = Screen.PostCompose.route,
+                    arguments = listOf(
+                        navArgument(Screen.PostCompose.ARG_POST_ID) {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                    ),
+                ) { entry ->
+                    val id = entry.arguments?.getString(Screen.PostCompose.ARG_POST_ID)
+                    PostComposeRoute(
+                        postId = id,
+                        onClose = { navController.popBackStack() },
+                    )
+                }
+
+                composable(
                     route = Screen.PostDetail.route,
                     arguments = listOf(navArgument(Screen.PostDetail.ARG_ID) { type = NavType.StringType }),
+                    enterTransition = {
+                        slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(VerticalSlideDurationMillis),
+                        )
+                    },
+                    popExitTransition = {
+                        slideOutVertically(
+                            targetOffsetY = { it },
+                            animationSpec = tween(VerticalSlideDurationMillis),
+                        )
+                    },
                 ) { entry ->
                     val id = entry.arguments?.getString(Screen.PostDetail.ARG_ID) ?: return@composable
                     PostDetailRoute(
                         postId = id,
-                        contentPadding = innerPadding,
                         onClose = { navController.popBackStack() },
+                        onEditPost = { postId ->
+                            navController.navigate(Screen.PostCompose.createRoute(postId))
+                        },
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable,
                     )

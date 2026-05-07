@@ -11,10 +11,12 @@ import app.cash.sqldelight.paging3.QueryPagingSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 import org.nikol.roasti.RoastiDatabaseCache
 import org.nikol.roasti.feature.comment.data.mapper.toDomain
 import org.nikol.roasti.feature.comment.data.network.CommentsApiClient
 import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentRequestDto
+import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentRequestDto
 import org.nikol.roasti.feature.comment.domain.model.Comment
 import org.nikol.roasti.feature.comment.domain.model.CommentThread
 
@@ -68,6 +70,36 @@ class PagingCommentRepository(
     ): Result<Comment> = commentsApiClient
         .createComment(postId, CreateCommentRequestDto(text = text, parentId = parentId))
         .map { it.toDomain() }
+
+    suspend fun updateComment(
+        commentId: String,
+        text: String,
+    ): Result<Comment> = commentsApiClient
+        .updateComment(commentId, UpdateCommentRequestDto(text = text))
+        .map { dto ->
+            db.transaction {
+                db.commentEntityQueries.updateCommentContent(
+                    text = dto.text,
+                    updated_at = dto.updatedAt.toString(),
+                    is_deleted = if (dto.isDeleted) 1L else 0L,
+                    author_id = dto.author?.id,
+                    author_username = dto.author?.username,
+                    author_avatar_id = dto.author?.avatarId,
+                    id = dto.id,
+                )
+            }
+            dto.toDomain()
+        }
+
+    suspend fun deleteComment(commentId: String): Result<Unit> =
+        commentsApiClient.deleteComment(commentId).onSuccess {
+            db.transaction {
+                db.commentEntityQueries.softDeleteComment(
+                    updated_at = Clock.System.now().toString(),
+                    id = commentId,
+                )
+            }
+        }
 
     private fun pagingConfig() = PagingConfig(
         pageSize = CommentsPageSize,

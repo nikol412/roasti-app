@@ -5,14 +5,15 @@ import org.nikol.roasti.Post as CachedPost
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 import org.nikol.roasti.feature.post.domain.model.Post
 import org.nikol.roasti.feature.post.domain.model.PostAuthor
+import org.nikol.roasti.feature.post.domain.model.PostRecipeRef
 
 fun PostResponseDto.toDomain(): Post = Post(
     id = id,
     text = text,
-    photos = photos,
-    recipeId = recipeId,
+    images = images,
+    recipe = recipe?.toDomain(),
     rating = rating,
-    userReaction = userReaction.toUserReaction(),
+    userVote = userVote.toDomain(),
     commentsCount = commentsCount,
     author = PostAuthor(
         id = author.id,
@@ -26,10 +27,12 @@ fun PostResponseDto.toDomain(): Post = Post(
 fun CachedPost.toDomain(): Post = Post(
     id = id,
     text = text,
-    photos = photos_json.parsePhotos(),
-    recipeId = recipe_id,
+    images = images_json.parseImages(),
+    recipe = recipe_id?.let { id ->
+        PostRecipeRef(id = id, status = recipe_status.toPostRecipeStatus())
+    },
     rating = rating.toInt(),
-    userReaction = user_reaction.toUserReaction(),
+    userVote = user_vote.toVoteDirection(),
     commentsCount = comments_count.toInt(),
     author = PostAuthor(
         id = author_id,

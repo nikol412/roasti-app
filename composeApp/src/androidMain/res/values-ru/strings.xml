@@ -89,6 +89,31 @@
     <string name="comments_deleted_placeholder">[удалено]</string>
     <string name="comments_deleted_body">Комментарий удалён</string>
 
+    <!-- Post compose -->
+    <string name="post_compose_title_create">Новый пост</string>
+    <string name="post_compose_title_edit">Редактировать пост</string>
+    <string name="post_compose_submit_create">Опубликовать</string>
+    <string name="post_compose_submit_update">Сохранить</string>
+    <string name="post_compose_title_hint">Заголовок</string>
+    <string name="post_compose_body_hint">текст (опционально)</string>
+    <string name="post_compose_save_error">Не удалось сохранить пост</string>
+    <string name="post_compose_attach_photo">Прикрепить фото</string>
+    <string name="post_compose_remove_photo">Удалить фото</string>
+    <string name="post_compose_photo_uploading">Загружается…</string>
+    <string name="post_compose_photo_upload_error">Не удалось загрузить фото</string>
+
+    <!-- Post owner actions -->
+    <string name="post_media_source_title">Выбрать источник фото</string>
+    <string name="post_media_source_camera">Сделать фото</string>
+    <string name="post_media_source_gallery">Выбрать из галереи</string>
+    <string name="post_owner_menu_title">Управление постом</string>
+    <string name="post_owner_menu_edit">Редактировать</string>
+    <string name="post_owner_menu_delete">Удалить</string>
+    <string name="post_delete_confirm_title">Удалить пост?</string>
+    <string name="post_delete_confirm_message">Это действие нельзя отменить.</string>
+    <string name="post_delete_confirm_action">Удалить</string>
+    <string name="post_create_fab_label">Создать пост</string>
+
     <!-- Settings -->
     <string name="settings_title">Настройки</string>
     <string name="settings_language">Язык</string>
