@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 import org.nikol.roasti.core.utils.imageUrl
 import org.nikol.roasti.feature.post.data.paging.PagingPostRepository
 import org.nikol.roasti.feature.upload.domain.UploadRepository
-import org.nikol.roasti.ui.features.feed.mapper.splitTitleAndBody
 
 class PostComposeViewModel(
     private val postId: String?,
@@ -76,19 +75,22 @@ class PostComposeViewModel(
         if (!current.canSubmit) return
         _state.update { it.copy(isSubmitting = true, submitError = null) }
 
-        val text = listOfNotNull(
-            current.title.takeIf { it.isNotBlank() },
-            current.body.takeIf { it.isNotBlank() },
-        ).joinToString("\n").takeIf { it.isNotEmpty() }
+        val title = current.title.trim()
+        val body = current.body.trim().takeIf { it.isNotEmpty() }
 
         val imageIds = (current.photoState as? PhotoState.Ready)?.let { listOf(it.imageId) }
             ?: emptyList()
 
         viewModelScope.launch {
             val result = if (postId == null) {
-                pagingPostRepository.createPost(text = text, imageIds = imageIds)
+                pagingPostRepository.createPost(title = title, text = body, imageIds = imageIds)
             } else {
-                pagingPostRepository.updatePost(id = postId, text = text, imageIds = imageIds)
+                pagingPostRepository.updatePost(
+                    id = postId,
+                    title = title,
+                    text = body,
+                    imageIds = imageIds,
+                )
             }
             result.fold(
                 onSuccess = {
@@ -105,14 +107,13 @@ class PostComposeViewModel(
     private fun loadExistingPost(id: String) {
         viewModelScope.launch {
             val post = pagingPostRepository.observePostById(id).first { it != null } ?: return@launch
-            val (title, body) = splitTitleAndBody(post.text)
             val photoState = post.images.firstOrNull()?.let { imageId ->
                 PhotoState.Ready(imageId = imageId, previewUrl = imageUrl(imageId))
             } ?: PhotoState.None
             _state.update {
                 it.copy(
-                    title = title,
-                    body = body.orEmpty(),
+                    title = post.title.orEmpty(),
+                    body = post.text,
                     photoState = photoState,
                     isLoadingExisting = false,
                 )
@@ -133,9 +134,7 @@ data class PostComposeUiState(
     val submitError: SubmitError? = null,
 ) {
     val canSubmit: Boolean
-        get() = !isSubmitting && !isLoadingExisting && (
-            title.isNotBlank() || body.isNotBlank() || photoState is PhotoState.Ready
-            )
+        get() = !isSubmitting && !isLoadingExisting && title.isNotBlank()
 }
 
 sealed interface PhotoState {

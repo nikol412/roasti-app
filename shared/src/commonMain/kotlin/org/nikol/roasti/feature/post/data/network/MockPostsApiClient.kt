@@ -96,6 +96,7 @@ class MockPostsApiClient(
             val dto = PostResponseDto(
                 id = newId,
                 author = currentAuthorProvider(),
+                title = request.title,
                 text = request.text.orEmpty(),
                 images = request.images,
                 recipe = request.recipeId?.let {
@@ -126,6 +127,7 @@ class MockPostsApiClient(
             }
             val current = posts[index]
             val updated = current.copy(
+                title = request.title,
                 text = request.text.orEmpty(),
                 images = request.images,
                 recipe = request.recipeId?.let {

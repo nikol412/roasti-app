@@ -33,6 +33,7 @@ import org.nikol.roasti.ui.features.auth.login.LoginRoute
 import org.nikol.roasti.ui.features.auth.register.RegisterRoute
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeRoute
 import org.nikol.roasti.ui.features.editrecipe.EditRecipeRoute
+import org.nikol.roasti.ui.features.photoviewer.PhotoViewerScreen
 import org.nikol.roasti.ui.features.profile.ProfileRoute
 import org.nikol.roasti.ui.features.settings.SettingsRoute
 import org.nikol.roasti.ui.features.recipepage.RecipeContentRoute
@@ -148,6 +149,9 @@ private fun MainNavHost(
                             onEditPost = { postId ->
                                 navController.navigate(Screen.PostCompose.createRoute(postId))
                             },
+                            onImageClick = { urls, index ->
+                                navController.navigate(Screen.PhotoViewer.createRoute(urls, index))
+                            },
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = this,
                         )
@@ -251,6 +255,34 @@ private fun MainNavHost(
                         onEditPost = { postId ->
                             navController.navigate(Screen.PostCompose.createRoute(postId))
                         },
+                        onImageClick = { urls, index ->
+                            navController.navigate(Screen.PhotoViewer.createRoute(urls, index))
+                        },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable,
+                    )
+                }
+
+                composable(
+                    route = Screen.PhotoViewer.route,
+                    arguments = listOf(
+                        navArgument(Screen.PhotoViewer.ARG_IMAGES) {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        },
+                        navArgument(Screen.PhotoViewer.ARG_INITIAL_INDEX) {
+                            type = NavType.IntType
+                            defaultValue = 0
+                        },
+                    ),
+                ) { entry ->
+                    val raw = entry.arguments?.getString(Screen.PhotoViewer.ARG_IMAGES)
+                    val initialIndex = entry.arguments?.getInt(Screen.PhotoViewer.ARG_INITIAL_INDEX) ?: 0
+                    val images = Screen.PhotoViewer.parseImages(raw)
+                    PhotoViewerScreen(
+                        images = images,
+                        initialIndex = initialIndex,
+                        onClose = { navController.popBackStack() },
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable,
                     )

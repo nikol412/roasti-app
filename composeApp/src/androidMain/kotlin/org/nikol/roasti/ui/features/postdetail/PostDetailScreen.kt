@@ -1,10 +1,10 @@
 package org.nikol.roasti.ui.features.postdetail
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,7 +27,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -37,10 +34,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -58,12 +57,21 @@ import org.nikol.roasti.ui.features.postdetail.model.CommentUiModel
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
+import org.nikol.roasti.ui.uikit.comment.CommentComposer
+import org.nikol.roasti.ui.uikit.comment.CommentComposerListener
 import org.nikol.roasti.ui.uikit.comment.CommentItem
+import org.nikol.roasti.ui.uikit.comment.CommentOwnerActionsSheet
 import org.nikol.roasti.ui.uikit.comment.CommentsEmptyState
+import org.nikol.roasti.ui.uikit.comment.DeleteCommentConfirmDialog
 import org.nikol.roasti.ui.uikit.post.DeletePostConfirmDialog
 import org.nikol.roasti.ui.uikit.post.PostCard
 import org.nikol.roasti.ui.uikit.post.PostOwnerActionsSheet
 import org.nikol.roasti.ui.util.postCardSharedBoundsModifier
+
+interface CommentInteractionListener {
+    fun onMoreClick(comment: CommentUiModel)
+    fun onReplyClick(comment: CommentUiModel)
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -71,26 +79,59 @@ fun PostDetailScreen(
     postId: String,
     onClose: () -> Unit,
     onEditPost: (String) -> Unit,
+    onImageClick: (List<String>, Int) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val viewModel: PostDetailViewModel = koinViewModel(parameters = { parametersOf(postId) })
     val headerState by viewModel.headerState.collectAsStateWithLifecycle()
+    val composerState by viewModel.composer.collectAsStateWithLifecycle()
     val comments = viewModel.commentsPager.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
+    val context = LocalContext.current
 
     val isOwn = (headerState as? PostDetailViewModel.HeaderState.Content)?.post?.isOwn == true
     var showOwnerSheet by rememberSaveable { mutableStateOf(false) }
-    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showDeletePostDialog by rememberSaveable { mutableStateOf(false) }
+    var commentSheetForId by rememberSaveable { mutableStateOf<String?>(null) }
+    var commentToDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val commentSheetTarget = remember(commentSheetForId, comments.itemCount) {
+        commentSheetForId?.let { id -> findCommentById(comments, id) }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collectLatest { event ->
             when (event) {
                 PostDetailViewModel.PostDetailEvent.DeleteSuccess -> onClose()
+                PostDetailViewModel.PostDetailEvent.CreateError ->
+                    Toast.makeText(context, R.string.comments_create_error, Toast.LENGTH_SHORT).show()
+                PostDetailViewModel.PostDetailEvent.EditError ->
+                    Toast.makeText(context, R.string.comments_edit_error, Toast.LENGTH_SHORT).show()
+                PostDetailViewModel.PostDetailEvent.DeleteCommentError ->
+                    Toast.makeText(context, R.string.comments_delete_error, Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+    val commentListener = remember(viewModel) {
+        object : CommentInteractionListener {
+            override fun onMoreClick(comment: CommentUiModel) { commentSheetForId = comment.id }
+            override fun onReplyClick(comment: CommentUiModel) { viewModel.onStartReply(comment) }
+        }
+    }
+
+    val composerListener = remember(viewModel) {
+        object : CommentComposerListener {
+            override fun onTextChange(text: String) = viewModel.onComposerTextChange(text)
+            override fun onSubmit() = viewModel.onComposerSubmit()
+            override fun onCancelMode() = viewModel.onCancelComposerMode()
+        }
+    }
+
+    val replyingToAuthor = (composerState.mode as? PostDetailViewModel.ComposerMode.Reply)?.parentAuthor
+    val isEditing = composerState.mode is PostDetailViewModel.ComposerMode.Edit
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -104,7 +145,13 @@ fun PostDetailScreen(
             )
         },
         bottomBar = {
-            CommentInputBar()
+            CommentComposer(
+                text = composerState.text,
+                isEditing = isEditing,
+                replyingToAuthor = replyingToAuthor,
+                isSubmitting = composerState.isSubmitting,
+                listener = composerListener,
+            )
         },
     ) { innerPadding ->
         when (val state = headerState) {
@@ -134,6 +181,8 @@ fun PostDetailScreen(
                 topInset = innerPadding.calculateTopPadding(),
                 bottomInset = innerPadding.calculateBottomPadding(),
                 onRatingChange = viewModel::onRatingChange,
+                onImageClick = onImageClick,
+                commentListener = commentListener,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
             )
@@ -148,21 +197,57 @@ fun PostDetailScreen(
             },
             onDelete = {
                 showOwnerSheet = false
-                showDeleteDialog = true
+                showDeletePostDialog = true
             },
             onDismiss = { showOwnerSheet = false },
         )
     }
 
-    if (showDeleteDialog) {
+    if (showDeletePostDialog) {
         DeletePostConfirmDialog(
             onConfirm = {
-                showDeleteDialog = false
+                showDeletePostDialog = false
                 viewModel.onDeletePost()
             },
-            onDismiss = { showDeleteDialog = false },
+            onDismiss = { showDeletePostDialog = false },
         )
     }
+
+    commentSheetTarget?.let { target ->
+        CommentOwnerActionsSheet(
+            onEdit = {
+                commentSheetForId = null
+                viewModel.onStartEdit(target)
+            },
+            onDelete = {
+                commentSheetForId = null
+                commentToDeleteId = target.id
+            },
+            onDismiss = { commentSheetForId = null },
+        )
+    }
+
+    commentToDeleteId?.let { id ->
+        DeleteCommentConfirmDialog(
+            onConfirm = {
+                commentToDeleteId = null
+                viewModel.onDeleteComment(id)
+            },
+            onDismiss = { commentToDeleteId = null },
+        )
+    }
+}
+
+private fun findCommentById(
+    items: LazyPagingItems<CommentThreadUiModel>,
+    id: String,
+): CommentUiModel? {
+    for (i in 0 until items.itemCount) {
+        val thread = items.peek(i) ?: continue
+        if (thread.root.id == id) return thread.root
+        thread.replies.firstOrNull { it.id == id }?.let { return it }
+    }
+    return null
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -209,6 +294,8 @@ private fun PostDetailContent(
     topInset: androidx.compose.ui.unit.Dp,
     bottomInset: androidx.compose.ui.unit.Dp,
     onRatingChange: (org.nikol.roasti.ui.uikit.post.PostUserReaction) -> Unit,
+    onImageClick: (List<String>, Int) -> Unit,
+    commentListener: CommentInteractionListener,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     modifier: Modifier = Modifier,
@@ -233,6 +320,16 @@ private fun PostDetailContent(
                 commentsCount = post.commentsCount,
                 isExpanded = true,
                 onRatingChange = onRatingChange,
+                onImageClick = {
+                    post.postImageUrl?.let { url -> onImageClick(listOf(url), 0) }
+                },
+                imageModifier = post.postImageUrl?.let { url ->
+                    org.nikol.roasti.ui.uikit.photoviewer.photoSharedBoundsModifier(
+                        imageUrl = url,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
+                } ?: Modifier,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(
@@ -273,6 +370,7 @@ private fun PostDetailContent(
             val thread = comments[index] ?: return@items
             CommentThreadBlock(
                 thread = thread,
+                listener = commentListener,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.lg),
@@ -348,6 +446,7 @@ private fun PostDetailContent(
 @Composable
 private fun CommentThreadBlock(
     thread: CommentThreadUiModel,
+    listener: CommentInteractionListener,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.padding(vertical = Spacing.xs)) {
@@ -357,9 +456,13 @@ private fun CommentThreadBlock(
             authorAvatarUrl = thread.root.authorAvatarUrl,
             postedAt = thread.root.postedAt,
             body = thread.root.body,
+            isOwn = thread.root.isOwn,
+            showReply = true,
+            onMoreClick = { listener.onMoreClick(thread.root) },
+            onReplyClick = { listener.onReplyClick(thread.root) },
         )
         thread.replies.forEach { reply ->
-            ReplyRow(reply = reply)
+            ReplyRow(reply = reply, listener = listener)
         }
     }
 }
@@ -367,6 +470,7 @@ private fun CommentThreadBlock(
 @Composable
 private fun ReplyRow(
     reply: CommentUiModel,
+    listener: CommentInteractionListener,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -387,43 +491,9 @@ private fun ReplyRow(
             authorAvatarUrl = reply.authorAvatarUrl,
             postedAt = reply.postedAt,
             body = reply.body,
+            isOwn = reply.isOwn,
+            showReply = false,
+            onMoreClick = { listener.onMoreClick(reply) },
         )
-    }
-}
-
-@Composable
-private fun CommentInputBar(
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = MaterialTheme.shapes.large,
-                    )
-                    .clickable(enabled = false) {
-                        // TODO: open comment composer when create flow lands
-                    }
-                    .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-            ) {
-                Text(
-                    text = stringResource(R.string.comments_input_placeholder),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
     }
 }

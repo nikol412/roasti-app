@@ -11,6 +11,8 @@ data class PostResponseDto(
     val id: String,
     @SerialName("author")
     val author: PostAuthorDto,
+    @SerialName("title")
+    val title: String? = null,
     @SerialName("text")
     val text: String = "",
     @SerialName("images")

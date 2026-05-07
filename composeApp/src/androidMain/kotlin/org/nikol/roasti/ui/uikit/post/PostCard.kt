@@ -40,7 +40,7 @@ fun PostCard(
     authorImageUrl: String?,
     authorName: String,
     postedAt: Instant?,
-    title: String,
+    title: String?,
     body: String?,
     postImageUrl: String?,
     ratingState: PostRatingStateUi,
@@ -53,6 +53,8 @@ fun PostCard(
     onCommentsClick: () -> Unit = {},
     onShareClick: () -> Unit = {},
     onOwnerOptionsClick: () -> Unit = {},
+    onImageClick: () -> Unit = {},
+    imageModifier: Modifier = Modifier,
 ) {
     val ratingHandler = onRatingChange
     val commentsHandler = onCommentsClick
@@ -96,10 +98,12 @@ fun PostCard(
             }
         }
 
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-        )
+        if (title != null) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
 
         if (body != null) {
             Column {
@@ -128,7 +132,8 @@ fun PostCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 300.dp)
-                    .pointerInput(Unit) { detectTapGestures { } },
+                    .then(imageModifier)
+                    .pointerInput(onImageClick) { detectTapGestures { onImageClick() } },
             )
         }
 

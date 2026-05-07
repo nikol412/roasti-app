@@ -11,7 +11,7 @@ data class PostUiModel(
     val authorName: String,
     val authorImageUrl: String?,
     val postedAt: Instant,
-    val title: String,
+    val title: String?,
     val body: String?,
     val postImageUrl: String?,
     val ratingState: PostRatingStateUi,

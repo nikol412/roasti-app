@@ -4,6 +4,7 @@ import kotlinx.datetime.Instant
 
 data class Post(
     val id: String,
+    val title: String?,
     val text: String,
     val images: List<String>,
     val recipe: PostRecipeRef?,

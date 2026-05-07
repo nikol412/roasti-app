@@ -18,6 +18,7 @@ fun String.parseImages(): List<String> =
 fun RoastiDatabaseCache.upsertPost(dto: PostResponseDto) {
     postQueries.insertPost(
         id = dto.id,
+        title = dto.title,
         text = dto.text,
         images_json = dto.images.encodeImages(),
         recipe_id = dto.recipe?.id,

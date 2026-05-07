@@ -1,5 +1,6 @@
 CREATE TABLE Post (
     id              TEXT PRIMARY KEY NOT NULL,
+    title           TEXT,
     text            TEXT NOT NULL DEFAULT '',
     images_json     TEXT NOT NULL DEFAULT '[]',
     recipe_id       TEXT,
@@ -18,9 +19,9 @@ CREATE INDEX Post_created_at ON Post(created_at DESC);
 
 insertPost:
 INSERT OR REPLACE INTO Post(
-    id, text, images_json, recipe_id, recipe_status, rating, user_vote, comments_count,
+    id, title, text, images_json, recipe_id, recipe_status, rating, user_vote, comments_count,
     author_id, author_name, author_image_id, created_at, updated_at
-) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllPosts:
 SELECT * FROM Post

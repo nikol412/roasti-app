@@ -69,7 +69,31 @@ class PagingCommentRepository(
         parentId: String? = null,
     ): Result<Comment> = commentsApiClient
         .createComment(postId, CreateCommentRequestDto(text = text, parentId = parentId))
-        .map { it.toDomain() }
+        .map { dto ->
+            db.transaction {
+                val maxPosition = if (dto.parentId == null) {
+                    db.commentEntityQueries.selectMaxPositionForRoot(postId)
+                        .executeAsOneOrNull()?.max_position
+                } else {
+                    db.commentEntityQueries.selectMaxPositionForReplies(dto.parentId)
+                        .executeAsOneOrNull()?.max_position
+                } ?: 0L
+                db.commentEntityQueries.upsertComment(
+                    id = dto.id,
+                    post_id = postId,
+                    parent_id = dto.parentId,
+                    is_deleted = if (dto.isDeleted) 1L else 0L,
+                    author_id = dto.author?.id,
+                    author_username = dto.author?.username,
+                    author_avatar_id = dto.author?.avatarId,
+                    text = dto.text,
+                    created_at = dto.createdAt.toString(),
+                    updated_at = dto.updatedAt.toString(),
+                    position = maxPosition + 1L,
+                )
+            }
+            dto.toDomain()
+        }
 
     suspend fun updateComment(
         commentId: String,

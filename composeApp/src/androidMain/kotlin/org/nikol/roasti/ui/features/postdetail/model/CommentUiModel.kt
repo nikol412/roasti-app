@@ -8,10 +8,12 @@ data class CommentUiModel(
     val id: String,
     val parentId: String?,
     val isDeleted: Boolean,
+    val authorId: String?,
     val authorName: String?,
     val authorAvatarUrl: String?,
     val postedAt: Instant,
     val body: String,
+    val isOwn: Boolean,
 )
 
 @Immutable

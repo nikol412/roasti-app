@@ -87,6 +87,22 @@
     <string name="comments_load_error">Failed to load comments</string>
     <string name="comments_deleted_placeholder">[deleted]</string>
     <string name="comments_deleted_body">Comment removed</string>
+    <string name="comments_action_more">More options</string>
+    <string name="comments_action_reply">Reply</string>
+    <string name="comments_owner_menu_title">Manage comment</string>
+    <string name="comments_owner_menu_edit">Edit</string>
+    <string name="comments_owner_menu_delete">Delete</string>
+    <string name="comments_delete_confirm_title">Delete comment?</string>
+    <string name="comments_delete_confirm_message">This action can\'t be undone.</string>
+    <string name="comments_delete_confirm_action">Delete</string>
+    <string name="comments_composer_editing">Editing comment</string>
+    <string name="comments_composer_reply_to">Replying to %1$s</string>
+    <string name="comments_composer_cancel_label">Cancel</string>
+    <string name="comments_composer_send_label">Send</string>
+    <string name="comments_composer_save_label">Save</string>
+    <string name="comments_create_error">Failed to send comment</string>
+    <string name="comments_edit_error">Failed to update comment</string>
+    <string name="comments_delete_error">Failed to delete comment</string>
 
     <!-- Post compose -->
     <string name="post_compose_title_create">New post</string>

@@ -14,6 +14,7 @@ fun PostDetailRoute(
     postId: String,
     onClose: () -> Unit,
     onEditPost: (String) -> Unit = {},
+    onImageClick: (List<String>, Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
@@ -21,6 +22,7 @@ fun PostDetailRoute(
         postId = postId,
         onClose = onClose,
         onEditPost = onEditPost,
+        onImageClick = onImageClick,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier.fillMaxSize(),

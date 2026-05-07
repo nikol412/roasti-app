@@ -88,6 +88,22 @@
     <string name="comments_load_error">Не удалось загрузить комментарии</string>
     <string name="comments_deleted_placeholder">[удалено]</string>
     <string name="comments_deleted_body">Комментарий удалён</string>
+    <string name="comments_action_more">Ещё</string>
+    <string name="comments_action_reply">Ответить</string>
+    <string name="comments_owner_menu_title">Управление комментарием</string>
+    <string name="comments_owner_menu_edit">Редактировать</string>
+    <string name="comments_owner_menu_delete">Удалить</string>
+    <string name="comments_delete_confirm_title">Удалить комментарий?</string>
+    <string name="comments_delete_confirm_message">Это действие нельзя отменить.</string>
+    <string name="comments_delete_confirm_action">Удалить</string>
+    <string name="comments_composer_editing">Редактирование комментария</string>
+    <string name="comments_composer_reply_to">Ответ для %1$s</string>
+    <string name="comments_composer_cancel_label">Отмена</string>
+    <string name="comments_composer_send_label">Отправить</string>
+    <string name="comments_composer_save_label">Сохранить</string>
+    <string name="comments_create_error">Не удалось отправить комментарий</string>
+    <string name="comments_edit_error">Не удалось обновить комментарий</string>
+    <string name="comments_delete_error">Не удалось удалить комментарий</string>
 
     <!-- Post compose -->
     <string name="post_compose_title_create">Новый пост</string>

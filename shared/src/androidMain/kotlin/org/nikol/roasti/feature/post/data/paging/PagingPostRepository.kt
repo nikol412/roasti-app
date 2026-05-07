@@ -101,8 +101,9 @@ class PagingPostRepository(
         )
     }
 
-    suspend fun createPost(text: String?, imageIds: List<String>): Result<Post> {
+    suspend fun createPost(title: String, text: String?, imageIds: List<String>): Result<Post> {
         val request = CreatePostRequestDto(
+            title = title,
             text = text,
             images = imageIds,
             recipeId = null,
@@ -113,8 +114,14 @@ class PagingPostRepository(
         }
     }
 
-    suspend fun updatePost(id: String, text: String?, imageIds: List<String>): Result<Post> {
+    suspend fun updatePost(
+        id: String,
+        title: String,
+        text: String?,
+        imageIds: List<String>,
+    ): Result<Post> {
         val request = UpdatePostRequestDto(
+            title = title,
             text = text,
             images = imageIds,
             recipeId = null,

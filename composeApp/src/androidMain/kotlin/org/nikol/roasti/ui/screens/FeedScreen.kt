@@ -17,6 +17,7 @@ fun FeedRoute(
     onPostClick: (String) -> Unit = {},
     onCreatePost: () -> Unit = {},
     onEditPost: (String) -> Unit = {},
+    onImageClick: (List<String>, Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
@@ -25,6 +26,7 @@ fun FeedRoute(
         onPostClick = onPostClick,
         onCreatePost = onCreatePost,
         onEditPost = onEditPost,
+        onImageClick = onImageClick,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier

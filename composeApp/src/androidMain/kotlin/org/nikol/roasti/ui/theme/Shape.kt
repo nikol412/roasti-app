@@ -4,20 +4,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
-// Mapped from theme.css radius tokens (1rem = 16dp base)
-// --radius-xs: 0.125rem = 2dp
-// --radius-sm: calc(0.625rem - 4px) = 6dp
-// --radius-md: calc(0.625rem - 2px) = 8dp
-// --radius-lg: 0.625rem             = 10dp  (base --radius)
-// --radius-xl: calc(0.625rem + 4px) = 14dp
-// --radius-3xl: 1.5rem              = 24dp
-
 val RoastiShapes = Shapes(
-    extraSmall = RoundedCornerShape(5),   // radius-xs
-    small      = RoundedCornerShape(10),   // radius-sm
-    medium     = RoundedCornerShape(15),   // radius-md
-    large      = RoundedCornerShape(25),  // radius-lg (base)
-    extraLarge = RoundedCornerShape(50),  // radius-xl
+    extraSmall = RoundedCornerShape(4),   // radius-xs
+    small      = RoundedCornerShape(6),   // radius-sm
+    medium     = RoundedCornerShape(10),   // radius-md
+    large      = RoundedCornerShape(12),  // radius-lg (base)
+    extraLarge = RoundedCornerShape(15),  // radius-xl
 )
 
 // Use directly where needed (e.g. bottom sheet, modal)

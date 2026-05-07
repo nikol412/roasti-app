@@ -9,6 +9,7 @@ import org.nikol.roasti.feature.post.domain.model.PostRecipeRef
 
 fun PostResponseDto.toDomain(): Post = Post(
     id = id,
+    title = title,
     text = text,
     images = images,
     recipe = recipe?.toDomain(),
@@ -26,6 +27,7 @@ fun PostResponseDto.toDomain(): Post = Post(
 
 fun CachedPost.toDomain(): Post = Post(
     id = id,
+    title = title,
     text = text,
     images = images_json.parseImages(),
     recipe = recipe_id?.let { id ->

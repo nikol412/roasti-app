@@ -68,6 +68,7 @@ fun FeedScreen(
     onPostClick: (String) -> Unit,
     onCreatePost: () -> Unit,
     onEditPost: (String) -> Unit,
+    onImageClick: (List<String>, Int) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -157,6 +158,7 @@ fun FeedScreen(
                 },
                 onRatingChange = viewModel::onRatingChange,
                 onPostClick = onPostClick,
+                onImageClick = onImageClick,
                 onOwnerOptionsClick = { post -> ownerActionsFor = post.id },
                 topInset = innerPadding.calculateTopPadding(),
                 bottomInset = contentPadding.calculateBottomPadding(),
@@ -233,6 +235,7 @@ private fun FeedContent(
     onRefresh: () -> Unit,
     onRatingChange: (PostUiModel, PostUserReaction) -> Unit,
     onPostClick: (String) -> Unit,
+    onImageClick: (List<String>, Int) -> Unit,
     onOwnerOptionsClick: (PostUiModel) -> Unit,
     topInset: androidx.compose.ui.unit.Dp,
     bottomInset: androidx.compose.ui.unit.Dp,
@@ -275,6 +278,16 @@ private fun FeedContent(
                     onClick = { onPostClick(post.id) },
                     onCommentsClick = { onPostClick(post.id) },
                     onOwnerOptionsClick = { onOwnerOptionsClick(post) },
+                    onImageClick = {
+                        post.postImageUrl?.let { url -> onImageClick(listOf(url), 0) }
+                    },
+                    imageModifier = post.postImageUrl?.let { url ->
+                        org.nikol.roasti.ui.uikit.photoviewer.photoSharedBoundsModifier(
+                            imageUrl = url,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                        )
+                    } ?: Modifier,
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(

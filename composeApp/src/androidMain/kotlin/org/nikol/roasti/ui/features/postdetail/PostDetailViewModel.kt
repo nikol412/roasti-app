@@ -1,5 +1,6 @@
 package org.nikol.roasti.ui.features.postdetail
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -9,6 +10,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -23,13 +25,14 @@ import org.nikol.roasti.ui.features.feed.mapper.toUiModel
 import org.nikol.roasti.ui.features.feed.model.PostUiModel
 import org.nikol.roasti.ui.features.postdetail.mapper.toUi
 import org.nikol.roasti.ui.features.postdetail.model.CommentThreadUiModel
+import org.nikol.roasti.ui.features.postdetail.model.CommentUiModel
 import org.nikol.roasti.ui.uikit.post.PostUserReaction
 import org.nikol.roasti.utils.stateInWhileSubscribe
 
 class PostDetailViewModel(
     private val postId: String,
     private val pagingPostRepository: PagingPostRepository,
-    pagingCommentRepository: PagingCommentRepository,
+    private val pagingCommentRepository: PagingCommentRepository,
     authRepository: AuthRepository,
 ) : ViewModel() {
 
@@ -39,13 +42,32 @@ class PostDetailViewModel(
         data class Content(val post: PostUiModel) : HeaderState
     }
 
+    sealed interface ComposerMode {
+        data object New : ComposerMode
+        data class Reply(val parentId: String, val parentAuthor: String?) : ComposerMode
+        data class Edit(val commentId: String) : ComposerMode
+    }
+
+    @Immutable
+    data class ComposerState(
+        val mode: ComposerMode = ComposerMode.New,
+        val text: String = "",
+        val isSubmitting: Boolean = false,
+    )
+
     sealed interface PostDetailEvent {
         data object DeleteSuccess : PostDetailEvent
+        data object CreateError : PostDetailEvent
+        data object EditError : PostDetailEvent
+        data object DeleteCommentError : PostDetailEvent
     }
 
     private val isHeaderRefreshFailed = MutableStateFlow(false)
     private val eventsChannel = Channel<PostDetailEvent>(Channel.BUFFERED)
     val events = eventsChannel.receiveAsFlow()
+
+    private val composerStateFlow = MutableStateFlow(ComposerState())
+    val composer: StateFlow<ComposerState> = composerStateFlow.asStateFlow()
 
     private val currentUserIdFlow: Flow<String?> =
         authRepository.getUser().map { it?.id }.distinctUntilChanged()
@@ -62,10 +84,12 @@ class PostDetailViewModel(
         }
     }.stateInWhileSubscribe(HeaderState.Loading)
 
-    val commentsPager: Flow<PagingData<CommentThreadUiModel>> =
-        pagingCommentRepository.threadsPager(postId)
-            .map { pagingData -> pagingData.map { it.toUi() } }
-            .cachedIn(viewModelScope)
+    val commentsPager: Flow<PagingData<CommentThreadUiModel>> = combine(
+        pagingCommentRepository.threadsPager(postId).cachedIn(viewModelScope),
+        currentUserIdFlow,
+    ) { pagingData, userId ->
+        pagingData.map { thread -> thread.toUi(userId) }
+    }
 
     init {
         viewModelScope.launch {
@@ -85,6 +109,67 @@ class PostDetailViewModel(
             pagingPostRepository.deletePost(postId).onSuccess {
                 eventsChannel.send(PostDetailEvent.DeleteSuccess)
             }
+        }
+    }
+
+    fun onComposerTextChange(text: String) {
+        composerStateFlow.update { it.copy(text = text) }
+    }
+
+    fun onCancelComposerMode() {
+        composerStateFlow.update { ComposerState() }
+    }
+
+    fun onStartReply(comment: CommentUiModel) {
+        composerStateFlow.update {
+            ComposerState(
+                mode = ComposerMode.Reply(parentId = comment.id, parentAuthor = comment.authorName),
+                text = "",
+            )
+        }
+    }
+
+    fun onStartEdit(comment: CommentUiModel) {
+        composerStateFlow.update {
+            ComposerState(
+                mode = ComposerMode.Edit(commentId = comment.id),
+                text = comment.body,
+            )
+        }
+    }
+
+    fun onComposerSubmit() {
+        val snapshot = composerStateFlow.value
+        if (snapshot.isSubmitting || snapshot.text.isBlank()) return
+        composerStateFlow.update { it.copy(isSubmitting = true) }
+        viewModelScope.launch {
+            val result = when (val mode = snapshot.mode) {
+                ComposerMode.New ->
+                    pagingCommentRepository.createComment(postId, snapshot.text.trim(), parentId = null)
+
+                is ComposerMode.Reply ->
+                    pagingCommentRepository.createComment(postId, snapshot.text.trim(), parentId = mode.parentId)
+
+                is ComposerMode.Edit ->
+                    pagingCommentRepository.updateComment(mode.commentId, snapshot.text.trim())
+            }
+            result
+                .onSuccess { composerStateFlow.update { ComposerState() } }
+                .onFailure {
+                    composerStateFlow.update { it.copy(isSubmitting = false) }
+                    val event = when (snapshot.mode) {
+                        is ComposerMode.Edit -> PostDetailEvent.EditError
+                        else -> PostDetailEvent.CreateError
+                    }
+                    eventsChannel.send(event)
+                }
+        }
+    }
+
+    fun onDeleteComment(commentId: String) {
+        viewModelScope.launch {
+            pagingCommentRepository.deleteComment(commentId)
+                .onFailure { eventsChannel.send(PostDetailEvent.DeleteCommentError) }
         }
     }
 }
