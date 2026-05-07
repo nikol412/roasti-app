@@ -25,6 +25,31 @@ sealed class Screen(val route: String) {
     object Profile : Screen("profile")
 
     object Settings : Screen("settings")
+
+    object PostDetail : Screen("post/{id}") {
+        const val ARG_ID = "id"
+        fun createRoute(id: String) = "post/$id"
+    }
+
+    object PostCompose : Screen("post/compose?postId={postId}") {
+        const val ARG_POST_ID = "postId"
+        fun createRoute(postId: String? = null): String =
+            if (postId == null) "post/compose" else "post/compose?postId=$postId"
+    }
+
+    object PhotoViewer : Screen("photo/viewer?images={images}&initialIndex={initialIndex}") {
+        const val ARG_IMAGES = "images"
+        const val ARG_INITIAL_INDEX = "initialIndex"
+        private const val SEPARATOR = "|"
+        fun createRoute(images: List<String>, initialIndex: Int = 0): String {
+            val joined = images.joinToString(SEPARATOR) { android.net.Uri.encode(it) }
+            return "photo/viewer?images=$joined&initialIndex=$initialIndex"
+        }
+        fun parseImages(raw: String?): List<String> = raw
+            ?.split(SEPARATOR)
+            ?.mapNotNull { android.net.Uri.decode(it).takeIf { decoded -> decoded.isNotEmpty() } }
+            .orEmpty()
+    }
 }
 
 // Screens that show the bottom navigation bar

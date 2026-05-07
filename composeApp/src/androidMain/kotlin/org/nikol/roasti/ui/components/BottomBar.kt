@@ -11,6 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.adamglin.PhosphorIcons
@@ -31,12 +33,20 @@ private fun labelResFor(route: String): Int = when (route) {
 
 @Composable
 fun BottomBar(
-    modifier: Modifier = Modifier,
     currentRoute: String?,
     onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    scrollBehavior: BottomBarScrollBehavior? = null,
 ) {
+    val barModifier = if (scrollBehavior != null) {
+        modifier
+            .onSizeChanged { scrollBehavior.heightPx = it.height.toFloat() }
+            .graphicsLayer { translationY = -scrollBehavior.heightOffsetPx }
+    } else {
+        modifier
+    }
     NavigationBar(
-        modifier = modifier,
+        modifier = barModifier,
         windowInsets = NavigationBarDefaults.windowInsets,
     ) {
         bottomNavScreens.forEach { screen ->

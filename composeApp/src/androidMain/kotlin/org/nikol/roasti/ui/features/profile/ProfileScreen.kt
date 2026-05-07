@@ -2,11 +2,10 @@ package org.nikol.roasti.ui.features.profile
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,16 +38,25 @@ internal fun ProfileRoute(
         }
     }
 
-    ProfileScreen(uiState, listener)
+    ProfileScreen(uiState, listener, contentPadding)
 }
 
 @Composable
 private fun ProfileScreen(
     uiState: ProfileState,
     listener: ProfileRowListener,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
-    Scaffold() { innerPaddings ->
-        Column(Modifier.padding(innerPaddings)) {
+    Scaffold(
+        modifier = Modifier.statusBarsPadding(),
+        contentWindowInsets = WindowInsets(0),
+    ) { innerPaddings ->
+        Column(
+            Modifier.padding(
+                top = innerPaddings.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding(),
+            )
+        ) {
             ProfileHeaderRow(
                 userUiModel = uiState.user,
                 listener = listener,
@@ -67,8 +75,6 @@ private fun ProfileScreen(
                     .padding(top = 20.dp),
                 horizontalPaddings = 16.dp
             )
-
-            Spacer(Modifier.height(80.dp))
         }
     }
 }

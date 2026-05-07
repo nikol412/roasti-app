@@ -76,6 +76,59 @@
     <string name="bottom_nav_recipes">Recipes</string>
     <string name="bottom_nav_profile">Profile</string>
 
+    <!-- Post detail / comments -->
+    <string name="post_detail_close_label">Close</string>
+    <string name="post_detail_more_options">More options</string>
+    <string name="post_detail_load_error">Failed to load post</string>
+    <string name="comments_section_title">Comments</string>
+    <string name="comments_input_placeholder">Join the conversation</string>
+    <string name="comments_empty_title">Be the first to comment</string>
+    <string name="comments_empty_subtitle">Nobody\'s responded to this post yet. Add your thoughts and get the conversation going.</string>
+    <string name="comments_load_error">Failed to load comments</string>
+    <string name="comments_deleted_placeholder">[deleted]</string>
+    <string name="comments_deleted_body">Comment removed</string>
+    <string name="comments_action_more">More options</string>
+    <string name="comments_action_reply">Reply</string>
+    <string name="comments_owner_menu_title">Manage comment</string>
+    <string name="comments_owner_menu_edit">Edit</string>
+    <string name="comments_owner_menu_delete">Delete</string>
+    <string name="comments_delete_confirm_title">Delete comment?</string>
+    <string name="comments_delete_confirm_message">This action can\'t be undone.</string>
+    <string name="comments_delete_confirm_action">Delete</string>
+    <string name="comments_composer_editing">Editing comment</string>
+    <string name="comments_composer_reply_to">Replying to %1$s</string>
+    <string name="comments_composer_cancel_label">Cancel</string>
+    <string name="comments_composer_send_label">Send</string>
+    <string name="comments_composer_save_label">Save</string>
+    <string name="comments_create_error">Failed to send comment</string>
+    <string name="comments_edit_error">Failed to update comment</string>
+    <string name="comments_delete_error">Failed to delete comment</string>
+
+    <!-- Post compose -->
+    <string name="post_compose_title_create">New post</string>
+    <string name="post_compose_title_edit">Edit post</string>
+    <string name="post_compose_submit_create">Post</string>
+    <string name="post_compose_submit_update">Save</string>
+    <string name="post_compose_title_hint">Title</string>
+    <string name="post_compose_body_hint">body text (optional)</string>
+    <string name="post_compose_save_error">Failed to save post</string>
+    <string name="post_compose_attach_photo">Attach photo</string>
+    <string name="post_compose_remove_photo">Remove photo</string>
+    <string name="post_compose_photo_uploading">Uploading…</string>
+    <string name="post_compose_photo_upload_error">Failed to upload photo</string>
+
+    <!-- Post owner actions -->
+    <string name="post_media_source_title">Choose photo source</string>
+    <string name="post_media_source_camera">Take photo</string>
+    <string name="post_media_source_gallery">Choose from gallery</string>
+    <string name="post_owner_menu_title">Manage post</string>
+    <string name="post_owner_menu_edit">Edit</string>
+    <string name="post_owner_menu_delete">Delete</string>
+    <string name="post_delete_confirm_title">Delete post?</string>
+    <string name="post_delete_confirm_message">This action can\'t be undone.</string>
+    <string name="post_delete_confirm_action">Delete</string>
+    <string name="post_create_fab_label">Create post</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>

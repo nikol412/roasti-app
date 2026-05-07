@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -31,10 +33,12 @@ enum class ImageFormat(val ratio: Float) {
  */
 sealed interface ImageSize {
     /** Fixed width; height is derived from [ImageFormat.ratio]. */
-    @JvmInline value class FixedWidth(val value: Dp) : ImageSize
+    @JvmInline
+    value class FixedWidth(val value: Dp) : ImageSize
 
     /** Fixed height; width is derived from [ImageFormat.ratio]. */
-    @JvmInline value class FixedHeight(val value: Dp) : ImageSize
+    @JvmInline
+    value class FixedHeight(val value: Dp) : ImageSize
 
     /** Fills available width; height is derived from [ImageFormat.ratio]. */
     data object FillWidth : ImageSize
@@ -46,6 +50,7 @@ fun ImageComponent(
     format: ImageFormat,
     size: ImageSize,
     modifier: Modifier = Modifier,
+    shape: Shape? = null,
     contentDescription: String? = null,
 ) {
     val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
@@ -54,21 +59,28 @@ fun ImageComponent(
         is ImageSize.FixedWidth -> modifier
             .width(size.value)
             .aspectRatio(format.ratio)
+
         is ImageSize.FixedHeight -> modifier
             .height(size.value)
             .aspectRatio(format.ratio, matchHeightConstraintsFirst = true)
+
         ImageSize.FillWidth -> modifier
             .fillMaxWidth()
             .aspectRatio(format.ratio)
-    }.background(surfaceVariant) // visible while image loads
+    }
 
+    val finalModifier = if (shape != null) {
+        resolvedModifier.clip(shape)
+    } else {
+        resolvedModifier
+    }.background(surfaceVariant)
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
             .data(url)
             .crossfade(true)
             .build(),
         contentDescription = contentDescription,
-        modifier = resolvedModifier,
+        modifier = finalModifier,
         contentScale = ContentScale.Crop,
     )
 }

@@ -1,29 +1,36 @@
 package org.nikol.roasti.ui.screens
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.nikol.roasti.ui.features.feed.FeedScreen
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun FeedRoute(contentPadding: PaddingValues = PaddingValues()) {
-    FeedScreenContent(contentPadding = contentPadding)
-}
-
-@Composable
-private fun FeedScreenContent(contentPadding: PaddingValues) {
-    Box(
+fun FeedRoute(
+    contentPadding: PaddingValues = PaddingValues(),
+    onPostClick: (String) -> Unit = {},
+    onCreatePost: () -> Unit = {},
+    onEditPost: (String) -> Unit = {},
+    onImageClick: (List<String>, Int) -> Unit = { _, _ -> },
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+) {
+    FeedScreen(
+        contentPadding = contentPadding,
+        onPostClick = onPostClick,
+        onCreatePost = onCreatePost,
+        onEditPost = onEditPost,
+        onImageClick = onImageClick,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
         modifier = Modifier
             .fillMaxSize()
-            .padding(contentPadding)
             .consumeWindowInsets(contentPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text("Feed")
-    }
+    )
 }

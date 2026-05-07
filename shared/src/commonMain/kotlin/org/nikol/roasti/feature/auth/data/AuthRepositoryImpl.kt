@@ -1,5 +1,7 @@
 package org.nikol.roasti.feature.auth.data
 
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -9,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import org.nikol.roasti.RoastiDatabaseCache
+import org.nikol.roasti.core.database.clearAllUserScopedData
 import org.nikol.roasti.core.session.SessionRepository
 import org.nikol.roasti.core.session.SessionState
 import org.nikol.roasti.feature.auth.data.local.UserCacheDataSource
@@ -29,6 +33,7 @@ class AuthRepositoryImpl(
     private val profileApiClient: ProfileApiClient,
     private val sessionRepository: SessionRepository,
     private val userCacheDataSource: UserCacheDataSource,
+    private val database: RoastiDatabaseCache,
 ) : AuthRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -57,7 +62,15 @@ class AuthRepositoryImpl(
     override suspend fun bootstrap() {
         sessionRepository.restore()
         if (sessionRepository.authState.value is SessionState.Authenticated) {
-            syncProfile()
+            syncProfile().onFailure { error ->
+                if (error is ClientRequestException &&
+                    error.response.status == HttpStatusCode.NotFound
+                ) {
+                    sessionRepository.clearSession()
+                    userCacheDataSource.deleteUser()
+                    database.clearAllUserScopedData()
+                }
+            }
         }
     }
 
@@ -103,6 +116,7 @@ class AuthRepositoryImpl(
         sessionRepository.currentSession()?.accessToken?.let { authApiClient.logout(it) }
         sessionRepository.clearSession()
         userCacheDataSource.deleteUser()
+        database.clearAllUserScopedData()
     }
 
     override suspend fun syncProfile(): Result<User> {
