@@ -9,8 +9,10 @@ class UpdateProfileRequest(
     val imageId: String? = null,
     @SerialName("bio")
     val bio: String? = null,
+    @SerialName("name")
+    val name: String? = null,
     @SerialName("username")
-    val username: String? = null
+    val username: String? = null,
 ) {
-    fun isEmpty() = imageId == null && bio == null && username == null
+    fun isEmpty() = imageId == null && bio == null && name == null && username == null
 }

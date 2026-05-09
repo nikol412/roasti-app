@@ -17,6 +17,9 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
 
 # Signing keys
 *.jks
