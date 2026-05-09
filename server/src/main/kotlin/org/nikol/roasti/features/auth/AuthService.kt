@@ -6,6 +6,7 @@ import com.google.firebase.auth.UserRecord
 import com.google.firebase.auth.AuthErrorCode
 import org.nikol.roasti.features.users.CreateUserInput
 import org.nikol.roasti.features.users.EmailTakenException
+import org.nikol.roasti.features.users.UserId
 import org.nikol.roasti.features.users.UserRepository
 import org.nikol.roasti.features.users.UserService
 import org.nikol.roasti.features.users.UsernameTakenException
@@ -56,7 +57,7 @@ class AuthServiceImpl(
 
         val user = userRepo.create(
             CreateUserInput(
-                id = firebaseUser.uid,
+                id = UserId(firebaseUser.uid),
                 email = request.email,
                 username = request.username,
                 name = request.name,

@@ -16,7 +16,7 @@ object UserTable : Table("users") {
 }
 
 fun ResultRow.toUser() = User(
-    id = this[UserTable.id],
+    id = UserId(this[UserTable.id]),
     email = this[UserTable.email],
     username = this[UserTable.username],
     name = this[UserTable.name],

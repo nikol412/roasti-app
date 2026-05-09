@@ -73,7 +73,7 @@ fun Route.userRoutes() {
 }
 
 fun User.toDto() = UserDto(
-    id = id,
+    id = id.value,
     email = email,
     username = username,
     name = name,

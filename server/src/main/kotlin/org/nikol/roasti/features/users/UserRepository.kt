@@ -10,20 +10,20 @@ import org.jetbrains.exposed.v1.jdbc.update
 import kotlin.time.Clock
 
 interface UserRepository {
-    suspend fun findById(id: String): User?
+    suspend fun findById(id: UserId): User?
     suspend fun findByUsername(username: String): User?
     suspend fun create(input: CreateUserInput): User
-    suspend fun update(id: String, fields: UpdateUserFields)
+    suspend fun update(id: UserId, fields: UpdateUserFields)
     suspend fun existsByUsername(username: String): Boolean
     suspend fun existsByEmail(email: String): Boolean
 }
 
 class UserRepositoryImpl : UserRepository {
 
-    override suspend fun findById(id: String): User? = withContext(Dispatchers.IO) {
+    override suspend fun findById(id: UserId): User? = withContext(Dispatchers.IO) {
         transaction {
             UserTable.selectAll()
-                .where { UserTable.id eq id }
+                .where { UserTable.id eq id.value }
                 .singleOrNull()
                 ?.toUser()
         }
@@ -41,7 +41,7 @@ class UserRepositoryImpl : UserRepository {
     override suspend fun create(input: CreateUserInput): User = withContext(Dispatchers.IO) {
         transaction {
             UserTable.insert {
-                it[id] = input.id
+                it[id] = input.id.value
                 it[email] = input.email
                 it[username] = input.username
                 it[name] = input.name
@@ -50,15 +50,15 @@ class UserRepositoryImpl : UserRepository {
                 it[createdAt] = Clock.System.now()
             }
             UserTable.selectAll()
-                .where { UserTable.id eq input.id }
+                .where { UserTable.id eq input.id.value }
                 .single()
                 .toUser()
         }
     }
 
-    override suspend fun update(id: String, fields: UpdateUserFields): Unit = withContext(Dispatchers.IO) {
+    override suspend fun update(id: UserId, fields: UpdateUserFields): Unit = withContext(Dispatchers.IO) {
         transaction {
-            UserTable.update({ UserTable.id eq id }) { stmt ->
+            UserTable.update({ UserTable.id eq id.value }) { stmt ->
                 fields.username?.let { stmt[UserTable.username] = it }
                 fields.name?.let { stmt[UserTable.name] = it }
                 fields.bio?.let { stmt[UserTable.bio] = it }
@@ -85,7 +85,7 @@ class UserRepositoryImpl : UserRepository {
 }
 
 data class CreateUserInput(
-    val id: String,
+    val id: UserId,
     val email: String,
     val username: String,
     val name: String? = null,

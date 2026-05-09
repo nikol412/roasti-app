@@ -40,6 +40,7 @@ import org.nikol.roasti.features.users.UserRepository
 import org.nikol.roasti.features.users.UserRepositoryImpl
 import org.nikol.roasti.features.users.UserService
 import org.nikol.roasti.features.users.UserServiceImpl
+import org.nikol.roasti.features.users.UserId
 import org.nikol.roasti.features.users.UserTable
 import org.nikol.roasti.features.users.userRoutes
 import org.slf4j.event.Level
@@ -82,7 +83,7 @@ fun Application.module() {
             authenticate { credential ->
                 try {
                     val decoded = firebaseAuth.verifyIdToken(credential.token)
-                    FirebasePrincipal(decoded.uid)
+                    FirebasePrincipal(UserId(decoded.uid))
                 } catch (e: FirebaseAuthException) {
                     null
                 }

@@ -5,22 +5,22 @@ private const val USERNAME_MIN_LENGTH = 6
 private const val USERNAME_MAX_LENGTH = 16
 
 interface UserService {
-    suspend fun getById(id: String): Result<User>
+    suspend fun getById(id: UserId): Result<User>
     suspend fun getByUsername(username: String): Result<User>
-    suspend fun updateProfile(id: String, fields: UpdateUserFields): Result<User>
+    suspend fun updateProfile(id: UserId, fields: UpdateUserFields): Result<User>
     suspend fun checkUsernameAvailability(username: String): Boolean
     fun validateUsername(username: String): Throwable?
 }
 
 class UserServiceImpl(private val repo: UserRepository) : UserService {
 
-    override suspend fun getById(id: String): Result<User> =
+    override suspend fun getById(id: UserId): Result<User> =
         repo.findById(id)?.let { Result.success(it) } ?: Result.failure(UserNotFoundException)
 
     override suspend fun getByUsername(username: String): Result<User> =
         repo.findByUsername(username)?.let { Result.success(it) } ?: Result.failure(UserNotFoundException)
 
-    override suspend fun updateProfile(id: String, fields: UpdateUserFields): Result<User> {
+    override suspend fun updateProfile(id: UserId, fields: UpdateUserFields): Result<User> {
         if (fields.username != null) {
             validateUsername(fields.username)?.let { return Result.failure(it) }
             if (repo.existsByUsername(fields.username)) return Result.failure(UsernameTakenException)
