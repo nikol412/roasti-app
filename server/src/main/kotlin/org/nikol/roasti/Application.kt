@@ -58,6 +58,12 @@ import org.nikol.roasti.features.votes.VoteRepositoryImpl
 import org.nikol.roasti.features.votes.VoteService
 import org.nikol.roasti.features.votes.VoteServiceImpl
 import org.nikol.roasti.features.votes.VoteTable
+import org.nikol.roasti.features.posts.PostRepository
+import org.nikol.roasti.features.posts.PostRepositoryImpl
+import org.nikol.roasti.features.posts.PostService
+import org.nikol.roasti.features.posts.PostServiceImpl
+import org.nikol.roasti.features.posts.PostTable
+import org.nikol.roasti.features.posts.postRoutes
 import org.slf4j.event.Level
 import java.io.ByteArrayInputStream
 import java.util.Base64
@@ -71,7 +77,7 @@ fun Application.module() {
     val dbDriver = environment.config.property("database.driver").getString()
 
     Database.connect(url = dbUrl, driver = dbDriver)
-    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable) }
+    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable, PostTable) }
 
     initFirebase()
 
@@ -90,6 +96,8 @@ fun Application.module() {
             single { FirebaseAuth.getInstance() }
             single<CommentRepository> { CommentRepositoryImpl() }
             single<CommentService> { CommentServiceImpl(get()) }
+            single<PostRepository> { PostRepositoryImpl() }
+            single<PostService> { PostServiceImpl(get(), get(), get()) }
             single<LikeRepository> { LikeRepositoryImpl() }
             single<LikeService> { LikeServiceImpl(get()) }
             single<VoteRepository> { VoteRepositoryImpl() }
@@ -145,6 +153,7 @@ fun Application.module() {
         route("/api/v1") {
             authRoutes()
             userRoutes()
+            postRoutes()
         }
     }
 }
