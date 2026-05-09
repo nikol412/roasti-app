@@ -13,13 +13,14 @@ object PostTable : UuidTable("posts") {
     val title = varchar("title", 500).nullable()
     val text = text("text").nullable()
     val images = array<String>("images")
+    @OptIn(ExperimentalUuidApi::class)
     val recipeId = uuid("recipe_id").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 }
 
 @OptIn(ExperimentalUuidApi::class)
-internal data class PostRow(
+data class PostRow(
     val id: PostId,
     val author: PostAuthor,
     val title: String?,
@@ -41,7 +42,7 @@ internal fun ResultRow.toPostRow() = PostRow(
     ),
     title = this[PostTable.title],
     text = this[PostTable.text],
-    images = this[PostTable.images].toList(),
+    images = this[PostTable.images],
     recipeId = this[PostTable.recipeId],
     createdAt = this[PostTable.createdAt],
     updatedAt = this[PostTable.updatedAt],

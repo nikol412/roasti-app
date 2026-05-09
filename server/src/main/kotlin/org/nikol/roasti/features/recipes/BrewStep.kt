@@ -5,6 +5,6 @@ data class BrewStep(
     val title: String,
     val description: String,
     val order: Int,
-    val duration: Int,
+    val durationSeconds: Int?,
     val imageId: String?,
 )

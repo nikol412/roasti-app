@@ -27,6 +27,8 @@ import org.nikol.roasti.feature.post.data.remote.model.request.CreatePostRequest
 import org.nikol.roasti.feature.post.data.remote.model.request.UpdatePostRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.request.VoteRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostAuthorDto
+import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeRefDto
+import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeStatusDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostVoteResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostsPaginationResponseDto
@@ -173,7 +175,8 @@ private fun Post.toDto() = PostResponseDto(
     title = title,
     text = text ?: "",
     images = images,
-    recipeId = recipeId?.toString(),
+    // TODO: check if recipe still exists and return UNAVAILABLE if deleted (requires batch lookup in PostService)
+    recipe = recipeId?.let { PostRecipeRefDto(id = it.toString(), status = PostRecipeStatusDto.AVAILABLE) },
     rating = rating,
     userVote = userVote.toDto(),
     commentsCount = commentsCount,

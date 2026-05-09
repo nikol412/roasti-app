@@ -16,6 +16,7 @@ import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 data class CreatePostInput(
     val title: String?,
     val text: String?,
@@ -23,6 +24,7 @@ data class CreatePostInput(
     val recipeId: Uuid?,
 )
 
+@OptIn(ExperimentalUuidApi::class)
 data class UpdatePostInput(
     val title: String?,
     val text: String?,
@@ -81,7 +83,7 @@ class PostRepositoryImpl : PostRepository {
                 it[PostTable.authorId] = authorId.value
                 it[PostTable.title] = input.title
                 it[PostTable.text] = input.text
-                it[PostTable.images] = input.images.toTypedArray()
+                it[PostTable.images] = input.images
                 it[PostTable.recipeId] = input.recipeId
                 it[PostTable.createdAt] = now
                 it[PostTable.updatedAt] = now
@@ -95,7 +97,7 @@ class PostRepositoryImpl : PostRepository {
             PostTable.update({ PostTable.id eq id.value }) {
                 it[title] = input.title
                 it[text] = input.text
-                if (input.images != null) it[images] = input.images.toTypedArray()
+                if (input.images != null) it[images] = input.images
                 it[recipeId] = input.recipeId
                 it[updatedAt] = Clock.System.now()
             }

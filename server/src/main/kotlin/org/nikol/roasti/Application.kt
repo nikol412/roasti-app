@@ -64,6 +64,13 @@ import org.nikol.roasti.features.posts.PostService
 import org.nikol.roasti.features.posts.PostServiceImpl
 import org.nikol.roasti.features.posts.PostTable
 import org.nikol.roasti.features.posts.postRoutes
+import org.nikol.roasti.features.recipes.BrewStepTable
+import org.nikol.roasti.features.recipes.RecipeRepository
+import org.nikol.roasti.features.recipes.RecipeRepositoryImpl
+import org.nikol.roasti.features.recipes.RecipeService
+import org.nikol.roasti.features.recipes.RecipeServiceImpl
+import org.nikol.roasti.features.recipes.RecipeTable
+import org.nikol.roasti.features.recipes.recipeRoutes
 import org.slf4j.event.Level
 import java.io.ByteArrayInputStream
 import java.util.Base64
@@ -77,7 +84,7 @@ fun Application.module() {
     val dbDriver = environment.config.property("database.driver").getString()
 
     Database.connect(url = dbUrl, driver = dbDriver)
-    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable, PostTable) }
+    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable, PostTable, RecipeTable, BrewStepTable) }
 
     initFirebase()
 
@@ -102,6 +109,8 @@ fun Application.module() {
             single<LikeService> { LikeServiceImpl(get()) }
             single<VoteRepository> { VoteRepositoryImpl() }
             single<VoteService> { VoteServiceImpl(get()) }
+            single<RecipeRepository> { RecipeRepositoryImpl() }
+            single<RecipeService> { RecipeServiceImpl(get(), get(), get()) }
             single<AuthService> { AuthServiceImpl(get(), get(), get(), get(), get()) }
         })
     }
@@ -154,6 +163,7 @@ fun Application.module() {
             authRoutes()
             userRoutes()
             postRoutes()
+            recipeRoutes()
         }
     }
 }
