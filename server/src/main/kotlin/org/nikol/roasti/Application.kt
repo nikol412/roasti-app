@@ -43,6 +43,11 @@ import org.nikol.roasti.features.users.UserServiceImpl
 import org.nikol.roasti.features.users.UserId
 import org.nikol.roasti.features.users.UserTable
 import org.nikol.roasti.features.users.userRoutes
+import org.nikol.roasti.features.likes.LikeRepository
+import org.nikol.roasti.features.likes.LikeRepositoryImpl
+import org.nikol.roasti.features.likes.LikeService
+import org.nikol.roasti.features.likes.LikeServiceImpl
+import org.nikol.roasti.features.likes.LikeTable
 import org.nikol.roasti.features.votes.VoteRepository
 import org.nikol.roasti.features.votes.VoteRepositoryImpl
 import org.nikol.roasti.features.votes.VoteService
@@ -61,7 +66,7 @@ fun Application.module() {
     val dbDriver = environment.config.property("database.driver").getString()
 
     Database.connect(url = dbUrl, driver = dbDriver)
-    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable) }
+    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable) }
 
     initFirebase()
 
@@ -78,6 +83,8 @@ fun Application.module() {
             single<FirebaseSigner> { FirebaseSignerImpl(firebaseApiKey, identityBaseUrl, tokenBaseUrl) }
             single<RevokedTokenRepository> { RevokedTokenRepositoryImpl() }
             single { FirebaseAuth.getInstance() }
+            single<LikeRepository> { LikeRepositoryImpl() }
+            single<LikeService> { LikeServiceImpl(get()) }
             single<VoteRepository> { VoteRepositoryImpl() }
             single<VoteService> { VoteServiceImpl(get()) }
             single<AuthService> { AuthServiceImpl(get(), get(), get(), get(), get()) }
