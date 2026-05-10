@@ -11,8 +11,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.config.mergeWith
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
+import java.nio.file.Files
 import kotlinx.serialization.json.Json
 import org.nikol.roasti.feature.auth.data.network.model.request.RegisterRequestDto
 import org.nikol.roasti.feature.auth.data.network.model.response.AuthResponseDto
@@ -20,11 +23,19 @@ import java.util.UUID
 
 private val testJson = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
-fun withApp(block: suspend ApplicationTestBuilder.() -> Unit) = testApplication {
-    environment {
-        config = ApplicationConfig("application.conf")
+fun withApp(block: suspend ApplicationTestBuilder.() -> Unit) {
+    val tempDir = Files.createTempDirectory("roasti-test-uploads")
+    try {
+        testApplication {
+            environment {
+                config = ApplicationConfig("application.conf")
+                    .mergeWith(MapApplicationConfig("uploads.dir" to tempDir.toAbsolutePath().toString()))
+            }
+            block()
+        }
+    } finally {
+        tempDir.toFile().deleteRecursively()
     }
-    block()
 }
 
 fun ApplicationTestBuilder.jsonClient(token: String? = null): HttpClient = createClient {
