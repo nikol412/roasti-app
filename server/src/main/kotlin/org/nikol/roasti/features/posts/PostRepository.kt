@@ -28,7 +28,7 @@ data class CreatePostInput(
 data class UpdatePostInput(
     val title: String?,
     val text: String?,
-    val images: List<String>?,
+    val images: List<String>,
     val recipeId: Uuid?,
 )
 
@@ -97,7 +97,7 @@ class PostRepositoryImpl : PostRepository {
             PostTable.update({ PostTable.id eq id.value }) {
                 it[title] = input.title
                 it[text] = input.text
-                if (input.images != null) it[images] = input.images
+                it[images] = input.images
                 it[recipeId] = input.recipeId
                 it[updatedAt] = Clock.System.now()
             }
