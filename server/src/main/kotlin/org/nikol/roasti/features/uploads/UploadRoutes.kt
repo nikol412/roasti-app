@@ -27,15 +27,21 @@ fun Route.uploadRoutes() {
             post {
                 val multipart = call.receiveMultipart()
                 var meta: UploadMeta? = null
+                var invalidMedia = false
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem && part.name == "file") {
                         val bytes = part.provider().readRemaining().readByteArray()
                         val filename = part.originalFileName ?: "upload"
                         val contentType = part.contentType?.toString() ?: contentTypeFromFilename(filename)
-                        meta = uploadService.save(contentType, bytes)
+                        if (bytes.isEmpty() || !contentType.startsWith("image/")) {
+                            invalidMedia = true
+                        } else {
+                            meta = uploadService.save(contentType, bytes)
+                        }
                     }
                     part.dispose()
                 }
+                if (invalidMedia) return@post call.respond(HttpStatusCode.UnsupportedMediaType)
                 val result = meta ?: return@post call.respond(HttpStatusCode.BadRequest, "missing file field")
                 call.respond(HttpStatusCode.Created, UploadResponseDto(result.id))
             }
