@@ -2,6 +2,7 @@ package org.nikol.roasti.features.recipes
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -66,8 +67,7 @@ class RecipeRepositoryImpl : RecipeRepository {
 
     override suspend fun findById(id: RecipeId): RecipeRow? = withContext(Dispatchers.IO) {
         transaction {
-            RecipeTable.innerJoin(UserTable)
-                .selectAll()
+            recipeQuery()
                 .where { RecipeTable.id eq id.value }
                 .singleOrNull()
                 ?.toRecipeRow()
@@ -94,11 +94,10 @@ class RecipeRepositoryImpl : RecipeRepository {
             if (difficulty != null) cond = cond and (RecipeTable.difficulty eq difficulty)
             if (roastLevel != null) cond = cond and (RecipeTable.roastLevel eq roastLevel)
 
-            val total = RecipeTable.innerJoin(UserTable).selectAll().where { cond }.count().toInt()
+            val total = recipeQuery().where { cond }.count().toInt()
             val offset = (page - 1) * limit
 
-            val items = RecipeTable.innerJoin(UserTable)
-                .selectAll()
+            val items = recipeQuery()
                 .where { cond }
                 .orderBy(RecipeTable.createdAt, SortOrder.DESC)
                 .limit(limit)
@@ -202,9 +201,6 @@ class RecipeRepositoryImpl : RecipeRepository {
                 it[RecipeTable.beans] = originalRow.beans
                 it[RecipeTable.public] = false
                 it[RecipeTable.originRecipeId] = originalRow.id.value
-                it[RecipeTable.originAuthorId] = originalRow.author.id.value
-                it[RecipeTable.originAuthorUsername] = originalRow.author.username
-                it[RecipeTable.originAuthorAvatarId] = originalRow.author.avatarId
                 it[RecipeTable.createdAt] = now
                 it[RecipeTable.updatedAt] = now
             }
@@ -221,12 +217,18 @@ class RecipeRepositoryImpl : RecipeRepository {
         findById(RecipeId(newId))!!
     }
 
+    private fun recipeQuery() = RecipeTable
+        .innerJoin(UserTable)
+        .join(OriginRecipes, JoinType.LEFT, RecipeTable.originRecipeId, OriginRecipes[RecipeTable.id])
+        .join(OriginAuthors, JoinType.LEFT, OriginRecipes[RecipeTable.authorId], OriginAuthors[UserTable.id])
+        .selectAll()
+
     private fun insertSteps(recipeId: RecipeId, steps: List<CreateBrewStepInput>) {
         steps.forEach { step ->
             BrewStepTable.insert {
                 it[BrewStepTable.recipeId] = org.jetbrains.exposed.v1.core.dao.id.EntityID(recipeId.value, RecipeTable)
                 it[BrewStepTable.title] = step.title
-                it[BrewStepTable.description] = step.description ?: ""
+                it[BrewStepTable.description] = step.description
                 it[BrewStepTable.order] = step.order
                 it[BrewStepTable.durationSeconds] = step.durationSeconds
                 it[BrewStepTable.imageId] = step.imageId

@@ -201,7 +201,7 @@ private fun Page<Recipe>.toDto() = PageResponseDto(
 private fun BrewStep.toDto() = RecipeStepResponseDto(
     order = order,
     title = title,
-    description = description,
+    description = description ?: "",
     durationSeconds = durationSeconds,
     imageId = imageId,
 )

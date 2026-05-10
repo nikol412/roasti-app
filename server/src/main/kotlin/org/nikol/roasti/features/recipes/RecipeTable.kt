@@ -2,6 +2,7 @@ package org.nikol.roasti.features.recipes
 
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.datetime.timestamp
@@ -25,9 +26,6 @@ object RecipeTable : UuidTable("recipes") {
     val public = bool("public").default(true)
     @OptIn(ExperimentalUuidApi::class)
     val originRecipeId = uuid("origin_recipe_id").nullable()
-    val originAuthorId = varchar("origin_author_id", 128).nullable()
-    val originAuthorUsername = varchar("origin_author_username", 255).nullable()
-    val originAuthorAvatarId = varchar("origin_author_avatar_id", 255).nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 }
@@ -36,11 +34,14 @@ object BrewStepTable : IntIdTable("brew_steps") {
     @OptIn(ExperimentalUuidApi::class)
     val recipeId = reference("recipe_id", RecipeTable.id, onDelete = ReferenceOption.CASCADE)
     val title = varchar("title", 255)
-    val description = text("description")
+    val description = text("description").nullable()
     val order = integer("order")
     val durationSeconds = integer("duration_seconds").nullable()
     val imageId = varchar("image_id", 255).nullable()
 }
+
+internal val OriginRecipes = RecipeTable.alias("origin_recipes")
+internal val OriginAuthors = UserTable.alias("origin_authors")
 
 @OptIn(ExperimentalUuidApi::class)
 data class RecipeRow(
@@ -81,9 +82,9 @@ fun ResultRow.toRecipeRow() = RecipeRow(
     beans = this[RecipeTable.beans],
     public = this[RecipeTable.public],
     originRecipeId = this[RecipeTable.originRecipeId]?.let { RecipeId(it) },
-    originAuthorId = this[RecipeTable.originAuthorId],
-    originAuthorUsername = this[RecipeTable.originAuthorUsername],
-    originAuthorAvatarId = this[RecipeTable.originAuthorAvatarId],
+    originAuthorId = this.getOrNull(OriginAuthors[UserTable.id]),
+    originAuthorUsername = this.getOrNull(OriginAuthors[UserTable.username]),
+    originAuthorAvatarId = this.getOrNull(OriginAuthors[UserTable.avatarId]),
     createdAt = this[RecipeTable.createdAt],
     updatedAt = this[RecipeTable.updatedAt],
 )
