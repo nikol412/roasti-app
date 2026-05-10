@@ -1,6 +1,7 @@
 package org.nikol.roasti.features.posts
 
 import org.nikol.roasti.features.comments.CommentRepository
+import org.nikol.roasti.features.comments.CommentTargetType
 import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.users.UserId
 import org.nikol.roasti.features.votes.VoteDirection
@@ -9,7 +10,6 @@ import org.nikol.roasti.features.votes.VoteTargetType
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-private const val COMMENT_TARGET_TYPE = "post"
 
 data class PostVoteResult(val rating: Int, val userVote: VoteDirection)
 
@@ -38,7 +38,7 @@ class PostServiceImpl(
         val (rows, total) = repo.list(page, limit, authorId)
         val postIds = rows.map { it.id.value.toString() }
         val voteInfos = voteService.getInfoBatch(userId, postIds, VoteTargetType.POST)
-        val commentCounts = commentRepo.countForTargetBatch(postIds, COMMENT_TARGET_TYPE)
+        val commentCounts = commentRepo.countForTargetBatch(postIds, CommentTargetType.POST)
 
         val posts = rows.map { row ->
             val id = row.id.value.toString()
@@ -84,7 +84,7 @@ class PostServiceImpl(
     private suspend fun PostRow.enrich(userId: UserId?): Post {
         val targetId = id.value.toString()
         val voteInfo = voteService.getInfo(userId, targetId, VoteTargetType.POST)
-        val commentsCount = commentRepo.countForTarget(targetId, COMMENT_TARGET_TYPE)
+        val commentsCount = commentRepo.countForTarget(targetId, CommentTargetType.POST)
         return toPost(voteInfo.rating, voteInfo.userVote, commentsCount)
     }
 }

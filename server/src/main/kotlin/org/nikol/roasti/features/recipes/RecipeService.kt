@@ -6,6 +6,7 @@ import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.features.comments.Comment
 import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentService
+import org.nikol.roasti.features.comments.CommentTargetType
 import org.nikol.roasti.features.comments.CommentThread
 import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.likes.LikeService
@@ -14,7 +15,6 @@ import org.nikol.roasti.features.likes.ToggleResult
 import org.nikol.roasti.features.users.UserId
 import kotlin.uuid.ExperimentalUuidApi
 
-private const val COMMENT_TARGET_TYPE = "recipe"
 
 interface RecipeService {
     suspend fun getById(id: RecipeId, userId: UserId?): Recipe
@@ -105,7 +105,7 @@ class RecipeServiceImpl(
 
     override suspend fun listComments(id: RecipeId, page: Int, limit: Int): Page<CommentThread> {
         repo.findById(id) ?: throw RecipeNotFoundException
-        return commentService.list(id.value.toString(), COMMENT_TARGET_TYPE, page, limit)
+        return commentService.list(id.value.toString(), CommentTargetType.RECIPE, page, limit)
     }
 
     override suspend fun createComment(
@@ -115,7 +115,7 @@ class RecipeServiceImpl(
         parentId: CommentId?,
     ): Comment {
         repo.findById(id) ?: throw RecipeNotFoundException
-        return commentService.create(userId, id.value.toString(), COMMENT_TARGET_TYPE, text, parentId)
+        return commentService.create(userId, id.value.toString(), CommentTargetType.RECIPE, text, parentId)
     }
 
     override suspend fun clone(userId: UserId, id: RecipeId): Recipe {

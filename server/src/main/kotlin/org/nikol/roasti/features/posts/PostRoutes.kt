@@ -35,6 +35,7 @@ import org.nikol.roasti.feature.post.data.remote.model.response.PostVoteResponse
 import org.nikol.roasti.features.comments.Comment
 import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentService
+import org.nikol.roasti.features.comments.CommentTargetType
 import org.nikol.roasti.features.comments.CommentThread
 import org.nikol.roasti.features.comments.toDto
 import org.nikol.roasti.features.votes.VoteDirection
@@ -69,7 +70,7 @@ fun Route.postRoutes() {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val result = commentService.list(id, "post", page, limit)
+            val result = commentService.list(id, CommentTargetType.POST, page, limit)
             call.respond(
                 PageResponseDto(
                     items = result.items.map { it.toDto() },
@@ -144,7 +145,7 @@ fun Route.postRoutes() {
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<CreateCommentRequestDto>()
                 val parentId = body.parentId?.let { CommentId(Uuid.parse(it)) }
-                val comment = commentService.create(userId, id, "post", body.text, parentId)
+                val comment = commentService.create(userId, id, CommentTargetType.POST, body.text, parentId)
                 call.respond(HttpStatusCode.Created, comment.toDto())
             }
         }

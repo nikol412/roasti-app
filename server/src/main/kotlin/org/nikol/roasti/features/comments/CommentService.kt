@@ -6,10 +6,10 @@ import org.nikol.roasti.features.users.UserId
 private const val TEXT_MAX_LENGTH = 1000
 
 interface CommentService {
-    suspend fun create(userId: UserId, targetId: String, targetType: String, text: String, parentId: CommentId?): Comment
+    suspend fun create(userId: UserId, targetId: String, targetType: CommentTargetType, text: String, parentId: CommentId?): Comment
     suspend fun update(userId: UserId, commentId: CommentId, text: String): Comment
     suspend fun delete(userId: UserId, commentId: CommentId)
-    suspend fun list(targetId: String, targetType: String, page: Int, limit: Int): Page<CommentThread>
+    suspend fun list(targetId: String, targetType: CommentTargetType, page: Int, limit: Int): Page<CommentThread>
 }
 
 class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
@@ -17,7 +17,7 @@ class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
     override suspend fun create(
         userId: UserId,
         targetId: String,
-        targetType: String,
+        targetType: CommentTargetType,
         text: String,
         parentId: CommentId?,
     ): Comment {
@@ -56,7 +56,7 @@ class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
         repo.softDelete(commentId)
     }
 
-    override suspend fun list(targetId: String, targetType: String, page: Int, limit: Int): Page<CommentThread> {
+    override suspend fun list(targetId: String, targetType: CommentTargetType, page: Int, limit: Int): Page<CommentThread> {
         val (items, total) = repo.listForTarget(targetId, targetType, page, limit)
         return Page.of(items, page, total, limit)
     }
