@@ -16,6 +16,7 @@ import org.nikol.roasti.feature.auth.data.network.model.request.UpdateProfileReq
 import org.nikol.roasti.feature.auth.data.network.model.response.UserDto
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
+import org.nikol.roasti.features.common.respondError
 
 @Serializable
 data class UsernameAvailabilityResponse(
@@ -30,8 +31,8 @@ fun Route.userRoutes() {
             get("/me") {
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 userService.getById(userId).fold(
-                    onSuccess = { call.respond(it.toDto()) },
-                    onFailure = { call.respond(HttpStatusCode.NotFound) },
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(it.toDto()) },
                 )
             }
 
@@ -45,13 +46,8 @@ fun Route.userRoutes() {
                     avatarId = body.imageId,
                 )
                 userService.updateProfile(userId, fields).fold(
-                    onSuccess = { call.respond(it.toDto()) },
-                    onFailure = { ex ->
-                        when (ex) {
-                            UsernameTakenException -> call.respond(HttpStatusCode.Conflict, ex.message ?: "conflict")
-                            else -> call.respond(HttpStatusCode.UnprocessableEntity, ex.message ?: "validation error")
-                        }
-                    },
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(it.toDto()) },
                 )
             }
         }
@@ -65,8 +61,8 @@ fun Route.userRoutes() {
         get("/{username}") {
             val username = call.parameters["username"]!!
             userService.getByUsername(username).fold(
-                onSuccess = { call.respond(it.toDto()) },
-                onFailure = { call.respond(HttpStatusCode.NotFound) },
+                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                ifRight = { call.respond(it.toDto()) },
             )
         }
     }

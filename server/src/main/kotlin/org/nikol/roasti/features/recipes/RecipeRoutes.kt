@@ -14,6 +14,7 @@ import io.ktor.server.routing.route
 import org.koin.ktor.ext.inject
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
+import org.nikol.roasti.features.common.respondError
 import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
@@ -62,8 +63,10 @@ fun Route.recipeRoutes() {
             val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                 ?: return@get call.respond(HttpStatusCode.BadRequest)
             val userId = call.principal<FirebasePrincipal>()?.uid
-            val recipe = recipeService.getById(id, userId)
-            call.respond(recipe.toDto())
+            recipeService.getById(id, userId).fold(
+                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                ifRight = { call.respond(it.toDto()) },
+            )
         }
 
         get("/{id}/comments") {
@@ -71,17 +74,21 @@ fun Route.recipeRoutes() {
                 ?: return@get call.respond(HttpStatusCode.BadRequest)
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val result = recipeService.listComments(id, page, limit)
-            call.respond(
-                PageResponseDto(
-                    items = result.items.map { it.toDto() },
-                    pagination = PaginationResponseDto(
-                        currentPage = result.currentPage,
-                        itemsCount = result.itemsCount,
-                        lastPage = result.lastPage,
-                        nextPage = result.nextPage,
-                    ),
-                )
+            recipeService.listComments(id, page, limit).fold(
+                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                ifRight = { result ->
+                    call.respond(
+                        PageResponseDto(
+                            items = result.items.map { it.toDto() },
+                            pagination = PaginationResponseDto(
+                                currentPage = result.currentPage,
+                                itemsCount = result.itemsCount,
+                                lastPage = result.lastPage,
+                                nextPage = result.nextPage,
+                            ),
+                        )
+                    )
+                },
             )
         }
 
@@ -98,24 +105,30 @@ fun Route.recipeRoutes() {
                     ?: return@put call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<CreateRecipeRequestDto>()
-                val recipe = recipeService.update(userId, id, body.toInput())
-                call.respond(recipe.toDto())
+                recipeService.update(userId, id, body.toInput()).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(it.toDto()) },
+                )
             }
 
             delete("/{id}") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@delete call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
-                recipeService.delete(userId, id)
-                call.respond(HttpStatusCode.NoContent)
+                recipeService.delete(userId, id).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.NoContent) },
+                )
             }
 
             post("/{id}/like") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
-                val result = recipeService.toggleLike(userId, id)
-                call.respond(RecipeLikeDto(isLiked = result.isLiked, likesCount = result.count))
+                recipeService.toggleLike(userId, id).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(RecipeLikeDto(isLiked = it.isLiked, likesCount = it.count)) },
+                )
             }
 
             post("/{id}/comments") {
@@ -124,16 +137,20 @@ fun Route.recipeRoutes() {
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<CreateCommentRequestDto>()
                 val parentId = body.parentId?.let { CommentId(Uuid.parse(it)) }
-                val comment = recipeService.createComment(userId, id, body.text, parentId)
-                call.respond(HttpStatusCode.Created, comment.toDto())
+                recipeService.createComment(userId, id, body.text, parentId).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.Created, it.toDto()) },
+                )
             }
 
             post("/{id}/clone") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
-                val recipe = recipeService.clone(userId, id)
-                call.respond(HttpStatusCode.Created, recipe.toDto())
+                recipeService.clone(userId, id).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.Created, it.toDto()) },
+                )
             }
         }
     }

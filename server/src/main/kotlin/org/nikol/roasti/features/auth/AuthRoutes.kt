@@ -15,7 +15,7 @@ import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
 import org.nikol.roasti.feature.auth.data.network.model.request.LoginRequestDto
 import org.nikol.roasti.feature.auth.data.network.model.request.RegisterRequestDto
-import org.nikol.roasti.feature.auth.data.network.model.response.RefreshResponseDto
+import org.nikol.roasti.features.common.respondError
 
 @Serializable
 data class RefreshRequestBody(@SerialName("refresh_token") val refreshToken: String)
@@ -29,20 +29,26 @@ fun Route.authRoutes() {
     route("/auth") {
         post("/register") {
             val request = call.receive<RegisterRequestDto>()
-            val response = authService.register(request)
-            call.respond(HttpStatusCode.Created, response)
+            authService.register(request).fold(
+                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                ifRight = { call.respond(HttpStatusCode.Created, it) },
+            )
         }
 
         post("/login") {
             val request = call.receive<LoginRequestDto>()
-            val response = authService.login(request.username, request.password)
-            call.respond(response)
+            authService.login(request.username, request.password).fold(
+                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                ifRight = { call.respond(it) },
+            )
         }
 
         post("/refresh") {
             val body = call.receive<RefreshRequestBody>()
-            val response = authService.refresh(body.refreshToken)
-            call.respond(response)
+            authService.refresh(body.refreshToken).fold(
+                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                ifRight = { call.respond(it) },
+            )
         }
 
         authenticate(FIREBASE_AUTH) {

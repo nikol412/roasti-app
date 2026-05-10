@@ -33,6 +33,8 @@ dependencies {
     implementation(libs.ktor.server.auth)
     testImplementation(libs.ktor.server.testHost)
     testImplementation(libs.kotlin.testJunit)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.serialization.kotlinx.json)
 }
 
 kotlin {
@@ -56,6 +58,10 @@ tasks.register<Exec>("firebaseEmulator") {
 }
 
 tasks.named<JavaExec>("run") {
+    environment(firebaseEmulatorEnv)
+}
+
+tasks.named<Test>("test") {
     environment(firebaseEmulatorEnv)
 }
 

@@ -16,6 +16,7 @@ import kotlinx.serialization.Serializable
 import org.koin.ktor.ext.inject
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
+import org.nikol.roasti.features.common.respondError
 import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
@@ -62,8 +63,10 @@ fun Route.postRoutes() {
             val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
                 ?: return@get call.respond(HttpStatusCode.BadRequest)
             val userId = call.principal<FirebasePrincipal>()?.uid
-            val post = postService.getById(id, userId)
-            call.respond(post.toDto())
+            postService.getById(id, userId).fold(
+                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                ifRight = { call.respond(it.toDto()) },
+            )
         }
 
         get("/{id}/comments") {
@@ -105,7 +108,7 @@ fun Route.postRoutes() {
                     ?: return@put call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<UpdatePostRequestDto>()
-                val post = postService.update(
+                postService.update(
                     userId, id,
                     UpdatePostInput(
                         title = body.title,
@@ -113,16 +116,20 @@ fun Route.postRoutes() {
                         images = body.images,
                         recipeId = body.recipeId?.let { Uuid.parse(it) },
                     ),
+                ).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(it.toDto()) },
                 )
-                call.respond(post.toDto())
             }
 
             delete("/{id}") {
                 val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
                     ?: return@delete call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
-                postService.delete(userId, id)
-                call.respond(HttpStatusCode.NoContent)
+                postService.delete(userId, id).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.NoContent) },
+                )
             }
 
             put("/{id}/vote") {
@@ -131,12 +138,9 @@ fun Route.postRoutes() {
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<VoteRequestDto>()
                 val direction = body.type.toDomain()
-                val result = postService.vote(userId, id, direction)
-                call.respond(
-                    PostVoteResponseDto(
-                        rating = result.rating,
-                        userVote = result.userVote.toDto(),
-                    )
+                postService.vote(userId, id, direction).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(PostVoteResponseDto(rating = it.rating, userVote = it.userVote.toDto())) },
                 )
             }
 

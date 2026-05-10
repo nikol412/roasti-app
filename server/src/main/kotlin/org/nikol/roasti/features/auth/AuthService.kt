@@ -1,28 +1,29 @@
 package org.nikol.roasti.features.auth
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.UserRecord
-import com.google.firebase.auth.AuthErrorCode
+import com.google.firebase.auth.AuthErrorCode as FirebaseAuthErrorCode
 import org.nikol.roasti.features.users.CreateUserInput
-import org.nikol.roasti.features.users.EmailTakenException
 import org.nikol.roasti.features.users.UserId
+import org.nikol.roasti.features.users.UserErrorCode
 import org.nikol.roasti.features.users.UserRepository
 import org.nikol.roasti.features.users.UserService
-import org.nikol.roasti.features.users.UsernameTakenException
 import org.nikol.roasti.feature.auth.data.network.model.request.RegisterRequestDto
 import org.nikol.roasti.feature.auth.data.network.model.response.AuthResponseDto
 import org.nikol.roasti.feature.auth.data.network.model.response.RefreshResponseDto
-import org.nikol.roasti.feature.auth.data.network.model.response.UserDto
 import org.nikol.roasti.features.users.toDto
 
 private const val PASSWORD_MIN_LENGTH = 8
 private const val PASSWORD_MAX_LENGTH = 32
 
 interface AuthService {
-    suspend fun register(request: RegisterRequestDto): AuthResponseDto
-    suspend fun login(username: String, password: String): AuthResponseDto
-    suspend fun refresh(refreshToken: String): RefreshResponseDto
+    suspend fun register(request: RegisterRequestDto): Either<AuthErrorCode, AuthResponseDto>
+    suspend fun login(username: String, password: String): Either<AuthErrorCode, AuthResponseDto>
+    suspend fun refresh(refreshToken: String): Either<AuthErrorCode, RefreshResponseDto>
     suspend fun logout(refreshToken: String)
 }
 
@@ -34,13 +35,12 @@ class AuthServiceImpl(
     private val firebaseAuth: FirebaseAuth,
 ) : AuthService {
 
-    override suspend fun register(request: RegisterRequestDto): AuthResponseDto {
-        validatePassword(request.password)
-        userService.validateUsername(request.username)
-            ?.let { throw IllegalArgumentException(it.message) }
+    override suspend fun register(request: RegisterRequestDto): Either<AuthErrorCode, AuthResponseDto> {
+        validatePassword(request.password)?.let { return it.left() }
+        userService.validateUsername(request.username)?.let { return it.toAuthErrorCode().left() }
 
-        if (userRepo.existsByUsername(request.username)) throw UsernameTakenException
-        if (userRepo.existsByEmail(request.email)) throw EmailTakenException
+        if (userRepo.existsByUsername(request.username)) return AuthErrorCode.USERNAME_TAKEN.left()
+        if (userRepo.existsByEmail(request.email)) return AuthErrorCode.EMAIL_TAKEN.left()
 
         val firebaseUser = try {
             firebaseAuth.createUser(
@@ -49,9 +49,9 @@ class AuthServiceImpl(
                     .setPassword(request.password)
             )
         } catch (e: FirebaseAuthException) {
-            throw when (e.authErrorCode) {
-                AuthErrorCode.EMAIL_ALREADY_EXISTS -> EmailTakenException
-                else -> e
+            return when (e.authErrorCode) {
+                FirebaseAuthErrorCode.EMAIL_ALREADY_EXISTS -> AuthErrorCode.EMAIL_TAKEN.left()
+                else -> throw e
             }
         }
 
@@ -71,41 +71,58 @@ class AuthServiceImpl(
             accessToken = tokens.idToken,
             refreshToken = tokens.refreshToken,
             user = user.toDto(),
-        )
+        ).right()
     }
 
-    override suspend fun login(username: String, password: String): AuthResponseDto {
-        val user = userRepo.findByUsername(username)
-            ?: throw AuthException.InvalidCredentials
-
-        val tokens = signer.signInWithPassword(user.email, password)
+    override suspend fun login(username: String, password: String): Either<AuthErrorCode, AuthResponseDto> {
+        val user = userRepo.findByUsername(username) ?: return AuthErrorCode.INVALID_CREDENTIALS.left()
+        val tokens = try {
+            signer.signInWithPassword(user.email, password)
+        } catch (e: AuthException) {
+            return e.toErrorCode().left()
+        }
         return AuthResponseDto(
             accessToken = tokens.idToken,
             refreshToken = tokens.refreshToken,
             user = user.toDto(),
-        )
+        ).right()
     }
 
-    override suspend fun refresh(refreshToken: String): RefreshResponseDto {
-        if (revokedTokens.isRevoked(refreshToken)) throw AuthException.TokenRevoked
-
-        val tokens = signer.refreshToken(refreshToken)
+    override suspend fun refresh(refreshToken: String): Either<AuthErrorCode, RefreshResponseDto> {
+        if (revokedTokens.isRevoked(refreshToken)) return AuthErrorCode.INVALID_REFRESH_TOKEN.left()
+        val tokens = try {
+            signer.refreshToken(refreshToken)
+        } catch (e: AuthException) {
+            return e.toErrorCode().left()
+        }
         return RefreshResponseDto(
             accessToken = tokens.idToken,
             refreshToken = tokens.refreshToken,
-        )
+        ).right()
     }
 
     override suspend fun logout(refreshToken: String) {
         revokedTokens.add(refreshToken)
     }
 
-    private fun validatePassword(password: String) {
-        require(password.length >= PASSWORD_MIN_LENGTH) {
-            "password must be at least $PASSWORD_MIN_LENGTH characters"
-        }
-        require(password.length <= PASSWORD_MAX_LENGTH) {
-            "password must be at most $PASSWORD_MAX_LENGTH characters"
-        }
+    private fun validatePassword(password: String): AuthErrorCode? = when {
+        password.length < PASSWORD_MIN_LENGTH -> AuthErrorCode.PASSWORD_TOO_SHORT
+        password.length > PASSWORD_MAX_LENGTH -> AuthErrorCode.PASSWORD_TOO_LONG
+        else -> null
+    }
+
+    private fun AuthException.toErrorCode(): AuthErrorCode = when (this) {
+        is AuthException.InvalidCredentials -> AuthErrorCode.INVALID_CREDENTIALS
+        is AuthException.InvalidRefreshToken -> AuthErrorCode.INVALID_REFRESH_TOKEN
+        is AuthException.UserDisabled -> AuthErrorCode.USER_DISABLED
+        is AuthException.UserNotFound -> AuthErrorCode.INVALID_CREDENTIALS
+        is AuthException.TokenRevoked -> AuthErrorCode.INVALID_REFRESH_TOKEN
+    }
+
+    private fun UserErrorCode.toAuthErrorCode(): AuthErrorCode = when (this) {
+        UserErrorCode.USERNAME_TOO_SHORT -> AuthErrorCode.USERNAME_TOO_SHORT
+        UserErrorCode.USERNAME_TOO_LONG -> AuthErrorCode.USERNAME_TOO_LONG
+        UserErrorCode.USERNAME_INVALID_CHARS -> AuthErrorCode.USERNAME_INVALID_CHARS
+        else -> error("unexpected UserErrorCode in auth context: $this")
     }
 }

@@ -12,6 +12,7 @@ import io.ktor.server.routing.route
 import org.koin.ktor.ext.inject
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
+import org.nikol.roasti.features.common.respondError
 import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
@@ -29,16 +30,20 @@ fun Route.commentRoutes() {
                     ?: return@patch call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<UpdateCommentRequestDto>()
-                val comment = commentService.update(userId, id, body.text)
-                call.respond(comment.toDto())
+                commentService.update(userId, id, body.text).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(it.toDto()) },
+                )
             }
 
             delete {
                 val id = call.parameters["id"]?.let { CommentId(Uuid.parse(it)) }
                     ?: return@delete call.respond(HttpStatusCode.BadRequest)
                 val userId = call.principal<FirebasePrincipal>()!!.uid
-                commentService.delete(userId, id)
-                call.respond(HttpStatusCode.NoContent)
+                commentService.delete(userId, id).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.NoContent) },
+                )
             }
         }
     }

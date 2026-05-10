@@ -12,12 +12,15 @@ import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.likes.LikeService
 import org.nikol.roasti.features.likes.LikeTargetType
 import org.nikol.roasti.features.likes.ToggleResult
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import org.nikol.roasti.features.users.UserId
 import kotlin.uuid.ExperimentalUuidApi
 
 
 interface RecipeService {
-    suspend fun getById(id: RecipeId, userId: UserId?): Recipe
+    suspend fun getById(id: RecipeId, userId: UserId?): Either<RecipeErrorCode, Recipe>
     suspend fun list(
         page: Int,
         limit: Int,
@@ -28,12 +31,12 @@ interface RecipeService {
         roastLevel: RoastLevel?,
     ): Page<Recipe>
     suspend fun create(userId: UserId, input: CreateRecipeInput): Recipe
-    suspend fun update(userId: UserId, id: RecipeId, input: CreateRecipeInput): Recipe
-    suspend fun delete(userId: UserId, id: RecipeId)
-    suspend fun toggleLike(userId: UserId, id: RecipeId): ToggleResult
-    suspend fun listComments(id: RecipeId, page: Int, limit: Int): Page<CommentThread>
-    suspend fun createComment(userId: UserId, id: RecipeId, text: String, parentId: CommentId?): Comment
-    suspend fun clone(userId: UserId, id: RecipeId): Recipe
+    suspend fun update(userId: UserId, id: RecipeId, input: CreateRecipeInput): Either<RecipeErrorCode, Recipe>
+    suspend fun delete(userId: UserId, id: RecipeId): Either<RecipeErrorCode, Unit>
+    suspend fun toggleLike(userId: UserId, id: RecipeId): Either<RecipeErrorCode, ToggleResult>
+    suspend fun listComments(id: RecipeId, page: Int, limit: Int): Either<RecipeErrorCode, Page<CommentThread>>
+    suspend fun createComment(userId: UserId, id: RecipeId, text: String, parentId: CommentId?): Either<RecipeErrorCode, Comment>
+    suspend fun clone(userId: UserId, id: RecipeId): Either<RecipeErrorCode, Recipe>
 }
 
 @OptIn(ExperimentalUuidApi::class)
@@ -43,11 +46,11 @@ class RecipeServiceImpl(
     private val commentService: CommentService,
 ) : RecipeService {
 
-    override suspend fun getById(id: RecipeId, userId: UserId?): Recipe {
-        val row = repo.findById(id) ?: throw RecipeNotFoundException
-        if (!row.public && row.author.id != userId) throw RecipeNotFoundException
+    override suspend fun getById(id: RecipeId, userId: UserId?): Either<RecipeErrorCode, Recipe> {
+        val row = repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
+        if (!row.public && row.author.id != userId) return RecipeErrorCode.NOT_FOUND.left()
         val steps = repo.getSteps(id)
-        return row.toRecipe(userId, steps)
+        return row.toRecipe(userId, steps).right()
     }
 
     override suspend fun list(
@@ -84,28 +87,29 @@ class RecipeServiceImpl(
         return row.toRecipe(userId, steps)
     }
 
-    override suspend fun update(userId: UserId, id: RecipeId, input: CreateRecipeInput): Recipe {
-        val existing = repo.findById(id) ?: throw RecipeNotFoundException
-        if (existing.author.id != userId) throw RecipeForbiddenException
-        val row = repo.update(id, input) ?: throw RecipeNotFoundException
+    override suspend fun update(userId: UserId, id: RecipeId, input: CreateRecipeInput): Either<RecipeErrorCode, Recipe> {
+        val existing = repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
+        if (existing.author.id != userId) return RecipeErrorCode.FORBIDDEN.left()
+        val row = repo.update(id, input) ?: return RecipeErrorCode.NOT_FOUND.left()
         val steps = repo.getSteps(id)
-        return row.toRecipe(userId, steps)
+        return row.toRecipe(userId, steps).right()
     }
 
-    override suspend fun delete(userId: UserId, id: RecipeId) {
-        val existing = repo.findById(id) ?: throw RecipeNotFoundException
-        if (existing.author.id != userId) throw RecipeForbiddenException
+    override suspend fun delete(userId: UserId, id: RecipeId): Either<RecipeErrorCode, Unit> {
+        val existing = repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
+        if (existing.author.id != userId) return RecipeErrorCode.FORBIDDEN.left()
         repo.delete(id)
+        return Unit.right()
     }
 
-    override suspend fun toggleLike(userId: UserId, id: RecipeId): ToggleResult {
-        repo.findById(id) ?: throw RecipeNotFoundException
-        return likeService.toggle(userId, id.value.toString(), LikeTargetType.RECIPE)
+    override suspend fun toggleLike(userId: UserId, id: RecipeId): Either<RecipeErrorCode, ToggleResult> {
+        repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
+        return likeService.toggle(userId, id.value.toString(), LikeTargetType.RECIPE).right()
     }
 
-    override suspend fun listComments(id: RecipeId, page: Int, limit: Int): Page<CommentThread> {
-        repo.findById(id) ?: throw RecipeNotFoundException
-        return commentService.list(id.value.toString(), CommentTargetType.RECIPE, page, limit)
+    override suspend fun listComments(id: RecipeId, page: Int, limit: Int): Either<RecipeErrorCode, Page<CommentThread>> {
+        repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
+        return commentService.list(id.value.toString(), CommentTargetType.RECIPE, page, limit).right()
     }
 
     override suspend fun createComment(
@@ -113,14 +117,14 @@ class RecipeServiceImpl(
         id: RecipeId,
         text: String,
         parentId: CommentId?,
-    ): Comment {
-        repo.findById(id) ?: throw RecipeNotFoundException
-        return commentService.create(userId, id.value.toString(), CommentTargetType.RECIPE, text, parentId)
+    ): Either<RecipeErrorCode, Comment> {
+        repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
+        return commentService.create(userId, id.value.toString(), CommentTargetType.RECIPE, text, parentId).right()
     }
 
-    override suspend fun clone(userId: UserId, id: RecipeId): Recipe {
-        val original = repo.findById(id) ?: throw RecipeNotFoundException
-        if (!original.public && original.author.id != userId) throw RecipeNotFoundException
+    override suspend fun clone(userId: UserId, id: RecipeId): Either<RecipeErrorCode, Recipe> {
+        val original = repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
+        if (!original.public && original.author.id != userId) return RecipeErrorCode.NOT_FOUND.left()
         val originalSteps = repo.getSteps(id)
         val newRow = repo.create(
             userId,
@@ -147,7 +151,7 @@ class RecipeServiceImpl(
             ),
         )
         val steps = repo.getSteps(newRow.id)
-        return newRow.toRecipe(userId, steps)
+        return newRow.toRecipe(userId, steps).right()
     }
 
     private suspend fun RecipeRow.toRecipe(userId: UserId?, steps: List<BrewStep>): Recipe {
@@ -181,5 +185,3 @@ class RecipeServiceImpl(
 
 }
 
-val RecipeNotFoundException = NoSuchElementException("recipe not found")
-val RecipeForbiddenException = IllegalStateException("forbidden")
