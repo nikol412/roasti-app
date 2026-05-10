@@ -1,5 +1,56 @@
 package org.nikol.roasti.features.comments
 
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.principal
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.patch
+import io.ktor.server.routing.route
+import org.koin.ktor.ext.inject
+import org.nikol.roasti.FIREBASE_AUTH
+import org.nikol.roasti.FirebasePrincipal
+import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentRequestDto
+import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
+import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-fun Route.commentRoutes() {}
+@OptIn(ExperimentalUuidApi::class)
+fun Route.commentRoutes() {
+    val commentService by inject<CommentService>()
+
+    route("/comments/{id}") {
+        authenticate(FIREBASE_AUTH) {
+            patch {
+                val id = call.parameters["id"]?.let { CommentId(Uuid.parse(it)) }
+                    ?: return@patch call.respond(HttpStatusCode.BadRequest)
+                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val body = call.receive<UpdateCommentRequestDto>()
+                val comment = commentService.update(userId, id, body.text)
+                call.respond(comment.toDto())
+            }
+
+            delete {
+                val id = call.parameters["id"]?.let { CommentId(Uuid.parse(it)) }
+                    ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                val userId = call.principal<FirebasePrincipal>()!!.uid
+                commentService.delete(userId, id)
+                call.respond(HttpStatusCode.NoContent)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+internal fun Comment.toDto() = CommentResponseDto(
+    id = id.value.toString(),
+    isDeleted = isDeleted,
+    author = author?.let { CommentAuthorDto(it.id.value, it.username, it.name, it.avatarId) },
+    text = text,
+    parentId = parentId?.value?.toString(),
+    createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt.toEpochMilliseconds()),
+    updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
+)

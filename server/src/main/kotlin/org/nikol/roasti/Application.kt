@@ -48,6 +48,7 @@ import org.nikol.roasti.features.comments.CommentRepositoryImpl
 import org.nikol.roasti.features.comments.CommentService
 import org.nikol.roasti.features.comments.CommentServiceImpl
 import org.nikol.roasti.features.comments.CommentTable
+import org.nikol.roasti.features.comments.commentRoutes
 import org.nikol.roasti.features.likes.LikeRepository
 import org.nikol.roasti.features.likes.LikeRepositoryImpl
 import org.nikol.roasti.features.likes.LikeService
@@ -164,6 +165,7 @@ fun Application.module() {
             userRoutes()
             postRoutes()
             recipeRoutes()
+            commentRoutes()
         }
     }
 }

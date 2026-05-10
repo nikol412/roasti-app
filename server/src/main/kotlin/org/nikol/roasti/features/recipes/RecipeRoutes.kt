@@ -37,6 +37,7 @@ import org.nikol.roasti.features.comments.Comment
 import org.nikol.roasti.features.comments.CommentAuthor
 import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentThread
+import org.nikol.roasti.features.comments.toDto
 import org.nikol.roasti.features.users.UserId
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -279,23 +280,6 @@ private fun parseRoastLevelDto(value: String) = runCatching {
     RoastLevelDto.valueOf(value.uppercase())
 }.getOrNull()
 
-private fun CommentAuthor.toDto() = CommentAuthorDto(
-    id = id.value,
-    username = username,
-    name = name,
-    avatarId = avatarId,
-)
-
-@OptIn(ExperimentalUuidApi::class)
-private fun Comment.toDto() = CommentResponseDto(
-    id = id.value.toString(),
-    isDeleted = isDeleted,
-    author = author?.toDto(),
-    text = text,
-    parentId = parentId?.value?.toString(),
-    createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt.toEpochMilliseconds()),
-    updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
-)
 
 private fun CommentThread.toDto() = root.toDto().let { r ->
     CommentThreadResponseDto(
