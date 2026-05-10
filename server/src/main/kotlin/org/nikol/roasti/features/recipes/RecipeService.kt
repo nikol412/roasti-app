@@ -74,14 +74,7 @@ class RecipeServiceImpl(
             )
         }
 
-        val lastPage = if (total == 0) 1 else (total + limit - 1) / limit
-        return Page<Recipe>(
-            items = recipes,
-            currentPage = page,
-            itemsCount = total,
-            lastPage = lastPage,
-            nextPage = if (page < lastPage) page + 1 else page,
-        )
+        return Page.of(recipes, page, total, limit)
     }
 
     override suspend fun create(userId: UserId, input: CreateRecipeInput): Recipe {

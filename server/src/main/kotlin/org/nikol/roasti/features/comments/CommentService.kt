@@ -58,14 +58,7 @@ class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
 
     override suspend fun list(targetId: String, targetType: String, page: Int, limit: Int): Page<CommentThread> {
         val (items, total) = repo.listForTarget(targetId, targetType, page, limit)
-        val lastPage = if (total == 0) 1 else (total + limit - 1) / limit
-        return Page<CommentThread>(
-            items = items,
-            currentPage = page,
-            itemsCount = total,
-            lastPage = lastPage,
-            nextPage = if (page < lastPage) page + 1 else page,
-        )
+        return Page.of(items, page, total, limit)
     }
 }
 
