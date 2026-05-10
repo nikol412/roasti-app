@@ -38,6 +38,7 @@ fun Route.userRoutes() {
 
             patch("/me") {
                 val userId = call.principal<FirebasePrincipal>()!!.uid
+                // TODO: support explicit null to clear nullable fields (name, bio, avatarId)
                 val body = call.receive<UpdateProfileRequest>()
                 val fields = UpdateUserFields(
                     username = body.username,
@@ -60,6 +61,7 @@ fun Route.userRoutes() {
 
         get("/{username}") {
             val username = call.parameters["username"]!!
+            // TODO: public profile should not expose email — use a separate DTO without email field
             userService.getByUsername(username).fold(
                 ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                 ifRight = { call.respond(it.toDto()) },
