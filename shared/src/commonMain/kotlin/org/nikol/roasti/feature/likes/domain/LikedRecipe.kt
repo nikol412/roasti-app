@@ -7,10 +7,3 @@ data class LikedRecipe(
     val recipe: Recipe,
 )
 
-data class LikedRecipesPage(
-    val items: List<LikedRecipe>,
-    val currentPage: Int,
-    val itemsCount: Int,
-    val lastPage: Int,
-    val nextPage: Int,
-)

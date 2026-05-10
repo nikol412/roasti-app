@@ -6,7 +6,8 @@ import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.features.comments.Comment
 import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentService
-import org.nikol.roasti.features.comments.CommentsPage
+import org.nikol.roasti.features.comments.CommentThread
+import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.likes.LikeService
 import org.nikol.roasti.features.likes.ToggleResult
 import org.nikol.roasti.features.users.UserId
@@ -24,12 +25,12 @@ interface RecipeService {
         brewMethod: BrewMethod?,
         difficulty: Difficulty?,
         roastLevel: RoastLevel?,
-    ): RecipesPage
+    ): Page<Recipe>
     suspend fun create(userId: UserId, input: CreateRecipeInput): Recipe
     suspend fun update(userId: UserId, id: RecipeId, input: CreateRecipeInput): Recipe
     suspend fun delete(userId: UserId, id: RecipeId)
     suspend fun toggleLike(userId: UserId, id: RecipeId): ToggleResult
-    suspend fun listComments(id: RecipeId, page: Int, limit: Int): CommentsPage
+    suspend fun listComments(id: RecipeId, page: Int, limit: Int): Page<CommentThread>
     suspend fun createComment(userId: UserId, id: RecipeId, text: String, parentId: CommentId?): Comment
     suspend fun clone(userId: UserId, id: RecipeId): Recipe
 }
@@ -56,7 +57,7 @@ class RecipeServiceImpl(
         brewMethod: BrewMethod?,
         difficulty: Difficulty?,
         roastLevel: RoastLevel?,
-    ): RecipesPage {
+    ): Page<Recipe> {
         val (rows, total) = repo.list(page, limit, authorId, userId, brewMethod, difficulty, roastLevel)
         val recipeIds = rows.map { it.id }
         val stepsMap = repo.getStepsBatch(recipeIds)
@@ -74,7 +75,7 @@ class RecipeServiceImpl(
         }
 
         val lastPage = if (total == 0) 1 else (total + limit - 1) / limit
-        return RecipesPage(
+        return Page<Recipe>(
             items = recipes,
             currentPage = page,
             itemsCount = total,
@@ -108,7 +109,7 @@ class RecipeServiceImpl(
         return likeService.toggle(userId, id.value.toString(), RECIPE_TARGET_TYPE)
     }
 
-    override suspend fun listComments(id: RecipeId, page: Int, limit: Int): CommentsPage {
+    override suspend fun listComments(id: RecipeId, page: Int, limit: Int): Page<CommentThread> {
         repo.findById(id) ?: throw RecipeNotFoundException
         return commentService.list(id.value.toString(), RECIPE_TARGET_TYPE, page, limit)
     }

@@ -33,10 +33,3 @@ data class Post(
     val updatedAt: Instant,
 )
 
-data class PostsPage(
-    val items: List<Post>,
-    val currentPage: Int,
-    val itemsCount: Int,
-    val lastPage: Int,
-    val nextPage: Int,
-)

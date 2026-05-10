@@ -7,17 +7,17 @@ import org.nikol.roasti.feature.recipe.data.remote.model.response.AuthorResponse
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeOriginResponseDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeResponseDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeStepResponseDto
-import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPageResponseDto
+import org.nikol.roasti.core.network.PageResponseDto
 import org.nikol.roasti.feature.recipe.domain.model.Author
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.BrewStep
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.Recipe
 import org.nikol.roasti.feature.recipe.domain.model.RecipeOrigin
-import org.nikol.roasti.feature.recipe.domain.model.RecipesPage
+import org.nikol.roasti.core.domain.Page
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 
-fun RecipesPageResponseDto.toDomain() = RecipesPage(
+fun PageResponseDto<RecipeResponseDto>.toDomain() = Page(
     items = items.map { it.toDomain() },
     currentPage = pagination.currentPage,
     itemsCount = pagination.itemsCount,

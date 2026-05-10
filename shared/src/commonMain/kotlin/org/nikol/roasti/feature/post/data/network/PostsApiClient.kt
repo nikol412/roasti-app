@@ -14,15 +14,15 @@ import org.nikol.roasti.core.network.AuthorizedRequestExecutor
 import org.nikol.roasti.feature.post.data.remote.model.request.CreatePostRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.request.UpdatePostRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.request.VoteRequestDto
+import org.nikol.roasti.core.network.PageResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostVoteResponseDto
-import org.nikol.roasti.feature.post.data.remote.model.response.PostsPageResponseDto
 
 interface PostsApiClient {
     suspend fun getPosts(
         page: Int,
         limit: Int,
-    ): Result<PostsPageResponseDto>
+    ): Result<PageResponseDto<PostResponseDto>>
 
     suspend fun getPost(id: String): Result<PostResponseDto>
 
@@ -43,13 +43,13 @@ class PostsApiClientImpl(
     override suspend fun getPosts(
         page: Int,
         limit: Int,
-    ): Result<PostsPageResponseDto> = authorizedRequestExecutor.execute {
+    ): Result<PageResponseDto<PostResponseDto>> = authorizedRequestExecutor.execute {
         httpClient.get(ApiRoutes.Posts) {
             url {
                 parameters.append("page", page.toString())
                 parameters.append("limit", limit.toString())
             }
-        }.body<PostsPageResponseDto>()
+        }.body<PageResponseDto<PostResponseDto>>()
     }
 
     override suspend fun getPost(id: String): Result<PostResponseDto> =

@@ -15,8 +15,8 @@ import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeRefDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeStatusDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostVoteResponseDto
-import org.nikol.roasti.feature.post.data.remote.model.response.PostsPageResponseDto
-import org.nikol.roasti.feature.post.data.remote.model.response.PostsPaginationResponseDto
+import org.nikol.roasti.core.network.PageResponseDto
+import org.nikol.roasti.core.network.PaginationResponseDto
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -48,7 +48,7 @@ class MockPostsApiClient(
     override suspend fun getPosts(
         page: Int,
         limit: Int,
-    ): Result<PostsPageResponseDto> {
+    ): Result<PageResponseDto<PostResponseDto>> {
         delay(SimulatedLatencyMillis)
         if (consumeFailureFlag()) return Result.failure(IllegalStateException("Simulated failure"))
 
@@ -62,9 +62,9 @@ class MockPostsApiClient(
             val nextPage = if (safePage < lastPage) safePage + 1 else safePage
 
             Result.success(
-                PostsPageResponseDto(
+                PageResponseDto(
                     items = items,
-                    pagination = PostsPaginationResponseDto(
+                    pagination = PaginationResponseDto(
                         currentPage = safePage,
                         itemsCount = total,
                         lastPage = lastPage,

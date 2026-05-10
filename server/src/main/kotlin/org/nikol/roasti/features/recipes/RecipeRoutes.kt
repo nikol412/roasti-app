@@ -18,8 +18,9 @@ import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentR
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentThreadResponseDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPaginationResponseDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPageResponseDto
+import org.nikol.roasti.core.network.PageResponseDto
+import org.nikol.roasti.core.network.PaginationResponseDto
+import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.feature.likes.data.RecipeLikeDto
 import org.nikol.roasti.feature.recipe.data.remote.model.BrewMethodDto
 import org.nikol.roasti.feature.recipe.data.remote.model.DifficultyDto
@@ -29,8 +30,6 @@ import org.nikol.roasti.feature.recipe.data.remote.model.response.AuthorResponse
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeOriginResponseDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeResponseDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeStepResponseDto
-import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPaginationResponseDto
-import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPageResponseDto
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
@@ -74,9 +73,9 @@ fun Route.recipeRoutes() {
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
             val result = recipeService.listComments(id, page, limit)
             call.respond(
-                CommentsPageResponseDto(
+                PageResponseDto(
                     items = result.items.map { it.toDto() },
-                    pagination = CommentsPaginationResponseDto(
+                    pagination = PaginationResponseDto(
                         currentPage = result.currentPage,
                         itemsCount = result.itemsCount,
                         lastPage = result.lastPage,
@@ -188,9 +187,9 @@ private fun Recipe.toDto() = RecipeResponseDto(
 )
 
 @OptIn(ExperimentalUuidApi::class)
-private fun RecipesPage.toDto() = RecipesPageResponseDto(
+private fun Page<Recipe>.toDto() = PageResponseDto(
     items = items.map { it.toDto() },
-    pagination = RecipesPaginationResponseDto(
+    pagination = PaginationResponseDto(
         currentPage = currentPage,
         itemsCount = itemsCount,
         lastPage = lastPage,

@@ -44,10 +44,3 @@ data class Recipe(
     val updatedAt: Instant,
 )
 
-data class RecipesPage(
-    val items: List<Recipe>,
-    val currentPage: Int,
-    val itemsCount: Int,
-    val lastPage: Int,
-    val nextPage: Int,
-)

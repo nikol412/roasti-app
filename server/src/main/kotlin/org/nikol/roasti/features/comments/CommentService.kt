@@ -1,14 +1,7 @@
 package org.nikol.roasti.features.comments
 
+import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.users.UserId
-
-data class CommentsPage(
-    val items: List<CommentThread>,
-    val currentPage: Int,
-    val itemsCount: Int,
-    val lastPage: Int,
-    val nextPage: Int,
-)
 
 private const val TEXT_MAX_LENGTH = 1000
 
@@ -16,7 +9,7 @@ interface CommentService {
     suspend fun create(userId: UserId, targetId: String, targetType: String, text: String, parentId: CommentId?): Comment
     suspend fun update(userId: UserId, commentId: CommentId, text: String): Comment
     suspend fun delete(userId: UserId, commentId: CommentId)
-    suspend fun list(targetId: String, targetType: String, page: Int, limit: Int): CommentsPage
+    suspend fun list(targetId: String, targetType: String, page: Int, limit: Int): Page<CommentThread>
 }
 
 class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
@@ -63,10 +56,10 @@ class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
         repo.softDelete(commentId)
     }
 
-    override suspend fun list(targetId: String, targetType: String, page: Int, limit: Int): CommentsPage {
+    override suspend fun list(targetId: String, targetType: String, page: Int, limit: Int): Page<CommentThread> {
         val (items, total) = repo.listForTarget(targetId, targetType, page, limit)
         val lastPage = if (total == 0) 1 else (total + limit - 1) / limit
-        return CommentsPage(
+        return Page<CommentThread>(
             items = items,
             currentPage = page,
             itemsCount = total,

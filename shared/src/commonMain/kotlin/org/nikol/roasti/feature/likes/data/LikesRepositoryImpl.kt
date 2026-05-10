@@ -3,7 +3,8 @@ package org.nikol.roasti.feature.likes.data
 import kotlinx.coroutines.flow.firstOrNull
 import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 import org.nikol.roasti.feature.likes.domain.LikesRepository
-import org.nikol.roasti.feature.likes.domain.LikedRecipesPage
+import org.nikol.roasti.core.domain.Page
+import org.nikol.roasti.feature.likes.domain.LikedRecipe
 import org.nikol.roasti.feature.likes.domain.RecipeLike
 
 class LikesRepositoryImpl(
@@ -11,7 +12,7 @@ class LikesRepositoryImpl(
     private val authRepository: AuthRepository,
 ): LikesRepository {
 
-    override suspend fun getUserLikedRecipes(limit: Int, page: Int): Result<LikedRecipesPage> {
+    override suspend fun getUserLikedRecipes(limit: Int, page: Int): Result<Page<LikedRecipe>> {
         val userId = authRepository.getUser().firstOrNull()?.id ?: return Result.failure(Throwable("User not found"))
         return httpClient.getLikedRecipes(
             userId = userId,
@@ -24,7 +25,7 @@ class LikesRepositoryImpl(
         userId: String,
         limit: Int,
         page: Int
-    ): Result<LikedRecipesPage> {
+    ): Result<Page<LikedRecipe>> {
         return httpClient.getLikedRecipes(
             userId = userId,
             limit = limit,

@@ -1,6 +1,7 @@
 package org.nikol.roasti.features.posts
 
 import org.nikol.roasti.features.comments.CommentRepository
+import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.users.UserId
 import org.nikol.roasti.features.votes.VOTE_TYPE_DOWN
 import org.nikol.roasti.features.votes.VOTE_TYPE_UP
@@ -14,7 +15,7 @@ data class PostVoteResult(val rating: Int, val userVote: VoteDirection)
 
 interface PostService {
     suspend fun getById(id: PostId, userId: UserId?): Post
-    suspend fun list(page: Int, limit: Int, authorId: UserId?): PostsPage
+    suspend fun list(page: Int, limit: Int, authorId: UserId?): Page<Post>
     suspend fun create(userId: UserId, input: CreatePostInput): Post
     suspend fun update(userId: UserId, id: PostId, input: UpdatePostInput): Post
     suspend fun delete(userId: UserId, id: PostId)
@@ -33,7 +34,7 @@ class PostServiceImpl(
         return row.enrich(userId)
     }
 
-    override suspend fun list(page: Int, limit: Int, authorId: UserId?): PostsPage {
+    override suspend fun list(page: Int, limit: Int, authorId: UserId?): Page<Post> {
         val (rows, total) = repo.list(page, limit, authorId)
         val postIds = rows.map { it.id.value.toString() }
         val voteInfos = voteService.getInfoBatch(null, postIds, POST_TARGET_TYPE)
@@ -50,7 +51,7 @@ class PostServiceImpl(
         }
 
         val lastPage = if (total == 0) 1 else (total + limit - 1) / limit
-        return PostsPage(
+        return Page<Post>(
             items = posts,
             currentPage = page,
             itemsCount = total,

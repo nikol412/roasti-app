@@ -20,8 +20,9 @@ import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentR
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentThreadResponseDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPaginationResponseDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPageResponseDto
+import org.nikol.roasti.core.network.PageResponseDto
+import org.nikol.roasti.core.network.PaginationResponseDto
+import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.feature.post.data.remote.model.VoteDirectionDto
 import org.nikol.roasti.feature.post.data.remote.model.request.CreatePostRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.request.UpdatePostRequestDto
@@ -31,8 +32,6 @@ import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeRefDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeStatusDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostVoteResponseDto
-import org.nikol.roasti.feature.post.data.remote.model.response.PostsPaginationResponseDto
-import org.nikol.roasti.feature.post.data.remote.model.response.PostsPageResponseDto
 import org.nikol.roasti.features.comments.Comment
 import org.nikol.roasti.features.comments.CommentAuthor
 import org.nikol.roasti.features.comments.CommentId
@@ -71,9 +70,9 @@ fun Route.postRoutes() {
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
             val result = commentService.list(id, POST_TARGET_TYPE, page, limit)
             call.respond(
-                CommentsPageResponseDto(
+                PageResponseDto(
                     items = result.items.map { it.toDto() },
-                    pagination = CommentsPaginationResponseDto(
+                    pagination = PaginationResponseDto(
                         currentPage = result.currentPage,
                         itemsCount = result.itemsCount,
                         lastPage = result.lastPage,
@@ -185,9 +184,9 @@ private fun Post.toDto() = PostResponseDto(
 )
 
 @OptIn(ExperimentalUuidApi::class)
-private fun PostsPage.toDto(userId: org.nikol.roasti.features.users.UserId?) = PostsPageResponseDto(
+private fun Page<Post>.toDto(userId: org.nikol.roasti.features.users.UserId?) = PageResponseDto(
     items = items.map { it.toDto() },
-    pagination = PostsPaginationResponseDto(
+    pagination = PaginationResponseDto(
         currentPage = currentPage,
         itemsCount = itemsCount,
         lastPage = lastPage,

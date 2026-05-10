@@ -14,14 +14,15 @@ import org.nikol.roasti.core.network.AuthorizedRequestExecutor
 import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPageResponseDto
+import org.nikol.roasti.core.network.PageResponseDto
+import org.nikol.roasti.feature.comment.data.remote.model.response.CommentThreadResponseDto
 
 interface CommentsApiClient {
     suspend fun listComments(
         postId: String,
         page: Int,
         limit: Int,
-    ): Result<CommentsPageResponseDto>
+    ): Result<PageResponseDto<CommentThreadResponseDto>>
 
     suspend fun createComment(
         postId: String,
@@ -45,13 +46,13 @@ class CommentsApiClientImpl(
         postId: String,
         page: Int,
         limit: Int,
-    ): Result<CommentsPageResponseDto> = authorizedRequestExecutor.execute {
+    ): Result<PageResponseDto<CommentThreadResponseDto>> = authorizedRequestExecutor.execute {
         httpClient.get(ApiRoutes.postComments(postId)) {
             url {
                 parameters.append("page", page.toString())
                 parameters.append("limit", limit.toString())
             }
-        }.body<CommentsPageResponseDto>()
+        }.body<PageResponseDto<CommentThreadResponseDto>>()
     }
 
     override suspend fun createComment(
