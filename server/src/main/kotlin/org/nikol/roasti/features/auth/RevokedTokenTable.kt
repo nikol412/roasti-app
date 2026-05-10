@@ -25,10 +25,16 @@ interface RevokedTokenRepository {
 class RevokedTokenRepositoryImpl : RevokedTokenRepository {
 
     override suspend fun add(token: String): Unit = withContext(Dispatchers.IO) {
+        val h = hash(token)
         transaction {
-            RevokedTokenTable.insert {
-                it[tokenHash] = hash(token)
-                it[revokedAt] = Clock.System.now()
+            val exists = RevokedTokenTable.selectAll()
+                .where { RevokedTokenTable.tokenHash eq h }
+                .count() > 0
+            if (!exists) {
+                RevokedTokenTable.insert {
+                    it[tokenHash] = h
+                    it[revokedAt] = Clock.System.now()
+                }
             }
         }
     }
