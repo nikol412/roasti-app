@@ -21,7 +21,11 @@ interface RecipeRepository {
 
     suspend fun getById(id: String): Result<Recipe>
 
-    fun getByIdFlow(id: String): Flow<Recipe>
+    fun observeById(id: String): Flow<Recipe?>
+
+    suspend fun refreshById(id: String): Result<Unit>
+
+    suspend fun toggleLike(id: String): Result<Unit>
 
     suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe>
 

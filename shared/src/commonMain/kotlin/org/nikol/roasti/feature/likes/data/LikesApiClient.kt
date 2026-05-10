@@ -12,14 +12,24 @@ private const val LimitQueryParameter = "limit"
 private const val PageQueryParameter = "page"
 private const val RecipeLikeType = "recipe"
 
-class LikesApiClient(
-    private val httpClient: HttpClient,
-    private val authorizedRequestExecutor: AuthorizedRequestExecutor,
-) {
+interface LikesApiClient {
     suspend fun getLikedRecipes(
         userId: String,
         limit: Int = 50,
-        page: Int = 1
+        page: Int = 1,
+    ): Result<LikedRecipesPageDto>
+
+    suspend fun toggleLikeOnRecipe(recipeId: String): Result<RecipeLikeDto>
+}
+
+class LikesApiClientImpl(
+    private val httpClient: HttpClient,
+    private val authorizedRequestExecutor: AuthorizedRequestExecutor,
+) : LikesApiClient {
+    override suspend fun getLikedRecipes(
+        userId: String,
+        limit: Int,
+        page: Int,
     ): Result<LikedRecipesPageDto> = authorizedRequestExecutor.execute {
         httpClient.get(ApiRoutes.userLikedRecipes(userId)) {
             url {
@@ -30,7 +40,7 @@ class LikesApiClient(
         }.body<LikedRecipesPageDto>()
     }
 
-    suspend fun toggleLikeOnRecipe(recipeId: String): Result<RecipeLikeDto> =
+    override suspend fun toggleLikeOnRecipe(recipeId: String): Result<RecipeLikeDto> =
         authorizedRequestExecutor.execute {
             return@execute httpClient.post(ApiRoutes.recipeLike(recipeId)).body<RecipeLikeDto>()
         }

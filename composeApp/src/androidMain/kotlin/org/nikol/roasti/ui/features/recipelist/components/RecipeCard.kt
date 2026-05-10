@@ -36,6 +36,7 @@ internal fun RecipeCard(
     item: RecipeListItemUiModel,
     onLikeClick: () -> Unit,
     modifier: Modifier = Modifier,
+    imageModifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier,
@@ -47,7 +48,7 @@ internal fun RecipeCard(
             AsyncImage(
                 model = item.imageUrl,
                 contentDescription = null,
-                modifier = Modifier.size(130.dp),
+                modifier = imageModifier.size(130.dp),
                 contentScale = ContentScale.Crop,
             )
             Column(

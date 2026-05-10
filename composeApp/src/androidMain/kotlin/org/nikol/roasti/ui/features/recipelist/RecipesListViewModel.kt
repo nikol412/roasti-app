@@ -19,10 +19,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.nikol.roasti.feature.recipe.data.paging.PagingRecipeRepository
-import org.nikol.roasti.feature.recipe.data.paging.RecipesPagingQuery
+import org.nikol.roasti.feature.recipe.domain.RecipeListsRepository
+import org.nikol.roasti.feature.recipe.domain.RecipeRepository
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.RecipesPagingQuery
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterState
 import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterStore
@@ -34,10 +35,11 @@ private const val SearchQueryDebounceMillis = 300L
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class RecipesListViewModel(
     private val filterStore: RecipeFilterStore,
-    private val pagingRepository: PagingRecipeRepository,
+    private val recipeListsRepository: RecipeListsRepository,
+    private val recipeRepository: RecipeRepository,
 ) : ViewModel() {
     val hasCachedRecipes: StateFlow<Boolean> =
-        pagingRepository.observeHasCachedRecipes()
+        recipeListsRepository.observeHasCachedFeed()
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
@@ -87,17 +89,16 @@ class RecipesListViewModel(
         recipesQuery
             .flatMapLatest { query ->
                 if (query.isDefaultFeed) {
-                    pagingRepository.getOfflineFirstAllRecipesPager()
-                        .map { pagingData -> pagingData.map { it.toUiModel() } }
+                    recipeListsRepository.observeFeed()
                 } else {
-                    pagingRepository.getRemoteSearchPager(query)
-                        .map { pagingData -> pagingData.map { it.toUiModel() } }
+                    recipeListsRepository.observeSearch(query)
                 }
             }
+            .map { pagingData -> pagingData.map { it.toUiModel() } }
             .cachedIn(viewModelScope)
 
     val pagingFavoritesState: Flow<PagingData<RecipeListItemUiModel>> =
-        pagingRepository.getFavoritesPager()
+        recipeListsRepository.observeFavorites()
             .map { pagingData -> pagingData.map { it.toUiModel() } }
             .cachedIn(viewModelScope)
 
@@ -119,7 +120,7 @@ class RecipesListViewModel(
 
     fun likeRecipe(recipe: RecipeListItemUiModel) {
         viewModelScope.launch {
-            pagingRepository.toggleLike(recipe.id)
+            recipeRepository.toggleLike(recipe.id)
         }
     }
 

@@ -1,7 +1,6 @@
 package org.nikol.roasti.feature.recipe.data.mapper
 
 import kotlinx.datetime.Instant
-import org.nikol.roasti.FavoriteRecipe as CachedFavoriteRecipe
 import org.nikol.roasti.Recipe as CachedRecipe
 import org.nikol.roasti.RecipeStep as CachedRecipeStep
 import org.nikol.roasti.RoastiDatabaseCache
@@ -11,7 +10,7 @@ import org.nikol.roasti.feature.recipe.domain.model.BrewStep
 import org.nikol.roasti.feature.recipe.domain.model.Recipe
 import org.nikol.roasti.feature.recipe.domain.model.RecipeOrigin
 
-internal fun RoastiDatabaseCache.upsertRecipe(recipe: RecipeResponseDto) {
+fun RoastiDatabaseCache.upsertRecipe(recipe: RecipeResponseDto) {
     recipeQueries.insertRecipe(
         id = recipe.id,
         title = recipe.title,
@@ -49,48 +48,7 @@ internal fun RoastiDatabaseCache.upsertRecipe(recipe: RecipeResponseDto) {
     }
 }
 
-internal fun RoastiDatabaseCache.upsertFavoriteRecipe(
-    recipe: RecipeResponseDto,
-    likedAt: String?,
-) {
-    favoriteRecipeQueries.insertFavoriteRecipe(
-        id = recipe.id,
-        title = recipe.title,
-        description = recipe.description,
-        note = recipe.note,
-        image_id = recipe.imageId,
-        brew_method = recipe.brewMethod.toDomain(),
-        difficulty = recipe.difficulty.toDomain(),
-        roast_level = recipe.roastLevel.toDomain(),
-        beans = recipe.beans,
-        likes_count = recipe.likesCount.toLong(),
-        author_id = recipe.author?.id ?: recipe.authorId,
-        author_name = recipe.author?.username,
-        author_image_id = recipe.author?.avatarId,
-        origin_recipe_id = recipe.origin?.recipeId,
-        origin_author_id = recipe.origin?.author?.id,
-        origin_author_name = recipe.origin?.author?.username,
-        origin_author_image_id = recipe.origin?.author?.avatarId,
-        is_public = if (recipe.isPublic) 1L else 0L,
-        liked_at = likedAt,
-        created_at = recipe.createdAt?.toString(),
-        updated_at = recipe.updatedAt?.toString(),
-    )
-
-    recipeStepQueries.deleteRecipeStepsByRecipeId(recipe.id)
-    recipe.steps.orEmpty().forEach { step ->
-        recipeStepQueries.insertRecipeStep(
-            recipe_id = recipe.id,
-            step_order = step.order.toLong(),
-            title = step.title,
-            description = step.description,
-            duration_seconds = step.durationSeconds?.toLong(),
-            image_id = step.imageId,
-        )
-    }
-}
-
-internal fun CachedRecipe.toDomain(steps: List<CachedRecipeStep>): Recipe = Recipe(
+internal fun CachedRecipe.toDomain(steps: List<CachedRecipeStep> = emptyList()): Recipe = Recipe(
     id = id,
     title = title,
     description = description,
@@ -103,31 +61,6 @@ internal fun CachedRecipe.toDomain(steps: List<CachedRecipeStep>): Recipe = Reci
     steps = steps.map(CachedRecipeStep::toDomain),
     author = cachedAuthor(author_id, author_name, author_image_id),
     isLiked = is_liked == 1L,
-    likesCount = likes_count.toInt(),
-    origin = cachedOrigin(
-        recipeId = origin_recipe_id,
-        authorId = origin_author_id,
-        authorName = origin_author_name,
-        authorImageId = origin_author_image_id,
-    ),
-    isPublic = is_public == 1L,
-    createdAt = created_at?.let { Instant.parse(it) },
-    updatedAt = updated_at?.let { Instant.parse(it) },
-)
-
-internal fun CachedFavoriteRecipe.toDomain(steps: List<CachedRecipeStep>): Recipe = Recipe(
-    id = id,
-    title = title,
-    description = description,
-    note = note,
-    imageId = image_id,
-    brewMethod = brew_method,
-    difficulty = difficulty,
-    roastLevel = roast_level,
-    beans = beans,
-    steps = steps.map(CachedRecipeStep::toDomain),
-    author = cachedAuthor(author_id, author_name, author_image_id),
-    isLiked = true,
     likesCount = likes_count.toInt(),
     origin = cachedOrigin(
         recipeId = origin_recipe_id,

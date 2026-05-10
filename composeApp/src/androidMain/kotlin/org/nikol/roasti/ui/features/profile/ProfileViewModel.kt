@@ -17,8 +17,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.nikol.roasti.feature.auth.domain.model.User
 import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
-import org.nikol.roasti.feature.likes.domain.LikesRepository
-import org.nikol.roasti.feature.recipe.data.paging.PagingRecipeRepository
+import org.nikol.roasti.feature.likes.data.LikesApiClient
+import org.nikol.roasti.feature.likes.data.toDomain
 import org.nikol.roasti.feature.upload.domain.UploadRepository
 import org.nikol.roasti.ui.features.recipelist.mapper.toUiModel
 import org.nikol.roasti.utils.stateInWhileSubscribe
@@ -38,9 +38,8 @@ sealed interface ProfileUiState {
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProfileViewModel(
     private val authRepository: AuthRepository,
-    private val pagingRecipeRepository: PagingRecipeRepository,
     private val uploadRepository: UploadRepository,
-    private val likesRepository: LikesRepository,
+    private val likesApiClient: LikesApiClient,
 ) : ViewModel(), ProfileRowListener {
 
     private val isRefreshing = MutableStateFlow(false)
@@ -70,7 +69,8 @@ class ProfileViewModel(
 
         val itemsLimit = 20
         val maxVisibleLimit = itemsLimit - 1
-        val result = likesRepository.getLikedRecipes(userId = userId, limit = itemsLimit, page = 1)
+        val result = likesApiClient.getLikedRecipes(userId = userId, limit = itemsLimit, page = 1)
+            .map { it.toDomain() }
 
         val likes = result.getOrNull()
         if (!likes?.items.isNullOrEmpty()) {

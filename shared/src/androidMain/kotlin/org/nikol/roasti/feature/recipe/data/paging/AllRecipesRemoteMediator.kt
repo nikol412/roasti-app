@@ -8,10 +8,9 @@ import kotlinx.coroutines.flow.first
 import org.nikol.roasti.Recipe
 import org.nikol.roasti.RoastiDatabaseCache
 import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
+import org.nikol.roasti.feature.recipe.data.RecipeListType
 import org.nikol.roasti.feature.recipe.data.network.RecipesApiClient
 import org.nikol.roasti.feature.recipe.data.mapper.upsertRecipe
-
-private const val AllRecipesRemoteKeyId = "all_recipes"
 
 @OptIn(ExperimentalPagingApi::class)
 class AllRecipesRemoteMediator(
@@ -22,23 +21,19 @@ class AllRecipesRemoteMediator(
 
     private var userId: String? = null
 
-    override suspend fun initialize(): RemoteMediator.InitializeAction {
-        return RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH
+    override suspend fun initialize(): InitializeAction {
+        return InitializeAction.LAUNCH_INITIAL_REFRESH
     }
 
     override suspend fun load(loadType: LoadType, state: PagingState<Int, Recipe>): MediatorResult {
         val page = when (loadType) {
-            LoadType.REFRESH -> {
-                1
-            }
-
-            LoadType.PREPEND -> {
-                return MediatorResult.Success(endOfPaginationReached = true)
-            }
-
+            LoadType.REFRESH -> 1
+            LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
-                val remoteKey = db.recipeRemoteKeyQueries.getRemoteKey(AllRecipesRemoteKeyId).executeAsOneOrNull()
-                remoteKey?.next_page?.toInt() ?: return MediatorResult.Success(endOfPaginationReached = true)
+                val remoteKey = db.recipeRemoteKeyQueries.getRemoteKey(RecipeListType.FEED)
+                    .executeAsOneOrNull()
+                remoteKey?.next_page?.toInt()
+                    ?: return MediatorResult.Success(endOfPaginationReached = true)
             }
         }
 
@@ -52,19 +47,25 @@ class AllRecipesRemoteMediator(
             val recipes = response.items
             val pagination = response.pagination
             val endReached = pagination.currentPage >= pagination.lastPage
+            val basePosition = (page - 1L) * state.config.pageSize
 
             db.transaction {
                 if (loadType == LoadType.REFRESH) {
-                    db.recipeQueries.clearAllRecipes()
-                    db.recipeRemoteKeyQueries.clearRemoteKeys(AllRecipesRemoteKeyId)
+                    db.recipeListMembershipQueries.clearList(RecipeListType.FEED)
+                    db.recipeRemoteKeyQueries.clearRemoteKeys(RecipeListType.FEED)
                 }
 
-                recipes.forEach { dto ->
+                recipes.forEachIndexed { index, dto ->
                     db.upsertRecipe(dto)
+                    db.recipeListMembershipQueries.insertMembership(
+                        listType = RecipeListType.FEED,
+                        recipeId = dto.id,
+                        position = basePosition + index,
+                    )
                 }
 
                 db.recipeRemoteKeyQueries.insertRemoteKey(
-                    AllRecipesRemoteKeyId,
+                    RecipeListType.FEED,
                     if (endReached) null else pagination.nextPage.toLong()
                 )
             }
@@ -76,7 +77,7 @@ class AllRecipesRemoteMediator(
     }
 
     private suspend fun assignCurrentUser(): String? {
-        if(userId == null) {
+        if (userId == null) {
             userId = authRepository.getUser().first()?.id
         }
         return userId

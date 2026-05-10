@@ -1,0 +1,41 @@
+CREATE TABLE RecipeListMembership (
+    list_type  TEXT NOT NULL,
+    recipe_id  TEXT NOT NULL,
+    position   INTEGER NOT NULL,
+    PRIMARY KEY (list_type, recipe_id),
+    FOREIGN KEY (recipe_id) REFERENCES Recipe(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_membership_list_pos ON RecipeListMembership(list_type, position);
+
+getRecipesByList:
+SELECT r.*
+FROM Recipe r
+JOIN RecipeListMembership m ON m.recipe_id = r.id
+WHERE m.list_type = :listType
+ORDER BY m.position
+LIMIT :limit OFFSET :offset;
+
+countRecipesByList:
+SELECT COUNT(*) FROM RecipeListMembership WHERE list_type = :listType;
+
+insertMembership:
+INSERT OR REPLACE INTO RecipeListMembership(list_type, recipe_id, position)
+VALUES (:listType, :recipeId, :position);
+
+insertMembershipAtTop:
+INSERT OR REPLACE INTO RecipeListMembership(list_type, recipe_id, position)
+VALUES (
+    :listType,
+    :recipeId,
+    COALESCE((SELECT MIN(position) FROM RecipeListMembership WHERE list_type = :listType), 0) - 1
+);
+
+deleteMembership:
+DELETE FROM RecipeListMembership WHERE list_type = :listType AND recipe_id = :recipeId;
+
+clearList:
+DELETE FROM RecipeListMembership WHERE list_type = :listType;
+
+clearAllMemberships:
+DELETE FROM RecipeListMembership;

@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Roasti</string>
     <string name="error_generic">Что-то пошло не так</string>
+    <string name="common_retry">Повторить</string>
     <string name="recipes_load_error">Не удалось загрузить рецепты</string>
     <string name="recipe_not_found">Не найдено</string>
     <string name="back_label">Назад</string>

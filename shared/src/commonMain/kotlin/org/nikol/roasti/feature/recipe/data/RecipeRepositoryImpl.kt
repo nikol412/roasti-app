@@ -1,8 +1,14 @@
 package org.nikol.roasti.feature.recipe.data
 
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.combine
 import org.nikol.roasti.RoastiDatabaseCache
+import org.nikol.roasti.feature.likes.data.LikesApiClient
 import org.nikol.roasti.feature.recipe.data.mapper.upsertRecipe
 import org.nikol.roasti.feature.recipe.data.mapper.toDomain
 import org.nikol.roasti.feature.recipe.data.mapper.toQueryDto
@@ -19,6 +25,7 @@ import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 class RecipeRepositoryImpl(
     private val apiClient: RecipesApiClient,
     private val db: RoastiDatabaseCache,
+    private val likesApiClient: LikesApiClient,
 ) : RecipeRepository {
 
     override suspend fun getRecipes(
@@ -44,47 +51,68 @@ class RecipeRepositoryImpl(
     override suspend fun getById(id: String): Result<Recipe> =
         apiClient.getRecipe(id)
             .mapCatching { recipe ->
-                db.transaction {
-                    db.upsertRecipe(recipe)
-                }
+                db.transaction { db.upsertRecipe(recipe) }
                 recipe.toDomain()
             }
-            .recoverCatching {
-                cachedRecipeById(id) ?: throw it
-            }
+            .recoverCatching { cachedRecipeById(id) ?: throw it }
 
-    override fun getByIdFlow(id: String): Flow<Recipe> = flow {
-        val cachedRecipe = cachedRecipeById(id)
-        if (cachedRecipe != null) {
-            emit(cachedRecipe)
+    override fun observeById(id: String): Flow<Recipe?> {
+        val recipeFlow = db.recipeQueries.getRecipeById(id)
+            .asFlow()
+            .mapToOneOrNull(Dispatchers.IO)
+        val stepsFlow = db.recipeStepQueries.getRecipeStepsByRecipeId(id)
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+
+        return combine(recipeFlow, stepsFlow) { recipe, steps ->
+            recipe?.toDomain(steps)
+        }
+    }
+
+    override suspend fun refreshById(id: String): Result<Unit> =
+        apiClient.getRecipe(id).mapCatching { dto ->
+            db.transaction { db.upsertRecipe(dto) }
         }
 
-        val remoteRecipe = apiClient.getRecipe(id).getOrElse { error ->
-            if (cachedRecipe == null) throw error
-            return@flow
-        }
+    override suspend fun toggleLike(id: String): Result<Unit> {
+        val recipe = db.recipeQueries.getRecipeById(id).executeAsOneOrNull()
+            ?: return Result.failure(IllegalStateException("Recipe $id is not in cache"))
+        val wasLiked = recipe.is_liked == 1L
 
+        applyLikeToggle(id, wasLiked)
+
+        return likesApiClient.toggleLikeOnRecipe(id)
+            .map { }
+            .onFailure { applyLikeToggle(id, !wasLiked) }
+    }
+
+    private fun applyLikeToggle(id: String, wasLiked: Boolean) {
         db.transaction {
-            db.upsertRecipe(remoteRecipe)
+            db.recipeQueries.toggleLike(id)
+            if (wasLiked) {
+                db.recipeListMembershipQueries.deleteMembership(
+                    listType = RecipeListType.FAVORITES,
+                    recipeId = id,
+                )
+            } else {
+                db.recipeListMembershipQueries.insertMembershipAtTop(
+                    listType = RecipeListType.FAVORITES,
+                    recipeId = id,
+                )
+            }
         }
-
-        emit(remoteRecipe.toDomain())
     }
 
     override suspend fun addRecipe(recipe: RecipeDraft): Result<Recipe> {
         return apiClient.addRecipe(recipe.toRequestDto()).mapCatching {
-            db.transaction {
-                db.upsertRecipe(it)
-            }
+            db.transaction { db.upsertRecipe(it) }
             it.toDomain()
         }
     }
 
     override suspend fun updateRecipe(id: String, recipe: RecipeDraft): Result<Recipe> {
         return apiClient.updateRecipe(id, recipe.toRequestDto()).mapCatching {
-            db.transaction {
-                db.upsertRecipe(it)
-            }
+            db.transaction { db.upsertRecipe(it) }
             it.toDomain()
         }
     }
@@ -94,19 +122,12 @@ class RecipeRepositoryImpl(
             db.transaction {
                 db.recipeQueries.deleteRecipe(id)
                 db.recipeStepQueries.deleteRecipeStepsByRecipeId(id)
-                db.favoriteRecipeQueries.deleteFavoriteRecipe(id)
             }
         }
 
     private fun cachedRecipeById(id: String): Recipe? {
-        val cachedRecipe = db.recipeQueries.getRecipeById(id).executeAsOneOrNull()
-        val cachedFavorite = db.favoriteRecipeQueries.getFavoriteRecipeById(id).executeAsOneOrNull()
+        val cached = db.recipeQueries.getRecipeById(id).executeAsOneOrNull() ?: return null
         val steps = db.recipeStepQueries.getRecipeStepsByRecipeId(id).executeAsList()
-
-        return when {
-            cachedRecipe != null -> cachedRecipe.toDomain(steps)
-            cachedFavorite != null -> cachedFavorite.toDomain(steps)
-            else -> null
-        }
+        return cached.toDomain(steps)
     }
 }

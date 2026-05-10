@@ -4,8 +4,6 @@ import org.nikol.roasti.core.utils.imageUrl
 import org.nikol.roasti.feature.recipe.domain.model.Recipe
 import org.nikol.roasti.ui.features.recipe.mapper.labelRes
 import org.nikol.roasti.ui.features.recipe.mapper.toUiModel
-import org.nikol.roasti.ui.features.recipe.model.RecipeAuthorUiModel
-import org.nikol.roasti.ui.features.recipe.model.RecipeOriginUiModel
 import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
 
 internal fun Recipe.toUiModel() = RecipeListItemUiModel(
@@ -21,76 +19,4 @@ internal fun Recipe.toUiModel() = RecipeListItemUiModel(
     author = author?.toUiModel(),
     origin = origin?.toUiModel(),
     isPublic = isPublic,
-)
-
-internal fun org.nikol.roasti.Recipe.toUiModel() = RecipeListItemUiModel(
-    id = id,
-    title = title,
-    description = description,
-    note = note,
-    imageUrl = image_id?.let(::imageUrl),
-    brewMethodLabelRes = brew_method.labelRes(),
-    difficultyLabelRes = difficulty.labelRes(),
-    isLiked = is_liked == 1L,
-    likesCount = likes_count.toInt(),
-    author = if (author_id != null && author_name != null) {
-        RecipeAuthorUiModel(
-            id = author_id!!,
-            username = author_name!!,
-            avatarId = author_image_id?.let(::imageUrl)
-        )
-    } else {
-        null
-    },
-    origin = origin_recipe_id?.let { recipeId ->
-        if (origin_author_id != null && origin_author_name != null) {
-            RecipeOriginUiModel(
-                recipeId = recipeId,
-                author = RecipeAuthorUiModel(
-                    id = origin_author_id!!,
-                    username = origin_author_name!!,
-                    avatarId = origin_author_image_id?.let(::imageUrl),
-                )
-            )
-        } else {
-            null
-        }
-    },
-    isPublic = is_public == 1L,
-)
-
-internal fun org.nikol.roasti.FavoriteRecipe.toUiModel() = RecipeListItemUiModel(
-    id = id,
-    title = title,
-    description = description,
-    note = note,
-    imageUrl = image_id?.let(::imageUrl),
-    brewMethodLabelRes = brew_method.labelRes(),
-    difficultyLabelRes = difficulty.labelRes(),
-    isLiked = true,  // everything in favorites is liked
-    likesCount = likes_count.toInt(),
-    author = if (author_id != null && author_name != null) {
-        RecipeAuthorUiModel(
-            id = author_id!!,
-            username = author_name!!,
-            avatarId = author_image_id?.let(::imageUrl)
-        )
-    } else {
-        null
-    },
-    origin = origin_recipe_id?.let { recipeId ->
-        if (origin_author_id != null && origin_author_name != null) {
-            RecipeOriginUiModel(
-                recipeId = recipeId,
-                author = RecipeAuthorUiModel(
-                    id = origin_author_id!!,
-                    username = origin_author_name!!,
-                    avatarId = origin_author_image_id?.let(::imageUrl),
-                )
-            )
-        } else {
-            null
-        }
-    },
-    isPublic = is_public == 1L,
 )

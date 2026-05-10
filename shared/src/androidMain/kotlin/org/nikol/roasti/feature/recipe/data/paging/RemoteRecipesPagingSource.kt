@@ -9,6 +9,7 @@ import org.nikol.roasti.feature.recipe.data.mapper.toQueryDto
 import org.nikol.roasti.feature.recipe.data.mapper.toRequestDto
 import org.nikol.roasti.feature.recipe.data.network.RecipesApiClient
 import org.nikol.roasti.feature.recipe.domain.model.Recipe
+import org.nikol.roasti.feature.recipe.domain.model.RecipesPagingQuery
 
 private const val FirstPage = 1
 

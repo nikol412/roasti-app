@@ -20,8 +20,8 @@ val viewModelsModule = module {
     viewModel { AppNavigationViewModel(get()) }
     viewModel { LoginViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
-    viewModel { ProfileViewModel(get(), get(), get(),get()) }
-    viewModel { RecipesListViewModel(get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get()) }
+    viewModel { RecipesListViewModel(get(), get(), get()) }
     viewModel { FeedViewModel(get(), get()) }
     viewModel { params -> PostDetailViewModel(params.get(), get(), get(), get()) }
     viewModel { params ->
@@ -31,7 +31,7 @@ val viewModelsModule = module {
             uploadRepository = get(),
         )
     }
-    viewModel { params -> RecipeContentViewModel(params.get(), get(), get()) }
+    viewModel { params -> RecipeContentViewModel(params.get(), get()) }
     viewModel { params -> RecipeStepsViewModel(params.get(), params.get(), get(), get()) }
     viewModel { CreateRecipeViewModel(get(), get()) }
     viewModel { CreateRecipeScreenViewModel(get(), get()) }

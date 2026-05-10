@@ -66,9 +66,9 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
 import org.nikol.roasti.ui.uikit.TextCard
+import org.nikol.roasti.ui.util.recipeImageSharedElementModifier
 
 private const val FavoritesSectionKey = "favorite_recipes_section"
-private const val RecipeScreenKeyPrefix = "recipe_screen_"
 private val FavoriteCardWidth = 200.dp
 private val RecipeCardHeight = 130.dp
 private val FavoriteCardHeight = 150.dp
@@ -248,15 +248,13 @@ private fun Content(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = Spacing.lg)
-                        .then(
-                            recipeSharedBoundsModifier(
-                                recipeId = recipe.id,
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-                        )
                         .clickable { onClick(recipe.id) }
                         .animateItem(),
+                    imageModifier = recipeImageSharedElementModifier(
+                        recipeId = recipe.id,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    ),
                 )
             }
 
@@ -435,23 +433,6 @@ private fun FilterHeader(
                 )
             }
         }
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-private fun recipeSharedBoundsModifier(
-    recipeId: String,
-    sharedTransitionScope: SharedTransitionScope?,
-    animatedVisibilityScope: AnimatedVisibilityScope?,
-): Modifier {
-    if (sharedTransitionScope == null || animatedVisibilityScope == null) return Modifier
-
-    return with(sharedTransitionScope) {
-        Modifier.sharedBounds(
-            sharedContentState = rememberSharedContentState(key = "$RecipeScreenKeyPrefix$recipeId"),
-            animatedVisibilityScope = animatedVisibilityScope,
-        )
     }
 }
 

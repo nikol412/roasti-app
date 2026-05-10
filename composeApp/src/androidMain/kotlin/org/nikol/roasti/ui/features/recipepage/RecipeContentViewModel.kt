@@ -2,69 +2,97 @@ package org.nikol.roasti.ui.features.recipepage
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.nikol.roasti.feature.likes.domain.LikesRepository
 import org.nikol.roasti.feature.recipe.domain.RecipeRepository
 import org.nikol.roasti.ui.features.recipepage.mapper.toUiModel
-
+import org.nikol.roasti.ui.features.recipepage.model.RecipeDetailsUiModel
+import org.nikol.roasti.ui.uikit.state.ContentUiState
+import org.nikol.roasti.ui.uikit.state.UiError
+import org.nikol.roasti.ui.uikit.state.UiEvent
 
 class RecipeContentViewModel(
     private val recipeId: String,
     private val repository: RecipeRepository,
-    private val likesRepository: LikesRepository,
 ) : ViewModel() {
 
-    private val _eventFlow: MutableSharedFlow<RecipeContentEvent> = MutableSharedFlow()
-    val eventFlow: SharedFlow<RecipeContentEvent> = _eventFlow.asSharedFlow()
+    private val refreshStatus = MutableStateFlow<RefreshStatus>(RefreshStatus.Idle)
 
-    private val _state = MutableStateFlow<RecipeContentState>(RecipeContentState.Loading)
-    val state: StateFlow<RecipeContentState> = _state.asStateFlow()
+    private val _events = MutableSharedFlow<UiEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<UiEvent> = _events.asSharedFlow()
+
+    private val _navEvents = MutableSharedFlow<RecipeContentNavEvent>(extraBufferCapacity = 1)
+    val navEvents: SharedFlow<RecipeContentNavEvent> = _navEvents.asSharedFlow()
+
+    val state: StateFlow<ContentUiState<RecipeDetailsUiModel>> = combine(
+        repository.observeById(recipeId),
+        refreshStatus,
+    ) { cache, status ->
+        val cacheUi = cache?.toUiModel()
+        when {
+            cacheUi != null -> ContentUiState.Content(
+                data = cacheUi,
+                isRefreshing = status is RefreshStatus.Loading,
+            )
+            status is RefreshStatus.Failed -> ContentUiState.FullscreenError(status.error)
+            else -> ContentUiState.Loading
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ContentUiState.Loading,
+    )
 
     init {
+        retry()
+    }
+
+    fun retry() {
         viewModelScope.launch {
-            try {
-                repository.getByIdFlow(recipeId).collectLatest { recipe ->
-                    _state.value = RecipeContentState.Content(recipe.toUiModel())
-                }
-            } catch (_: Exception) {
-                _state.value = RecipeContentState.Error
-            }
+            refreshStatus.value = RefreshStatus.Loading
+            repository.refreshById(recipeId).fold(
+                onSuccess = { refreshStatus.value = RefreshStatus.Idle },
+                onFailure = {
+                    val hasCache = repository.observeById(recipeId).first() != null
+                    if (hasCache) {
+                        refreshStatus.value = RefreshStatus.Idle
+                        _events.tryEmit(UiEvent.ShowError(UiError.Generic))
+                    } else {
+                        refreshStatus.value = RefreshStatus.Failed(UiError.Generic)
+                    }
+                },
+            )
         }
     }
 
     fun toggleLike() {
-        val content = _state.value as? RecipeContentState.Content ?: return
-        val recipe = content.recipe
-        val optimisticLiked = !recipe.isLiked
-        val optimisticCount = recipe.likesCount + if (optimisticLiked) 1 else -1
-
-        _state.update {
-            content.copy(recipe = recipe.copy(isLiked = optimisticLiked, likesCount = optimisticCount))
-        }
-
         viewModelScope.launch {
-            likesRepository.toggleLikeOnRecipe(recipeId)
-                .onFailure {
-                    _state.update {
-                        content.copy(recipe = recipe.copy(isLiked = recipe.isLiked, likesCount = recipe.likesCount))
-                    }
-                }
+            repository.toggleLike(recipeId).onFailure {
+                _events.tryEmit(UiEvent.ShowError(UiError.Generic))
+            }
         }
     }
 
     fun onRemoveRecipe() {
         viewModelScope.launch {
-            repository.removeRecipe(recipeId).onSuccess {
-                _eventFlow.emit(RecipeContentEvent.NavigateBack)
-            }
+            repository.removeRecipe(recipeId).fold(
+                onSuccess = { _navEvents.tryEmit(RecipeContentNavEvent.NavigateBack) },
+                onFailure = { _events.tryEmit(UiEvent.ShowError(UiError.Generic)) },
+            )
         }
+    }
+
+    private sealed interface RefreshStatus {
+        data object Idle : RefreshStatus
+        data object Loading : RefreshStatus
+        data class Failed(val error: UiError) : RefreshStatus
     }
 }

@@ -13,7 +13,7 @@ import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterStore
 
 val recipeModule = module {
     single { RecipesApiClientImpl(get(), get()) } bind RecipesApiClient::class
-    single { RecipeRepositoryImpl(get(), get()) } bind RecipeRepository::class
+    single { RecipeRepositoryImpl(get(), get(), get()) } bind RecipeRepository::class
     factoryOf(::BrewingTimerImpl) bind BrewingTimer::class
     factory { RecipeFilterStore() }
 }
