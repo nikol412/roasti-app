@@ -33,6 +33,7 @@ import org.nikol.roasti.ui.features.auth.login.LoginRoute
 import org.nikol.roasti.ui.features.auth.register.RegisterRoute
 import org.nikol.roasti.ui.features.createrecipe.CreateRecipeRoute
 import org.nikol.roasti.ui.features.editrecipe.EditRecipeRoute
+import org.nikol.roasti.ui.features.favorites.FavoritesRoute
 import org.nikol.roasti.ui.features.photoviewer.PhotoViewerScreen
 import org.nikol.roasti.ui.features.profile.ProfileRoute
 import org.nikol.roasti.ui.features.settings.SettingsRoute
@@ -162,8 +163,18 @@ private fun MainNavHost(
                         contentPadding = innerPadding,
                         onRecipeClick = { navController.navigate(Screen.RecipeItem.createRoute(it)) },
                         onCreateClick = { navController.navigate(Screen.CreateRecipe.route) },
+                        onSeeAllFavorites = { navController.navigate(Screen.Favorites.route) },
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this,
+                    )
+                }
+
+                composable(Screen.Favorites.route) {
+                    FavoritesRoute(
+                        onBackClick = { navController.popBackStack() },
+                        onRecipeClick = { navController.navigate(Screen.RecipeItem.createRoute(it)) },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable,
                     )
                 }
 
@@ -176,6 +187,8 @@ private fun MainNavHost(
                 tabComposable(Screen.Profile.route) {
                     ProfileRoute(
                         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                        onNavigateToFavorites = { navController.navigate(Screen.Favorites.route) },
+                        onRecipeClick = { navController.navigate(Screen.RecipeItem.createRoute(it)) },
                         contentPadding = innerPadding,
                     )
                 }

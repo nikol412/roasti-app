@@ -21,6 +21,7 @@ import org.nikol.roasti.ui.features.feed.mapper.toDomain
 import org.nikol.roasti.ui.features.feed.mapper.toUiModel
 import org.nikol.roasti.ui.features.feed.model.PostUiModel
 import org.nikol.roasti.ui.uikit.post.PostUserReaction
+import org.nikol.roasti.utils.stateInWhileSubscribe
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModel(
@@ -33,6 +34,10 @@ class FeedViewModel(
 
     private val manualRefreshMutable = MutableStateFlow(false)
     val isManualRefresh: StateFlow<Boolean> = manualRefreshMutable.asStateFlow()
+
+    val hasCachedPosts: StateFlow<Boolean> =
+        pagingPostRepository.observeHasCachedPosts()
+            .stateInWhileSubscribe(false)
 
     val pagingPostsState: Flow<PagingData<PostUiModel>> =
         currentUserIdFlow

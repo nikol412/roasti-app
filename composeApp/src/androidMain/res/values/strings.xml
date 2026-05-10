@@ -3,6 +3,8 @@
     <string name="error_generic">Something went wrong</string>
     <string name="common_retry">Retry</string>
     <string name="recipes_load_error">Failed to load recipes</string>
+    <string name="feed_load_error">Failed to load feed</string>
+    <string name="feed_refresh_error">Couldn\'t refresh feed</string>
     <string name="recipe_not_found">Not found</string>
     <string name="back_label">Back</string>
     <string name="recipe_edit">Edit</string>
@@ -14,6 +16,8 @@
     <string name="recipe_missing_value">N/A</string>
     <string name="recipe_list_favorite_section_title">Favorites</string>
     <string name="recipe_list_favorite_empty_state">You don’t have favorites yet</string>
+    <string name="favorites_see_all">See all favorites</string>
+    <string name="favorites_load_error">Couldn’t load favorites</string>
     <string name="recipe_list_all_section_title">All</string>
     <string name="recipe_brew_method">Brew Method</string>
     <string name="recipe_brew_method_all">All</string>

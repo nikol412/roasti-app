@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -27,7 +28,8 @@ class RecipeRepositoryImplTest {
     private val db: RoastiDatabaseCache = inMemoryRoastiDatabase()
     private val api = FakeRecipesApiClient()
     private val likes = FakeLikesApiClient()
-    private val repo = RecipeRepositoryImpl(api, db, likes)
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val repo = RecipeRepositoryImpl(api, db, likes, ioDispatcher = testDispatcher)
 
     @AfterTest
     fun tearDown() {
@@ -148,7 +150,7 @@ class RecipeRepositoryImplTest {
         repo.toggleLike("r1")
 
         assertEquals(1L, favoritesCount())
-        // position is reset to top via insertMembershipAtTop on revert — that's expected
+        // position is reset to bottom via insertMembershipAtBottom on revert — that's expected
     }
 
     @Test

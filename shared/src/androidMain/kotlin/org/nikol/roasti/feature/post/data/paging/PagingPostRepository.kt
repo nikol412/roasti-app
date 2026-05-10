@@ -5,9 +5,11 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToOne
 import app.cash.sqldelight.paging3.QueryPagingSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.nikol.roasti.Post as CachedPost
 import org.nikol.roasti.RoastiDatabaseCache
@@ -36,6 +38,13 @@ class PagingPostRepository(
         db.postQueries.getPostById(id)
             .asFlow()
             .map { query -> query.executeAsOneOrNull()?.toDomain() }
+
+    fun observeHasCachedPosts(): Flow<Boolean> =
+        db.postQueries.countAllPosts()
+            .asFlow()
+            .mapToOne(Dispatchers.IO)
+            .map { count -> count > 0L }
+            .distinctUntilChanged()
 
     suspend fun refreshPostById(id: String): Result<Unit> =
         postsApiClient.getPost(id).map { dto ->

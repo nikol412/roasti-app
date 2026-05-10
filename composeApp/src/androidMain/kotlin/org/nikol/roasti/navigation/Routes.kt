@@ -24,6 +24,8 @@ sealed class Screen(val route: String) {
 
     object Profile : Screen("profile")
 
+    object Favorites : Screen("favorites")
+
     object Settings : Screen("settings")
 
     object PostDetail : Screen("post/{id}") {

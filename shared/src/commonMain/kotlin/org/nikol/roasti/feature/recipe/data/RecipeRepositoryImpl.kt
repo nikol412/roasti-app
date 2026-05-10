@@ -3,6 +3,7 @@ package org.nikol.roasti.feature.recipe.data
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,7 @@ class RecipeRepositoryImpl(
     private val apiClient: RecipesApiClient,
     private val db: RoastiDatabaseCache,
     private val likesApiClient: LikesApiClient,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : RecipeRepository {
 
     override suspend fun getRecipes(
@@ -59,10 +61,10 @@ class RecipeRepositoryImpl(
     override fun observeById(id: String): Flow<Recipe?> {
         val recipeFlow = db.recipeQueries.getRecipeById(id)
             .asFlow()
-            .mapToOneOrNull(Dispatchers.IO)
+            .mapToOneOrNull(ioDispatcher)
         val stepsFlow = db.recipeStepQueries.getRecipeStepsByRecipeId(id)
             .asFlow()
-            .mapToList(Dispatchers.IO)
+            .mapToList(ioDispatcher)
 
         return combine(recipeFlow, stepsFlow) { recipe, steps ->
             recipe?.toDomain(steps)
@@ -95,7 +97,7 @@ class RecipeRepositoryImpl(
                     recipeId = id,
                 )
             } else {
-                db.recipeListMembershipQueries.insertMembershipAtTop(
+                db.recipeListMembershipQueries.insertMembershipAtBottom(
                     listType = RecipeListType.FAVORITES,
                     recipeId = id,
                 )

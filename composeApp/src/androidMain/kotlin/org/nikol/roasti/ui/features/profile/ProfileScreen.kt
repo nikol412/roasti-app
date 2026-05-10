@@ -18,14 +18,17 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.ui.features.profile.widgets.ProfileFavoriteRecipesRow
 import org.nikol.roasti.ui.features.profile.widgets.ProfileHeaderRow
 import org.nikol.roasti.ui.features.profile.widgets.StatisticsRow
+import org.nikol.roasti.ui.uikit.state.ContentScaffold
 
 @Composable
 internal fun ProfileRoute(
     onNavigateToSettings: () -> Unit,
+    onNavigateToFavorites: () -> Unit,
+    onRecipeClick: (String) -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     val viewModel: ProfileViewModel = koinViewModel()
-    val uiState by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val listener = remember(viewModel, onNavigateToSettings) {
         object : ProfileRowListener {
@@ -38,13 +41,28 @@ internal fun ProfileRoute(
         }
     }
 
-    ProfileScreen(uiState, listener, contentPadding)
+    ContentScaffold(
+        state = state,
+        onRetry = viewModel::retry,
+        onRefresh = viewModel::retry,
+        events = viewModel.events,
+    ) { profile ->
+        ProfileScreen(
+            uiState = profile,
+            listener = listener,
+            onRecipeClick = onRecipeClick,
+            onSeeAllFavorites = onNavigateToFavorites,
+            contentPadding = contentPadding,
+        )
+    }
 }
 
 @Composable
 private fun ProfileScreen(
     uiState: ProfileState,
     listener: ProfileRowListener,
+    onRecipeClick: (String) -> Unit,
+    onSeeAllFavorites: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     Scaffold(
@@ -70,6 +88,8 @@ private fun ProfileScreen(
             )
             ProfileFavoriteRecipesRow(
                 item = uiState.favoritesState,
+                onRecipeClick = { onRecipeClick(it.id) },
+                onSeeAllClick = onSeeAllFavorites,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 20.dp),
@@ -82,11 +102,15 @@ private fun ProfileScreen(
 @Preview(showBackground = true)
 @Composable
 private fun ProfileRootPreview() {
-    ProfileScreen(uiState = ProfileState(), listener = object : ProfileRowListener {
-        override fun onImagePicked(fileName: String, bytes: ByteArray) {}
-        override fun onEditClick() {}
-        override fun onSettingsClick() {}
-        override fun onLogoutClick() {}
-    })
+    ProfileScreen(
+        uiState = ProfileState(),
+        listener = object : ProfileRowListener {
+            override fun onImagePicked(fileName: String, bytes: ByteArray) {}
+            override fun onEditClick() {}
+            override fun onSettingsClick() {}
+            override fun onLogoutClick() {}
+        },
+        onRecipeClick = {},
+        onSeeAllFavorites = {},
+    )
 }
-

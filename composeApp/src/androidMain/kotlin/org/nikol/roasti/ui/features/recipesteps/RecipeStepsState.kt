@@ -2,12 +2,6 @@ package org.nikol.roasti.ui.features.recipesteps
 
 import kotlin.math.ceil
 
-internal sealed interface RecipeStepsUiState {
-    data object Loading : RecipeStepsUiState
-    data object Error : RecipeStepsUiState
-    data class Content(val session: SessionState) : RecipeStepsUiState
-}
-
 internal data class StepTimerState(
     val totalMillis: Long,
     val remainingMillis: Long,

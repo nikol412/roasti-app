@@ -4,6 +4,8 @@
     <string name="error_generic">Что-то пошло не так</string>
     <string name="common_retry">Повторить</string>
     <string name="recipes_load_error">Не удалось загрузить рецепты</string>
+    <string name="feed_load_error">Не удалось загрузить ленту</string>
+    <string name="feed_refresh_error">Не удалось обновить ленту</string>
     <string name="recipe_not_found">Не найдено</string>
     <string name="back_label">Назад</string>
     <string name="recipe_edit">Редактировать</string>
@@ -15,6 +17,8 @@
     <string name="recipe_missing_value">Н/Д</string>
     <string name="recipe_list_favorite_section_title">Избранное</string>
     <string name="recipe_list_favorite_empty_state">У вас пока нет избранных</string>
+    <string name="favorites_see_all">Все избранные</string>
+    <string name="favorites_load_error">Не удалось загрузить избранное</string>
     <string name="recipe_list_all_section_title">Все</string>
     <string name="recipe_brew_method">Способ заваривания</string>
     <string name="recipe_brew_method_all">Все</string>

@@ -3,12 +3,14 @@ package org.nikol.roasti.ui.features.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -20,20 +22,12 @@ import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
 import org.nikol.roasti.feature.likes.data.LikesApiClient
 import org.nikol.roasti.feature.likes.data.toDomain
 import org.nikol.roasti.feature.upload.domain.UploadRepository
+import org.nikol.roasti.ui.features.favorites.model.FavoritesPreviewState
 import org.nikol.roasti.ui.features.recipelist.mapper.toUiModel
+import org.nikol.roasti.ui.uikit.state.ContentUiState
+import org.nikol.roasti.ui.uikit.state.UiError
+import org.nikol.roasti.ui.uikit.state.UiEvent
 import org.nikol.roasti.utils.stateInWhileSubscribe
-
-private const val SessionExpiredMessage = "Your session has ended. Please sign in again."
-
-sealed interface ProfileUiState {
-    data object Loading : ProfileUiState
-    data class Error(val message: String) : ProfileUiState
-    data class Content(
-        val user: User,
-        val isRefreshing: Boolean,
-        val isLoggingOut: Boolean,
-    ) : ProfileUiState
-}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProfileViewModel(
@@ -42,28 +36,71 @@ class ProfileViewModel(
     private val likesApiClient: LikesApiClient,
 ) : ViewModel(), ProfileRowListener {
 
-    private val isRefreshing = MutableStateFlow(false)
+    private val refreshStatus = MutableStateFlow<RefreshStatus>(RefreshStatus.Idle)
     private val isLoggingOut = MutableStateFlow(false)
+    private val favoritesRefreshTrigger = MutableStateFlow(0)
+    private val isUserImageUploadProgressFlow = MutableStateFlow(false)
+
+    private val _events = MutableSharedFlow<UiEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<UiEvent> = _events.asSharedFlow()
 
     private val userStatisticsState: StateFlow<ProfileStatisticsUiModel> =
         MutableStateFlow(ProfileStatisticsUiModel.empty()).asStateFlow()
 
-    private val isUserImageUploadProgressFlow = MutableStateFlow(false)
+    private val userState: StateFlow<ProfileUserUiModel?> = authRepository.getUser()
+        .combine(isUserImageUploadProgressFlow) { user, isImageLoading -> user?.toUi(isImageLoading) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    private val userState = authRepository.getUser()
-        .filterNotNull()
-        .combine(isUserImageUploadProgressFlow, ::Pair)
-        .map { it.first.toUi(it.second) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProfileUserUiModel.empty())
+    private val favoritesState: StateFlow<FavoritesPreviewState> = combine(
+        authRepository.getUser(),
+        favoritesRefreshTrigger,
+    ) { user, _ -> user?.id }
+        .flatMapLatest { userId -> favoriteRecipesFlow(userId) }
+        .stateInWhileSubscribe(FavoritesPreviewState.Loading)
 
-    private val favoritesState = authRepository.getUser().flatMapLatest { user ->
-        favoriteRecipesFlow(user?.id)
+    val state: StateFlow<ContentUiState<ProfileState>> = combine(
+        userState,
+        userStatisticsState,
+        favoritesState,
+        refreshStatus,
+    ) { user, statistics, favorites, status ->
+        when {
+            user != null -> ContentUiState.Content(
+                data = ProfileState(user = user, statistics = statistics, favoritesState = favorites),
+                isRefreshing = status is RefreshStatus.Loading,
+            )
+            status is RefreshStatus.Failed -> ContentUiState.FullscreenError(status.error)
+            else -> ContentUiState.Loading
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ContentUiState.Loading)
+
+    init {
+        retry()
     }
-        .stateInWhileSubscribe(ProfileFavoritesBlock.Loading)
+
+    fun retry() {
+        viewModelScope.launch {
+            refreshStatus.value = RefreshStatus.Loading
+            authRepository.syncProfile().fold(
+                onSuccess = {
+                    favoritesRefreshTrigger.update { it + 1 }
+                    refreshStatus.value = RefreshStatus.Idle
+                },
+                onFailure = {
+                    if (userState.value != null) {
+                        refreshStatus.value = RefreshStatus.Idle
+                        _events.tryEmit(UiEvent.ShowError(UiError.Generic))
+                    } else {
+                        refreshStatus.value = RefreshStatus.Failed(UiError.Generic)
+                    }
+                },
+            )
+        }
+    }
 
     private fun favoriteRecipesFlow(userId: String?) = flow {
         if (userId == null) {
-            emit(ProfileFavoritesBlock.Empty)
+            emit(FavoritesPreviewState.Empty)
             return@flow
         }
 
@@ -75,21 +112,15 @@ class ProfileViewModel(
         val likes = result.getOrNull()
         if (!likes?.items.isNullOrEmpty()) {
             emit(
-                ProfileFavoritesBlock.Content(
+                FavoritesPreviewState.Content(
                     items = likes.items.map { it.recipe.toUiModel() }.take(maxVisibleLimit),
-                    showMoreBlock = likes.items.size > maxVisibleLimit
+                    hasMore = likes.items.size > maxVisibleLimit,
                 )
             )
         } else {
-            emit(ProfileFavoritesBlock.Empty)
+            emit(FavoritesPreviewState.Empty)
         }
     }
-
-    val state: StateFlow<ProfileState> =
-        combine(userStatisticsState, userState, favoritesState) { statistics, user, favorites ->
-            ProfileState(user, statistics, favorites)
-        }.stateInWhileSubscribe(ProfileState.empty())
-
 
     private fun logout() {
         if (isLoggingOut.value) return
@@ -111,7 +142,9 @@ class ProfileViewModel(
     override fun onImagePicked(fileName: String, bytes: ByteArray) {
         viewModelScope.launch {
             isUserImageUploadProgressFlow.update { true }
-            uploadImage(fileName, bytes)
+            uploadImage(fileName, bytes).onFailure {
+                _events.tryEmit(UiEvent.ShowError(UiError.Generic))
+            }
             isUserImageUploadProgressFlow.update { false }
         }
     }
@@ -120,9 +153,16 @@ class ProfileViewModel(
         logout()
     }
 
-    private suspend fun uploadImage(fileName: String, bytes: ByteArray) {
-        val imageId = uploadRepository.uploadImage(fileName, bytes).getOrNull() ?: return
-        authRepository.updateProfile(imageId.id)
+    private suspend fun uploadImage(fileName: String, bytes: ByteArray): Result<Unit> {
+        val uploaded = uploadRepository.uploadImage(fileName, bytes)
+            .getOrElse { return Result.failure(it) }
+        return authRepository.updateProfile(imageId = uploaded.id).map { }
+    }
+
+    private sealed interface RefreshStatus {
+        data object Idle : RefreshStatus
+        data object Loading : RefreshStatus
+        data class Failed(val error: UiError) : RefreshStatus
     }
 }
 

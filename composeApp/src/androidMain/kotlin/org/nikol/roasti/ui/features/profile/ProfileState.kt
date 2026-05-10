@@ -1,14 +1,13 @@
 package org.nikol.roasti.ui.features.profile
 
 import androidx.compose.runtime.Immutable
-import androidx.paging.PagingData
-import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
+import org.nikol.roasti.ui.features.favorites.model.FavoritesPreviewState
 
 @Immutable
 data class ProfileState(
     val user: ProfileUserUiModel = ProfileUserUiModel.empty(),
     val statistics: ProfileStatisticsUiModel = ProfileStatisticsUiModel.empty(),
-    val favoritesState: ProfileFavoritesBlock = ProfileFavoritesBlock.Empty
+    val favoritesState: FavoritesPreviewState = FavoritesPreviewState.Empty,
 ) {
     companion object {
         fun empty() = ProfileState()
@@ -41,14 +40,4 @@ data class ProfileStatisticsUiModel(
             postCount = postCount,
         )
     }
-}
-
-
-sealed interface ProfileFavoritesBlock {
-    data object Loading : ProfileFavoritesBlock
-    data object Empty : ProfileFavoritesBlock
-    data class Content(
-        val items: List<RecipeListItemUiModel> = emptyList(),
-        val showMoreBlock: Boolean = false
-    ) : ProfileFavoritesBlock
 }

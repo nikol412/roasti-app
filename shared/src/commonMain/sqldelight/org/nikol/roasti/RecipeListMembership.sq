@@ -31,6 +31,14 @@ VALUES (
     COALESCE((SELECT MIN(position) FROM RecipeListMembership WHERE list_type = :listType), 0) - 1
 );
 
+insertMembershipAtBottom:
+INSERT OR REPLACE INTO RecipeListMembership(list_type, recipe_id, position)
+VALUES (
+    :listType,
+    :recipeId,
+    COALESCE((SELECT MAX(position) FROM RecipeListMembership WHERE list_type = :listType), -1) + 1
+);
+
 deleteMembership:
 DELETE FROM RecipeListMembership WHERE list_type = :listType AND recipe_id = :recipeId;
 

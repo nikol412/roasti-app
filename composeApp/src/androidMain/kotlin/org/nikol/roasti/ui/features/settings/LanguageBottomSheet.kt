@@ -6,19 +6,14 @@ import android.os.Build
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import org.nikol.roasti.R
+import org.nikol.roasti.ui.uikit.RoastiBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +29,6 @@ fun LanguageBottomSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val sheetState = rememberModalBottomSheetState()
 
     val applyLocale: (String) -> Unit = { tag ->
         val locales = if (tag.isEmpty()) {
@@ -45,49 +40,36 @@ fun LanguageBottomSheet(
         onDismiss()
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        shape = MaterialTheme.shapes.small,
+    RoastiBottomSheet(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.language_sheet_title),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.language_sheet_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            )
+        LanguageOptionRow(
+            label = stringResource(R.string.settings_language_system_default),
+            onClick = { applyLocale("") },
+        )
+        LanguageOptionRow(
+            label = stringResource(R.string.settings_language_english),
+            onClick = { applyLocale("en") },
+        )
+        LanguageOptionRow(
+            label = stringResource(R.string.settings_language_russian),
+            onClick = { applyLocale("ru") },
+        )
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider()
             LanguageOptionRow(
-                label = stringResource(R.string.settings_language_system_default),
-                onClick = { applyLocale("") },
+                label = stringResource(R.string.settings_open_system_language),
+                onClick = {
+                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
+                    onDismiss()
+                },
             )
-            LanguageOptionRow(
-                label = stringResource(R.string.settings_language_english),
-                onClick = { applyLocale("en") },
-            )
-            LanguageOptionRow(
-                label = stringResource(R.string.settings_language_russian),
-                onClick = { applyLocale("ru") },
-            )
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider()
-                LanguageOptionRow(
-                    label = stringResource(R.string.settings_open_system_language),
-                    onClick = {
-                        val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
-                        context.startActivity(intent)
-                        onDismiss()
-                    },
-                )
-            }
         }
     }
 }
