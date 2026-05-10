@@ -12,34 +12,35 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 import org.nikol.roasti.features.users.UserId
 import kotlin.time.Clock
 
-data class VoteInfo(val rating: Int, val userVote: String?)
+enum class VoteDirection { UP, DOWN, NONE }
 
-const val VOTE_TYPE_UP = "up"
-const val VOTE_TYPE_DOWN = "down"
+enum class VoteTargetType { POST }
+
+data class VoteInfo(val rating: Int, val userVote: VoteDirection)
 
 interface VoteRepository {
-    suspend fun upsert(userId: UserId, targetId: String, targetType: String, voteType: String)
-    suspend fun delete(userId: UserId, targetId: String, targetType: String)
-    suspend fun getInfo(userId: UserId?, targetId: String, targetType: String): VoteInfo
-    suspend fun getInfoBatch(userId: UserId?, targetIds: List<String>, targetType: String): Map<String, VoteInfo>
+    suspend fun upsert(userId: UserId, targetId: String, targetType: VoteTargetType, direction: VoteDirection)
+    suspend fun delete(userId: UserId, targetId: String, targetType: VoteTargetType)
+    suspend fun getInfo(userId: UserId?, targetId: String, targetType: VoteTargetType): VoteInfo
+    suspend fun getInfoBatch(userId: UserId?, targetIds: List<String>, targetType: VoteTargetType): Map<String, VoteInfo>
 }
 
 class VoteRepositoryImpl : VoteRepository {
 
-    override suspend fun upsert(userId: UserId, targetId: String, targetType: String, voteType: String): Unit =
+    override suspend fun upsert(userId: UserId, targetId: String, targetType: VoteTargetType, direction: VoteDirection): Unit =
         withContext(Dispatchers.IO) {
             transaction {
                 VoteTable.upsert {
                     it[VoteTable.userId] = userId.value
                     it[VoteTable.targetId] = targetId
                     it[VoteTable.targetType] = targetType
-                    it[VoteTable.voteType] = voteType
+                    it[VoteTable.voteType] = direction
                     it[VoteTable.createdAt] = Clock.System.now()
                 }
             }
         }
 
-    override suspend fun delete(userId: UserId, targetId: String, targetType: String): Unit =
+    override suspend fun delete(userId: UserId, targetId: String, targetType: VoteTargetType): Unit =
         withContext(Dispatchers.IO) {
             transaction {
                 VoteTable.deleteWhere {
@@ -50,27 +51,10 @@ class VoteRepositoryImpl : VoteRepository {
             }
         }
 
-    override suspend fun getInfo(userId: UserId?, targetId: String, targetType: String): VoteInfo =
-        withContext(Dispatchers.IO) {
-            transaction {
-                val rows = VoteTable.selectAll()
-                    .where { (VoteTable.targetId eq targetId) and (VoteTable.targetType eq targetType) }
+    override suspend fun getInfo(userId: UserId?, targetId: String, targetType: VoteTargetType): VoteInfo =
+        getInfoBatch(userId, listOf(targetId), targetType)[targetId] ?: VoteInfo(0, VoteDirection.NONE)
 
-                val rating = rows.sumOf { row ->
-                    when (row[VoteTable.voteType]) {
-                        VOTE_TYPE_UP -> 1
-                        VOTE_TYPE_DOWN -> -1
-                        else -> 0
-                    }
-                }
-                val userVote = userId?.let { uid ->
-                    rows.find { it[VoteTable.userId] == uid.value }?.get(VoteTable.voteType)
-                }
-                VoteInfo(rating, userVote)
-            }
-        }
-
-    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<String>, targetType: String): Map<String, VoteInfo> =
+    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<String>, targetType: VoteTargetType): Map<String, VoteInfo> =
         withContext(Dispatchers.IO) {
             if (targetIds.isEmpty()) return@withContext emptyMap()
             transaction {
@@ -82,14 +66,14 @@ class VoteRepositoryImpl : VoteRepository {
                     val group = grouped[id] ?: emptyList()
                     val rating = group.sumOf { row ->
                         when (row[VoteTable.voteType]) {
-                            VOTE_TYPE_UP -> 1
-                            VOTE_TYPE_DOWN -> -1
-                            else -> 0
+                            VoteDirection.UP -> 1
+                            VoteDirection.DOWN -> -1
+                            VoteDirection.NONE -> 0
                         }
                     }
                     val userVote = userId?.let { uid ->
                         group.find { it[VoteTable.userId] == uid.value }?.get(VoteTable.voteType)
-                    }
+                    } ?: VoteDirection.NONE
                     VoteInfo(rating, userVote)
                 }
             }

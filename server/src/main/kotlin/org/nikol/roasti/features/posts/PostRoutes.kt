@@ -38,6 +38,7 @@ import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentService
 import org.nikol.roasti.features.comments.CommentThread
 import org.nikol.roasti.features.comments.toDto
+import org.nikol.roasti.features.votes.VoteDirection
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -53,7 +54,7 @@ fun Route.postRoutes() {
             val authorId = call.request.queryParameters["author_id"]
                 ?.let { org.nikol.roasti.features.users.UserId(it) }
             val userId = call.principal<FirebasePrincipal>()?.uid
-            val postsPage = postService.list(page, limit, authorId)
+            val postsPage = postService.list(page, limit, authorId, userId)
             call.respond(postsPage.toDto())
         }
 
@@ -69,7 +70,7 @@ fun Route.postRoutes() {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val result = commentService.list(id, POST_TARGET_TYPE, page, limit)
+            val result = commentService.list(id, "post", page, limit)
             call.respond(
                 PageResponseDto(
                     items = result.items.map { it.toDto() },
@@ -144,7 +145,7 @@ fun Route.postRoutes() {
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<CreateCommentRequestDto>()
                 val parentId = body.parentId?.let { CommentId(Uuid.parse(it)) }
-                val comment = commentService.create(userId, id, POST_TARGET_TYPE, body.text, parentId)
+                val comment = commentService.create(userId, id, "post", body.text, parentId)
                 call.respond(HttpStatusCode.Created, comment.toDto())
             }
         }

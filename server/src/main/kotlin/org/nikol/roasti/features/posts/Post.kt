@@ -1,6 +1,7 @@
 package org.nikol.roasti.features.posts
 
 import org.nikol.roasti.features.users.UserId
+import org.nikol.roasti.features.votes.VoteDirection
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -15,8 +16,6 @@ data class PostAuthor(
     val name: String?,
     val avatarId: String?,
 )
-
-enum class VoteDirection { UP, DOWN, NONE }
 
 @OptIn(ExperimentalUuidApi::class)
 data class Post(

@@ -3,19 +3,19 @@ package org.nikol.roasti.features.posts
 import org.nikol.roasti.features.comments.CommentRepository
 import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.users.UserId
-import org.nikol.roasti.features.votes.VOTE_TYPE_DOWN
-import org.nikol.roasti.features.votes.VOTE_TYPE_UP
+import org.nikol.roasti.features.votes.VoteDirection
 import org.nikol.roasti.features.votes.VoteService
+import org.nikol.roasti.features.votes.VoteTargetType
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-const val POST_TARGET_TYPE = "post"
+private const val COMMENT_TARGET_TYPE = "post"
 
 data class PostVoteResult(val rating: Int, val userVote: VoteDirection)
 
 interface PostService {
     suspend fun getById(id: PostId, userId: UserId?): Post
-    suspend fun list(page: Int, limit: Int, authorId: UserId?): Page<Post>
+    suspend fun list(page: Int, limit: Int, authorId: UserId?, userId: UserId?): Page<Post>
     suspend fun create(userId: UserId, input: CreatePostInput): Post
     suspend fun update(userId: UserId, id: PostId, input: UpdatePostInput): Post
     suspend fun delete(userId: UserId, id: PostId)
@@ -34,19 +34,19 @@ class PostServiceImpl(
         return row.enrich(userId)
     }
 
-    override suspend fun list(page: Int, limit: Int, authorId: UserId?): Page<Post> {
+    override suspend fun list(page: Int, limit: Int, authorId: UserId?, userId: UserId?): Page<Post> {
         val (rows, total) = repo.list(page, limit, authorId)
         val postIds = rows.map { it.id.value.toString() }
-        val voteInfos = voteService.getInfoBatch(null, postIds, POST_TARGET_TYPE)
-        val commentCounts = postIds.associateWith { commentRepo.countForTarget(it, POST_TARGET_TYPE) }
+        val voteInfos = voteService.getInfoBatch(userId, postIds, VoteTargetType.POST)
+        val commentCounts = commentRepo.countForTargetBatch(postIds, COMMENT_TARGET_TYPE)
 
         val posts = rows.map { row ->
             val id = row.id.value.toString()
-            val voteInfo = voteInfos[id]
+            val voteInfo = voteInfos.getValue(id)
             row.toPost(
-                rating = voteInfo?.rating ?: 0,
-                userVote = VoteDirection.NONE,
-                commentsCount = commentCounts[id] ?: 0,
+                rating = voteInfo.rating,
+                userVote = voteInfo.userVote,
+                commentsCount = commentCounts.getValue(id),
             )
         }
 
@@ -75,28 +75,17 @@ class PostServiceImpl(
         repo.findById(id) ?: throw PostNotFoundException
         val targetId = id.value.toString()
         val voteInfo = when (direction) {
-            VoteDirection.UP -> voteService.put(userId, targetId, POST_TARGET_TYPE, VOTE_TYPE_UP)
-            VoteDirection.DOWN -> voteService.put(userId, targetId, POST_TARGET_TYPE, VOTE_TYPE_DOWN)
-            VoteDirection.NONE -> voteService.remove(userId, targetId, POST_TARGET_TYPE)
+            VoteDirection.UP, VoteDirection.DOWN -> voteService.put(userId, targetId, VoteTargetType.POST, direction)
+            VoteDirection.NONE -> voteService.remove(userId, targetId, VoteTargetType.POST)
         }
-        val userVote = when (voteInfo.userVote) {
-            VOTE_TYPE_UP -> VoteDirection.UP
-            VOTE_TYPE_DOWN -> VoteDirection.DOWN
-            else -> VoteDirection.NONE
-        }
-        return PostVoteResult(voteInfo.rating, userVote)
+        return PostVoteResult(voteInfo.rating, voteInfo.userVote)
     }
 
     private suspend fun PostRow.enrich(userId: UserId?): Post {
         val targetId = id.value.toString()
-        val voteInfo = voteService.getInfo(userId, targetId, POST_TARGET_TYPE)
-        val commentsCount = commentRepo.countForTarget(targetId, POST_TARGET_TYPE)
-        val userVote = when (voteInfo.userVote) {
-            VOTE_TYPE_UP -> VoteDirection.UP
-            VOTE_TYPE_DOWN -> VoteDirection.DOWN
-            else -> VoteDirection.NONE
-        }
-        return toPost(voteInfo.rating, userVote, commentsCount)
+        val voteInfo = voteService.getInfo(userId, targetId, VoteTargetType.POST)
+        val commentsCount = commentRepo.countForTarget(targetId, COMMENT_TARGET_TYPE)
+        return toPost(voteInfo.rating, voteInfo.userVote, commentsCount)
     }
 }
 

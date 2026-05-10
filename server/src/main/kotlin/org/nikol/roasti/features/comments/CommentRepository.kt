@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.isNotNull
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -33,6 +34,7 @@ interface CommentRepository {
     suspend fun listForTarget(targetId: String, targetType: String, page: Int, limit: Int): Pair<List<CommentThread>, Int>
     suspend fun existsInTarget(commentId: CommentId, targetId: String): Boolean
     suspend fun countForTarget(targetId: String, targetType: String): Int
+    suspend fun countForTargetBatch(targetIds: List<String>, targetType: String): Map<String, Int>
 }
 
 @OptIn(ExperimentalUuidApi::class)
@@ -167,18 +169,24 @@ class CommentRepositoryImpl : CommentRepository {
         }
     }
 
-    override suspend fun countForTarget(targetId: String, targetType: String): Int = withContext(Dispatchers.IO) {
-        transaction {
-            CommentTable.selectAll()
-                .where {
-                    (CommentTable.targetId eq targetId) and
-                        (CommentTable.targetType eq targetType) and
-                        CommentTable.deletedAt.isNull()
-                }
-                .count()
-                .toInt()
+    override suspend fun countForTarget(targetId: String, targetType: String): Int =
+        countForTargetBatch(listOf(targetId), targetType)[targetId] ?: 0
+
+    override suspend fun countForTargetBatch(targetIds: List<String>, targetType: String): Map<String, Int> =
+        withContext(Dispatchers.IO) {
+            if (targetIds.isEmpty()) return@withContext emptyMap()
+            transaction {
+                CommentTable.selectAll()
+                    .where {
+                        (CommentTable.targetId inList targetIds) and
+                            (CommentTable.targetType eq targetType) and
+                            CommentTable.deletedAt.isNull()
+                    }
+                    .groupBy { it[CommentTable.targetId] }
+                    .mapValues { (_, rows) -> rows.size }
+                    .let { counts -> targetIds.associateWith { counts[it] ?: 0 } }
+            }
         }
-    }
 }
 
 @OptIn(ExperimentalUuidApi::class)
