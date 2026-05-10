@@ -45,12 +45,23 @@ fun Route.commentRoutes() {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-internal fun Comment.toDto() = CommentResponseDto(
-    id = id.value.toString(),
-    isDeleted = isDeleted,
-    author = author?.let { CommentAuthorDto(it.id.value, it.username, it.name, it.avatarId) },
-    text = text,
-    parentId = parentId?.value?.toString(),
-    createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt.toEpochMilliseconds()),
-    updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
-)
+internal fun Comment.toDto() = when (this) {
+    is Comment.Active -> CommentResponseDto(
+        id = id.value.toString(),
+        isDeleted = false,
+        author = CommentAuthorDto(author.id.value, author.username, author.name, author.avatarId),
+        text = text,
+        parentId = parentId?.value?.toString(),
+        createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt.toEpochMilliseconds()),
+        updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
+    )
+    is Comment.Deleted -> CommentResponseDto(
+        id = id.value.toString(),
+        isDeleted = true,
+        author = null,
+        text = "",
+        parentId = parentId?.value?.toString(),
+        createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt.toEpochMilliseconds()),
+        updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
+    )
+}

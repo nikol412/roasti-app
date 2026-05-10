@@ -195,30 +195,24 @@ class CommentRepositoryImpl : CommentRepository {
 
 @OptIn(ExperimentalUuidApi::class)
 private fun ResultRow.toComment(): Comment {
-    val deletedAt = this[CommentTable.deletedAt]
-    return if (deletedAt != null) {
-        Comment(
-            id = CommentId(this[CommentTable.id].value),
-            isDeleted = true,
-            author = null,
-            text = "",
-            parentId = this[CommentTable.parentId]?.let { CommentId(it) },
-            createdAt = this[CommentTable.createdAt],
-            updatedAt = this[CommentTable.updatedAt],
-        )
+    val id = CommentId(this[CommentTable.id].value)
+    val parentId = this[CommentTable.parentId]?.let { CommentId(it) }
+    val createdAt = this[CommentTable.createdAt]
+    val updatedAt = this[CommentTable.updatedAt]
+    return if (this[CommentTable.deletedAt] != null) {
+        Comment.Deleted(id = id, parentId = parentId, createdAt = createdAt, updatedAt = updatedAt)
     } else {
-        Comment(
-            id = CommentId(this[CommentTable.id].value),
-            isDeleted = false,
+        Comment.Active(
+            id = id,
+            parentId = parentId,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
             author = toUserPreview(),
             text = this[CommentTable.text],
-            parentId = this[CommentTable.parentId]?.let { CommentId(it) },
-            createdAt = this[CommentTable.createdAt],
-            updatedAt = this[CommentTable.updatedAt],
         )
     }
 }
 
 private fun ResultRow.toCommentThread(): CommentThread =
-    CommentThread(root = toComment().copy(parentId = null), replies = emptyList())
+    CommentThread(root = toComment(), replies = emptyList())
 
