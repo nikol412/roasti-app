@@ -1,6 +1,7 @@
 package org.nikol.roasti.features.recipes
 
 import kotlinx.coroutines.Dispatchers
+import org.nikol.roasti.features.common.pageOffset
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -95,7 +96,7 @@ class RecipeRepositoryImpl : RecipeRepository {
             if (roastLevel != null) cond = cond and (RecipeTable.roastLevel eq roastLevel)
 
             val total = recipeQuery().where { cond }.count().toInt()
-            val offset = (page - 1) * limit
+            val offset = pageOffset(page, limit)
 
             val items = recipeQuery()
                 .where { cond }

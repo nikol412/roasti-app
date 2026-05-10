@@ -1,6 +1,7 @@
 package org.nikol.roasti.features.posts
 
 import kotlinx.coroutines.Dispatchers
+import org.nikol.roasti.features.common.pageOffset
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
@@ -60,7 +61,7 @@ class PostRepositoryImpl : PostRepository {
                 if (authorId != null) query.where { PostTable.authorId eq authorId.value }
 
                 val total = query.count().toInt()
-                val offset = (page - 1) * limit
+                val offset = pageOffset(page, limit)
 
                 val items = PostTable.innerJoin(UserTable)
                     .selectAll()

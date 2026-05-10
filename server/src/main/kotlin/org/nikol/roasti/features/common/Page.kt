@@ -1,5 +1,7 @@
 package org.nikol.roasti.features.common
 
+fun pageOffset(page: Int, limit: Int) = (page - 1) * limit
+
 data class Page<T>(
     val items: List<T>,
     val currentPage: Int,

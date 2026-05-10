@@ -1,6 +1,7 @@
 package org.nikol.roasti.features.comments
 
 import kotlinx.coroutines.Dispatchers
+import org.nikol.roasti.features.common.pageOffset
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -112,7 +113,7 @@ class CommentRepositoryImpl : CommentRepository {
 
             if (total == 0) return@transaction emptyList<CommentThread>() to 0
 
-            val offset = (page - 1) * limit
+            val offset = pageOffset(page, limit)
 
             val roots = CommentTable.innerJoin(UserTable)
                 .selectAll()
