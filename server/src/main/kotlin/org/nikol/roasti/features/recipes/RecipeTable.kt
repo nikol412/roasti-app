@@ -25,7 +25,7 @@ object RecipeTable : UuidTable("recipes") {
     val beans = varchar("beans", 255).nullable()
     val public = bool("public").default(true)
     @OptIn(ExperimentalUuidApi::class)
-    val originRecipeId = uuid("origin_recipe_id").nullable()
+    val originRecipeId = reference("origin_recipe_id", RecipeTable.id, onDelete = ReferenceOption.SET_NULL).nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 }
@@ -56,38 +56,45 @@ data class RecipeRow(
     val roastLevel: RoastLevel,
     val beans: String?,
     val public: Boolean,
-    val originRecipeId: RecipeId?,
-    val originAuthorId: String?,
-    val originAuthorUsername: String?,
-    val originAuthorAvatarId: String?,
+    val origin: RecipeOriginInfo?,
     val createdAt: kotlin.time.Instant,
     val updatedAt: kotlin.time.Instant,
 )
 
 @OptIn(ExperimentalUuidApi::class)
+private fun ResultRow.toOrigin(): RecipeOriginInfo? {
+    val originRecipeId = this[RecipeTable.originRecipeId]?.value?.let { RecipeId(it) } ?: return null
+    return RecipeOriginInfo(
+        recipeId = originRecipeId,
+        author = RecipeAuthor(
+            id = UserId(this[OriginAuthors[UserTable.id]]),
+            username = this[OriginAuthors[UserTable.username]],
+            avatarId = this[OriginAuthors[UserTable.avatarId]],
+        ),
+    )
+}
+
+@OptIn(ExperimentalUuidApi::class)
 fun ResultRow.toRecipeRow() = RecipeRow(
-    id = RecipeId(this[RecipeTable.id].value),
-    author = RecipeAuthor(
-        id = UserId(this[UserTable.id]),
-        username = this[UserTable.username],
-        avatarId = this[UserTable.avatarId],
-    ),
-    title = this[RecipeTable.title],
-    description = this[RecipeTable.description],
-    note = this[RecipeTable.note],
-    imageId = this[RecipeTable.imageId],
-    brewMethod = this[RecipeTable.brewMethod],
-    difficulty = this[RecipeTable.difficulty],
-    roastLevel = this[RecipeTable.roastLevel],
-    beans = this[RecipeTable.beans],
-    public = this[RecipeTable.public],
-    originRecipeId = this[RecipeTable.originRecipeId]?.let { RecipeId(it) },
-    originAuthorId = this.getOrNull(OriginAuthors[UserTable.id]),
-    originAuthorUsername = this.getOrNull(OriginAuthors[UserTable.username]),
-    originAuthorAvatarId = this.getOrNull(OriginAuthors[UserTable.avatarId]),
-    createdAt = this[RecipeTable.createdAt],
-    updatedAt = this[RecipeTable.updatedAt],
-)
+        id = RecipeId(this[RecipeTable.id].value),
+        author = RecipeAuthor(
+            id = UserId(this[UserTable.id]),
+            username = this[UserTable.username],
+            avatarId = this[UserTable.avatarId],
+        ),
+        title = this[RecipeTable.title],
+        description = this[RecipeTable.description],
+        note = this[RecipeTable.note],
+        imageId = this[RecipeTable.imageId],
+        brewMethod = this[RecipeTable.brewMethod],
+        difficulty = this[RecipeTable.difficulty],
+        roastLevel = this[RecipeTable.roastLevel],
+        beans = this[RecipeTable.beans],
+        public = this[RecipeTable.public],
+        origin = toOrigin(),
+        createdAt = this[RecipeTable.createdAt],
+        updatedAt = this[RecipeTable.updatedAt],
+    )
 
 fun ResultRow.toBrewStep() = BrewStep(
     id = this[BrewStepTable.id].value,

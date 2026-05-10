@@ -34,6 +34,7 @@ data class CreateRecipeInput(
     val beans: String?,
     val public: Boolean,
     val steps: List<CreateBrewStepInput>,
+    val originRecipeId: RecipeId? = null,
 )
 
 data class CreateBrewStepInput(
@@ -60,7 +61,6 @@ interface RecipeRepository {
     suspend fun delete(id: RecipeId)
     suspend fun getSteps(recipeId: RecipeId): List<BrewStep>
     suspend fun getStepsBatch(recipeIds: List<RecipeId>): Map<RecipeId, List<BrewStep>>
-    suspend fun clone(originalRow: RecipeRow, originalSteps: List<BrewStep>, newAuthorId: UserId): RecipeRow
 }
 
 @OptIn(ExperimentalUuidApi::class)
@@ -125,6 +125,9 @@ class RecipeRepositoryImpl : RecipeRepository {
                 it[RecipeTable.roastLevel] = input.roastLevel
                 it[RecipeTable.beans] = input.beans
                 it[RecipeTable.public] = input.public
+                it[RecipeTable.originRecipeId] = input.originRecipeId?.let {
+                    org.jetbrains.exposed.v1.core.dao.id.EntityID(it.value, RecipeTable)
+                }
                 it[RecipeTable.createdAt] = now
                 it[RecipeTable.updatedAt] = now
             }
@@ -180,43 +183,6 @@ class RecipeRepositoryImpl : RecipeRepository {
                     .map { it[BrewStepTable.recipeId].value to it.toBrewStep() }
             }.groupBy({ RecipeId(it.first) }, { it.second })
         }
-
-    override suspend fun clone(
-        originalRow: RecipeRow,
-        originalSteps: List<BrewStep>,
-        newAuthorId: UserId,
-    ): RecipeRow = withContext(Dispatchers.IO) {
-        val newId = Uuid.random()
-        val now = Clock.System.now()
-        transaction {
-            RecipeTable.insert {
-                it[RecipeTable.id] = org.jetbrains.exposed.v1.core.dao.id.EntityID(newId, RecipeTable)
-                it[RecipeTable.authorId] = newAuthorId.value
-                it[RecipeTable.title] = originalRow.title
-                it[RecipeTable.description] = originalRow.description
-                it[RecipeTable.note] = originalRow.note
-                it[RecipeTable.imageId] = originalRow.imageId
-                it[RecipeTable.brewMethod] = originalRow.brewMethod
-                it[RecipeTable.difficulty] = originalRow.difficulty
-                it[RecipeTable.roastLevel] = originalRow.roastLevel
-                it[RecipeTable.beans] = originalRow.beans
-                it[RecipeTable.public] = false
-                it[RecipeTable.originRecipeId] = originalRow.id.value
-                it[RecipeTable.createdAt] = now
-                it[RecipeTable.updatedAt] = now
-            }
-            insertSteps(RecipeId(newId), originalSteps.map {
-                CreateBrewStepInput(
-                    title = it.title,
-                    description = it.description,
-                    order = it.order,
-                    durationSeconds = it.durationSeconds,
-                    imageId = it.imageId,
-                )
-            })
-        }
-        findById(RecipeId(newId))!!
-    }
 
     private fun recipeQuery() = RecipeTable
         .innerJoin(UserTable)

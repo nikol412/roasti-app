@@ -121,7 +121,30 @@ class RecipeServiceImpl(
         val original = repo.findById(id) ?: throw RecipeNotFoundException
         if (!original.public && original.author.id != userId) throw RecipeNotFoundException
         val originalSteps = repo.getSteps(id)
-        val newRow = repo.clone(original, originalSteps, userId)
+        val newRow = repo.create(
+            userId,
+            CreateRecipeInput(
+                title = original.title,
+                description = original.description,
+                note = original.note,
+                imageId = original.imageId,
+                brewMethod = original.brewMethod,
+                difficulty = original.difficulty,
+                roastLevel = original.roastLevel,
+                beans = original.beans,
+                public = false,
+                steps = originalSteps.map {
+                    CreateBrewStepInput(
+                        title = it.title,
+                        description = it.description,
+                        order = it.order,
+                        durationSeconds = it.durationSeconds,
+                        imageId = it.imageId,
+                    )
+                },
+                originRecipeId = id,
+            ),
+        )
         val steps = repo.getSteps(newRow.id)
         return newRow.toRecipe(userId, steps)
     }
@@ -150,24 +173,11 @@ class RecipeServiceImpl(
         steps = steps,
         isLiked = isLiked,
         likesCount = likesCount,
-        origin = buildOrigin(),
+        origin = origin,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
 
-    private fun RecipeRow.buildOrigin(): RecipeOriginInfo? {
-        val originId = originRecipeId ?: return null
-        val authorId = originAuthorId ?: return null
-        val username = originAuthorUsername ?: return null
-        return RecipeOriginInfo(
-            author = RecipeAuthor(
-                id = UserId(authorId),
-                username = username,
-                avatarId = originAuthorAvatarId,
-            ),
-            recipeId = originId,
-        )
-    }
 }
 
 val RecipeNotFoundException = NoSuchElementException("recipe not found")
