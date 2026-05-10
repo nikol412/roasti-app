@@ -72,6 +72,15 @@ import org.nikol.roasti.features.recipes.RecipeService
 import org.nikol.roasti.features.recipes.RecipeServiceImpl
 import org.nikol.roasti.features.recipes.RecipeTable
 import org.nikol.roasti.features.recipes.recipeRoutes
+import org.nikol.roasti.features.uploads.FileStorage
+import org.nikol.roasti.features.uploads.LocalFileStorage
+import org.nikol.roasti.features.uploads.UploadRepository
+import org.nikol.roasti.features.uploads.UploadRepositoryImpl
+import org.nikol.roasti.features.uploads.UploadService
+import org.nikol.roasti.features.uploads.UploadServiceImpl
+import org.nikol.roasti.features.uploads.UploadTable
+import org.nikol.roasti.features.uploads.uploadRoutes
+import java.io.File
 import org.slf4j.event.Level
 import java.io.ByteArrayInputStream
 import java.util.Base64
@@ -85,10 +94,11 @@ fun Application.module() {
     val dbDriver = environment.config.property("database.driver").getString()
 
     Database.connect(url = dbUrl, driver = dbDriver)
-    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable, PostTable, RecipeTable, BrewStepTable) }
+    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable, PostTable, RecipeTable, BrewStepTable, UploadTable) }
 
     initFirebase()
 
+    val uploadsDir = File(environment.config.propertyOrNull("uploads.dir")?.getString() ?: "./uploads")
     val firebaseApiKey = environment.config.property("firebase.apiKey").getString()
     val identityBaseUrl = environment.config.propertyOrNull("firebase.identityBaseUrl")?.getString()
         ?: "https://identitytoolkit.googleapis.com/v1/accounts"
@@ -112,6 +122,9 @@ fun Application.module() {
             single<VoteService> { VoteServiceImpl(get()) }
             single<RecipeRepository> { RecipeRepositoryImpl() }
             single<RecipeService> { RecipeServiceImpl(get(), get(), get()) }
+            single<FileStorage> { LocalFileStorage(uploadsDir) }
+            single<UploadRepository> { UploadRepositoryImpl() }
+            single<UploadService> { UploadServiceImpl(get(), get()) }
             single<AuthService> { AuthServiceImpl(get(), get(), get(), get(), get()) }
         })
     }
@@ -166,6 +179,7 @@ fun Application.module() {
             postRoutes()
             recipeRoutes()
             commentRoutes()
+            uploadRoutes()
         }
     }
 }
