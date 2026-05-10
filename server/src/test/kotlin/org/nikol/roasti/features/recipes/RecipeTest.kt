@@ -15,7 +15,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
-import kotlinx.serialization.Serializable
 import org.nikol.roasti.core.network.PageResponseDto
 import org.nikol.roasti.feature.likes.data.RecipeLikeDto
 import org.nikol.roasti.feature.recipe.data.remote.model.BrewMethodDto
@@ -24,6 +23,7 @@ import org.nikol.roasti.feature.recipe.data.remote.model.RoastLevelDto
 import org.nikol.roasti.feature.recipe.data.remote.model.request.CreateRecipeRequestDto
 import org.nikol.roasti.feature.recipe.data.remote.model.request.CreateRecipeStepRequestDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeResponseDto
+import org.nikol.roasti.feature.upload.data.remote.model.response.ImageUploadResponseDto
 import org.nikol.roasti.jsonClient
 import org.nikol.roasti.newAuthenticatedClient
 import org.nikol.roasti.withApp
@@ -35,9 +35,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class RecipeTest {
-
-    @Serializable
-    private data class UploadResponseDto(val id: String)
 
     private fun samplePayload(title: String = "Test Recipe") = CreateRecipeRequestDto(
         title = title,
@@ -81,7 +78,7 @@ class RecipeTest {
             }))
         }
         assertEquals(HttpStatusCode.Created, response.status)
-        return response.body<UploadResponseDto>().id
+        return response.body<ImageUploadResponseDto>().id
     }
 
     @Test

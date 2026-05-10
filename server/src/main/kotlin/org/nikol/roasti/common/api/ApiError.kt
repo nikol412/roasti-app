@@ -1,4 +1,4 @@
-package org.nikol.roasti.features.common
+package org.nikol.roasti.common
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
