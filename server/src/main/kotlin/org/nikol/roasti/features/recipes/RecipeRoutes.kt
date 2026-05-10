@@ -96,8 +96,10 @@ fun Route.recipeRoutes() {
             post {
                 val userId = call.principal<FirebasePrincipal>()!!.uid
                 val body = call.receive<CreateRecipeRequestDto>()
-                val recipe = recipeService.create(userId, body.toInput())
-                call.respond(HttpStatusCode.Created, recipe.toDto())
+                recipeService.create(userId, body.toInput()).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.Created, it.toDto()) },
+                )
             }
 
             put("/{id}") {

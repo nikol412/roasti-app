@@ -30,7 +30,7 @@ interface RecipeService {
         difficulty: Difficulty?,
         roastLevel: RoastLevel?,
     ): Page<Recipe>
-    suspend fun create(userId: UserId, input: CreateRecipeInput): Recipe
+    suspend fun create(userId: UserId, input: CreateRecipeInput): Either<RecipeErrorCode, Recipe>
     suspend fun update(userId: UserId, id: RecipeId, input: CreateRecipeInput): Either<RecipeErrorCode, Recipe>
     suspend fun delete(userId: UserId, id: RecipeId): Either<RecipeErrorCode, Unit>
     suspend fun toggleLike(userId: UserId, id: RecipeId): Either<RecipeErrorCode, ToggleResult>
@@ -81,13 +81,17 @@ class RecipeServiceImpl(
         return Page.of(recipes, page, total, limit)
     }
 
-    override suspend fun create(userId: UserId, input: CreateRecipeInput): Recipe {
+    override suspend fun create(userId: UserId, input: CreateRecipeInput): Either<RecipeErrorCode, Recipe> {
+        if (input.title.isBlank()) return RecipeErrorCode.INVALID_INPUT.left()
+        if (input.description.isBlank()) return RecipeErrorCode.INVALID_INPUT.left()
         val row = repo.create(userId, input)
         val steps = repo.getSteps(row.id)
-        return row.toRecipe(userId, steps)
+        return row.toRecipe(userId, steps).right()
     }
 
     override suspend fun update(userId: UserId, id: RecipeId, input: CreateRecipeInput): Either<RecipeErrorCode, Recipe> {
+        if (input.title.isBlank()) return RecipeErrorCode.INVALID_INPUT.left()
+        if (input.description.isBlank()) return RecipeErrorCode.INVALID_INPUT.left()
         val existing = repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
         if (existing.author.id != userId) return RecipeErrorCode.FORBIDDEN.left()
         val row = repo.update(id, input) ?: return RecipeErrorCode.NOT_FOUND.left()
