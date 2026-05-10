@@ -9,11 +9,12 @@ import org.nikol.roasti.features.comments.CommentService
 import org.nikol.roasti.features.comments.CommentThread
 import org.nikol.roasti.features.common.Page
 import org.nikol.roasti.features.likes.LikeService
+import org.nikol.roasti.features.likes.LikeTargetType
 import org.nikol.roasti.features.likes.ToggleResult
 import org.nikol.roasti.features.users.UserId
 import kotlin.uuid.ExperimentalUuidApi
 
-const val RECIPE_TARGET_TYPE = "recipe"
+private const val COMMENT_TARGET_TYPE = "recipe"
 
 interface RecipeService {
     suspend fun getById(id: RecipeId, userId: UserId?): Recipe
@@ -62,7 +63,7 @@ class RecipeServiceImpl(
         val recipeIds = rows.map { it.id }
         val stepsMap = repo.getStepsBatch(recipeIds)
         val targetIds = recipeIds.map { it.value.toString() }
-        val likeInfos = likeService.getInfoBatch(userId, targetIds, RECIPE_TARGET_TYPE)
+        val likeInfos = likeService.getInfoBatch(userId, targetIds, LikeTargetType.RECIPE)
 
         val recipes = rows.map { row ->
             val id = row.id.value.toString()
@@ -99,12 +100,12 @@ class RecipeServiceImpl(
 
     override suspend fun toggleLike(userId: UserId, id: RecipeId): ToggleResult {
         repo.findById(id) ?: throw RecipeNotFoundException
-        return likeService.toggle(userId, id.value.toString(), RECIPE_TARGET_TYPE)
+        return likeService.toggle(userId, id.value.toString(), LikeTargetType.RECIPE)
     }
 
     override suspend fun listComments(id: RecipeId, page: Int, limit: Int): Page<CommentThread> {
         repo.findById(id) ?: throw RecipeNotFoundException
-        return commentService.list(id.value.toString(), RECIPE_TARGET_TYPE, page, limit)
+        return commentService.list(id.value.toString(), COMMENT_TARGET_TYPE, page, limit)
     }
 
     override suspend fun createComment(
@@ -114,7 +115,7 @@ class RecipeServiceImpl(
         parentId: CommentId?,
     ): Comment {
         repo.findById(id) ?: throw RecipeNotFoundException
-        return commentService.create(userId, id.value.toString(), RECIPE_TARGET_TYPE, text, parentId)
+        return commentService.create(userId, id.value.toString(), COMMENT_TARGET_TYPE, text, parentId)
     }
 
     override suspend fun clone(userId: UserId, id: RecipeId): Recipe {
@@ -150,7 +151,7 @@ class RecipeServiceImpl(
     }
 
     private suspend fun RecipeRow.toRecipe(userId: UserId?, steps: List<BrewStep>): Recipe {
-        val likeInfo = likeService.getInfo(userId, id.value.toString(), RECIPE_TARGET_TYPE)
+        val likeInfo = likeService.getInfo(userId, id.value.toString(), LikeTargetType.RECIPE)
         return toRecipeWithLikes(steps, likeInfo.isLiked, likeInfo.count)
     }
 
