@@ -34,7 +34,6 @@ import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.features.comments.Comment
-import org.nikol.roasti.features.comments.CommentAuthor
 import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentThread
 import org.nikol.roasti.features.comments.toDto

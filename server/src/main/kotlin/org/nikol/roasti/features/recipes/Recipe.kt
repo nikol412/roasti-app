@@ -3,7 +3,7 @@ package org.nikol.roasti.features.recipes
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
-import org.nikol.roasti.features.users.UserId
+import org.nikol.roasti.features.users.UserPreview
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -12,21 +12,15 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 value class RecipeId(val value: Uuid)
 
-data class RecipeAuthor(
-    val id: UserId,
-    val username: String,
-    val avatarId: String?,
-)
-
 data class RecipeOriginInfo(
-    val author: RecipeAuthor,
+    val author: UserPreview,
     val recipeId: RecipeId,
 )
 
 @OptIn(ExperimentalUuidApi::class)
 data class Recipe(
     val id: RecipeId,
-    val author: RecipeAuthor,
+    val author: UserPreview,
     val title: String,
     val description: String,
     val note: String?,

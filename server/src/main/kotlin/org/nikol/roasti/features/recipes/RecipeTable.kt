@@ -10,7 +10,8 @@ import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.features.users.UserTable
-import org.nikol.roasti.features.users.UserId
+import org.nikol.roasti.features.users.UserPreview
+import org.nikol.roasti.features.users.toUserPreview
 import kotlin.uuid.ExperimentalUuidApi
 
 object RecipeTable : UuidTable("recipes") {
@@ -46,7 +47,7 @@ internal val OriginAuthors = UserTable.alias("origin_authors")
 @OptIn(ExperimentalUuidApi::class)
 data class RecipeRow(
     val id: RecipeId,
-    val author: RecipeAuthor,
+    val author: UserPreview,
     val title: String,
     val description: String,
     val note: String?,
@@ -66,22 +67,14 @@ private fun ResultRow.toOrigin(): RecipeOriginInfo? {
     val originRecipeId = this[RecipeTable.originRecipeId]?.value?.let { RecipeId(it) } ?: return null
     return RecipeOriginInfo(
         recipeId = originRecipeId,
-        author = RecipeAuthor(
-            id = UserId(this[OriginAuthors[UserTable.id]]),
-            username = this[OriginAuthors[UserTable.username]],
-            avatarId = this[OriginAuthors[UserTable.avatarId]],
-        ),
+        author = toUserPreview(OriginAuthors),
     )
 }
 
 @OptIn(ExperimentalUuidApi::class)
 fun ResultRow.toRecipeRow() = RecipeRow(
         id = RecipeId(this[RecipeTable.id].value),
-        author = RecipeAuthor(
-            id = UserId(this[UserTable.id]),
-            username = this[UserTable.username],
-            avatarId = this[UserTable.avatarId],
-        ),
+        author = toUserPreview(),
         title = this[RecipeTable.title],
         description = this[RecipeTable.description],
         note = this[RecipeTable.note],

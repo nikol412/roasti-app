@@ -6,6 +6,8 @@ import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.datetime.timestamp
 import org.nikol.roasti.features.users.UserTable
 import org.nikol.roasti.features.users.UserId
+import org.nikol.roasti.features.users.UserPreview
+import org.nikol.roasti.features.users.toUserPreview
 import kotlin.uuid.ExperimentalUuidApi
 
 object PostTable : UuidTable("posts") {
@@ -22,7 +24,7 @@ object PostTable : UuidTable("posts") {
 @OptIn(ExperimentalUuidApi::class)
 data class PostRow(
     val id: PostId,
-    val author: PostAuthor,
+    val author: UserPreview,
     val title: String?,
     val text: String?,
     val images: List<String>,
@@ -34,12 +36,7 @@ data class PostRow(
 @OptIn(ExperimentalUuidApi::class)
 internal fun ResultRow.toPostRow() = PostRow(
     id = PostId(this[PostTable.id].value),
-    author = PostAuthor(
-        id = UserId(this[UserTable.id]),
-        username = this[UserTable.username],
-        name = this[UserTable.name],
-        avatarId = this[UserTable.avatarId],
-    ),
+    author = toUserPreview(),
     title = this[PostTable.title],
     text = this[PostTable.text],
     images = this[PostTable.images],

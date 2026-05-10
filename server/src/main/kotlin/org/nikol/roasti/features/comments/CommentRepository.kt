@@ -14,6 +14,8 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.nikol.roasti.features.users.UserTable
 import org.nikol.roasti.features.users.UserId
+import org.nikol.roasti.features.users.UserPreview
+import org.nikol.roasti.features.users.toUserPreview
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -207,12 +209,7 @@ private fun org.jetbrains.exposed.v1.core.ResultRow.toComment(): Comment {
         Comment(
             id = CommentId(this[CommentTable.id].value),
             isDeleted = false,
-            author = CommentAuthor(
-                id = UserId(this[UserTable.id]),
-                username = this[UserTable.username],
-                name = this[UserTable.name],
-                avatarId = this[UserTable.avatarId],
-            ),
+            author = toUserPreview(),
             text = this[CommentTable.text],
             parentId = this[CommentTable.parentId]?.let { CommentId(it) },
             createdAt = this[CommentTable.createdAt],

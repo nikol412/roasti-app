@@ -33,7 +33,6 @@ import org.nikol.roasti.feature.post.data.remote.model.response.PostRecipeStatus
 import org.nikol.roasti.feature.post.data.remote.model.response.PostResponseDto
 import org.nikol.roasti.feature.post.data.remote.model.response.PostVoteResponseDto
 import org.nikol.roasti.features.comments.Comment
-import org.nikol.roasti.features.comments.CommentAuthor
 import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentService
 import org.nikol.roasti.features.comments.CommentThread
