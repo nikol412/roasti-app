@@ -3,7 +3,7 @@ package org.nikol.roasti.features.comments
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.nikol.roasti.features.common.ApiError
+import org.nikol.roasti.common.api.ApiError
 
 enum class CommentErrorCode { NOT_FOUND, FORBIDDEN }
 

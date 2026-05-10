@@ -1,7 +1,7 @@
 package org.nikol.roasti.features.comments
 
 import kotlinx.coroutines.Dispatchers
-import org.nikol.roasti.features.common.pageOffset
+import org.nikol.roasti.common.domain.pageOffset
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
@@ -15,7 +15,6 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.nikol.roasti.features.users.UserTable
 import org.nikol.roasti.features.users.UserId
-import org.nikol.roasti.features.users.UserPreview
 import org.nikol.roasti.features.users.toUserPreview
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi

@@ -12,7 +12,7 @@ import io.ktor.server.routing.route
 import org.koin.ktor.ext.inject
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
-import org.nikol.roasti.features.common.respondError
+import org.nikol.roasti.common.api.respondError
 import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentRequestDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto

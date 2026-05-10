@@ -16,7 +16,7 @@ import org.nikol.roasti.feature.auth.data.network.model.request.UpdateProfileReq
 import org.nikol.roasti.feature.auth.data.network.model.response.UserDto
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
-import org.nikol.roasti.features.common.respondError
+import org.nikol.roasti.common.api.respondError
 
 @Serializable
 data class UsernameAvailabilityResponse(

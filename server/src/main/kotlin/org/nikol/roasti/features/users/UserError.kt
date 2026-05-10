@@ -3,7 +3,7 @@ package org.nikol.roasti.features.users
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.nikol.roasti.features.common.ApiError
+import org.nikol.roasti.common.api.ApiError
 
 enum class UserErrorCode { NOT_FOUND, USERNAME_TAKEN, USERNAME_TOO_SHORT, USERNAME_TOO_LONG, USERNAME_INVALID_CHARS }
 

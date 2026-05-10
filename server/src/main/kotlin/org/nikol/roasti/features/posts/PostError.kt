@@ -3,7 +3,7 @@ package org.nikol.roasti.features.posts
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.nikol.roasti.features.common.ApiError
+import org.nikol.roasti.common.api.ApiError
 
 enum class PostErrorCode { NOT_FOUND, FORBIDDEN }
 

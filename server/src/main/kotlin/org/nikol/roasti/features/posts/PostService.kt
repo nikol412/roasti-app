@@ -5,7 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import org.nikol.roasti.features.comments.CommentRepository
 import org.nikol.roasti.features.comments.CommentTargetType
-import org.nikol.roasti.features.common.Page
+import org.nikol.roasti.common.domain.Page
 import org.nikol.roasti.features.users.UserId
 import org.nikol.roasti.features.votes.VoteDirection
 import org.nikol.roasti.features.votes.VoteService

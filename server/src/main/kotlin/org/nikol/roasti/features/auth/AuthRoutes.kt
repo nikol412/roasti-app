@@ -2,7 +2,6 @@ package org.nikol.roasti.features.auth
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -12,10 +11,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.ktor.ext.inject
 import org.nikol.roasti.FIREBASE_AUTH
-import org.nikol.roasti.FirebasePrincipal
 import org.nikol.roasti.feature.auth.data.network.model.request.LoginRequestDto
 import org.nikol.roasti.feature.auth.data.network.model.request.RegisterRequestDto
-import org.nikol.roasti.features.common.respondError
+import org.nikol.roasti.common.api.respondError
 
 @Serializable
 data class RefreshRequestBody(@SerialName("refresh_token") val refreshToken: String)

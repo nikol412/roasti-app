@@ -3,7 +3,7 @@ package org.nikol.roasti.features.comments
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import org.nikol.roasti.features.common.Page
+import org.nikol.roasti.common.domain.Page
 import org.nikol.roasti.features.users.UserId
 
 private const val TEXT_MAX_LENGTH = 1000

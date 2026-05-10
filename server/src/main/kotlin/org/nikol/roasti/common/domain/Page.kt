@@ -1,4 +1,4 @@
-package org.nikol.roasti.common
+package org.nikol.roasti.common.domain
 
 fun pageOffset(page: Int, limit: Int) = (page - 1) * limit
 

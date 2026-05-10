@@ -1,7 +1,7 @@
 package org.nikol.roasti.features.recipes
 
 import kotlinx.coroutines.Dispatchers
-import org.nikol.roasti.features.common.pageOffset
+import org.nikol.roasti.common.domain.pageOffset
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.SortOrder

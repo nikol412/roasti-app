@@ -3,7 +3,7 @@ package org.nikol.roasti.features.recipes
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.nikol.roasti.features.common.ApiError
+import org.nikol.roasti.common.api.ApiError
 
 enum class RecipeErrorCode { NOT_FOUND, FORBIDDEN, INVALID_INPUT }
 

@@ -14,14 +14,12 @@ import io.ktor.server.routing.route
 import org.koin.ktor.ext.inject
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
-import org.nikol.roasti.features.common.respondError
+import org.nikol.roasti.common.api.respondError
 import org.nikol.roasti.feature.comment.data.remote.model.request.CreateCommentRequestDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentThreadResponseDto
 import org.nikol.roasti.core.network.PageResponseDto
 import org.nikol.roasti.core.network.PaginationResponseDto
-import org.nikol.roasti.features.common.Page
+import org.nikol.roasti.common.domain.Page
 import org.nikol.roasti.feature.likes.data.RecipeLikeDto
 import org.nikol.roasti.feature.recipe.data.remote.model.BrewMethodDto
 import org.nikol.roasti.feature.recipe.data.remote.model.DifficultyDto
@@ -34,7 +32,6 @@ import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeStepResp
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
-import org.nikol.roasti.features.comments.Comment
 import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentThread
 import org.nikol.roasti.features.comments.toDto

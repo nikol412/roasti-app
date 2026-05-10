@@ -1,10 +1,9 @@
 package org.nikol.roasti.features.posts
 
 import kotlinx.coroutines.Dispatchers
-import org.nikol.roasti.features.common.pageOffset
+import org.nikol.roasti.common.domain.pageOffset
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert

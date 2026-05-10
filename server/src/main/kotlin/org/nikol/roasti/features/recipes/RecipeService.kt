@@ -8,7 +8,7 @@ import org.nikol.roasti.features.comments.CommentId
 import org.nikol.roasti.features.comments.CommentService
 import org.nikol.roasti.features.comments.CommentTargetType
 import org.nikol.roasti.features.comments.CommentThread
-import org.nikol.roasti.features.common.Page
+import org.nikol.roasti.common.domain.Page
 import org.nikol.roasti.features.likes.LikeService
 import org.nikol.roasti.features.likes.LikeTargetType
 import org.nikol.roasti.features.likes.ToggleResult
