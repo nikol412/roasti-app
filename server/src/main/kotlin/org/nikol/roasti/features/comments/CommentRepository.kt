@@ -126,7 +126,7 @@ class CommentRepositoryImpl : CommentRepository {
 
             if (roots.isEmpty()) return@transaction emptyList<CommentThread>() to total
 
-            val rootIdxMap = roots.mapIndexed { i, c -> c.id.value to i }.toMap()
+            val rootIdxMap = roots.mapIndexed { i, c -> c.root.id.value to i }.toMap()
 
             // Load all non-root comments for target, build tree in Kotlin
             val allReplies = CommentTable.innerJoin(UserTable)
@@ -150,7 +150,7 @@ class CommentRepositoryImpl : CommentRepository {
                 replyGroups[rootIdx].add(reply)
             }
 
-            val threads = roots.mapIndexed { i, root -> root.copy(replies = replyGroups[i]) }
+            val threads = roots.mapIndexed { i, thread -> thread.copy(replies = replyGroups[i]) }
             threads to total
         }
     }
@@ -212,36 +212,6 @@ private fun org.jetbrains.exposed.v1.core.ResultRow.toComment(): Comment {
     }
 }
 
-@OptIn(ExperimentalUuidApi::class)
-private fun org.jetbrains.exposed.v1.core.ResultRow.toCommentThread(): CommentThread {
-    val deletedAt = this[CommentTable.deletedAt]
-    return if (deletedAt != null) {
-        CommentThread(
-            id = CommentId(this[CommentTable.id].value),
-            isDeleted = true,
-            author = null,
-            text = "",
-            parentId = null,
-            replies = emptyList(),
-            createdAt = this[CommentTable.createdAt],
-            updatedAt = this[CommentTable.updatedAt],
-        )
-    } else {
-        CommentThread(
-            id = CommentId(this[CommentTable.id].value),
-            isDeleted = false,
-            author = CommentAuthor(
-                id = UserId(this[UserTable.id]),
-                username = this[UserTable.username],
-                name = this[UserTable.name],
-                avatarId = this[UserTable.avatarId],
-            ),
-            text = this[CommentTable.text],
-            parentId = null,
-            replies = emptyList(),
-            createdAt = this[CommentTable.createdAt],
-            updatedAt = this[CommentTable.updatedAt],
-        )
-    }
-}
+private fun org.jetbrains.exposed.v1.core.ResultRow.toCommentThread(): CommentThread =
+    CommentThread(root = toComment().copy(parentId = null), replies = emptyList())
 

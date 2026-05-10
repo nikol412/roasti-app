@@ -27,14 +27,7 @@ data class Comment(
     val updatedAt: Instant,
 )
 
-@OptIn(ExperimentalUuidApi::class)
 data class CommentThread(
-    val id: CommentId,
-    val isDeleted: Boolean,
-    val author: CommentAuthor?,
-    val text: String,
-    val parentId: CommentId?,
+    val root: Comment,
     val replies: List<Comment>,
-    val createdAt: Instant,
-    val updatedAt: Instant,
 )

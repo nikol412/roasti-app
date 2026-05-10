@@ -297,14 +297,15 @@ private fun Comment.toDto() = CommentResponseDto(
     updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
 )
 
-@OptIn(ExperimentalUuidApi::class)
-private fun CommentThread.toDto() = CommentThreadResponseDto(
-    id = id.value.toString(),
-    isDeleted = isDeleted,
-    author = author?.toDto(),
-    text = text,
-    parentId = parentId?.value?.toString(),
-    replies = replies.map { it.toDto() },
-    createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt.toEpochMilliseconds()),
-    updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
-)
+private fun CommentThread.toDto() = root.toDto().let { r ->
+    CommentThreadResponseDto(
+        id = r.id,
+        isDeleted = r.isDeleted,
+        author = r.author,
+        text = r.text,
+        parentId = r.parentId,
+        replies = replies.map { it.toDto() },
+        createdAt = r.createdAt,
+        updatedAt = r.updatedAt,
+    )
+}
