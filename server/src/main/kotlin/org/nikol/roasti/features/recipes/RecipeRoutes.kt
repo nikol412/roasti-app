@@ -54,8 +54,8 @@ fun Route.recipeRoutes() {
             val difficulty = call.request.queryParameters["difficulty"]?.let { parseDifficultyDto(it)?.toDomain() }
             val roastLevel = call.request.queryParameters["roast_level"]?.let { parseRoastLevelDto(it)?.toDomain() }
             val userId = call.principal<FirebasePrincipal>()?.uid
-            val page2 = recipeService.list(page, limit, authorId, userId, brewMethod, difficulty, roastLevel)
-            call.respond(page2.toDto())
+            val recipesPage = recipeService.list(page, limit, authorId, userId, brewMethod, difficulty, roastLevel)
+            call.respond(recipesPage.toDto())
         }
 
         get("/{id}") {

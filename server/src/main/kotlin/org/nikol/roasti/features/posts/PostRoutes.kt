@@ -52,8 +52,8 @@ fun Route.postRoutes() {
             val authorId = call.request.queryParameters["author_id"]
                 ?.let { org.nikol.roasti.features.users.UserId(it) }
             val userId = call.principal<FirebasePrincipal>()?.uid
-            val page2 = postService.list(page, limit, authorId)
-            call.respond(page2.toDto(userId))
+            val postsPage = postService.list(page, limit, authorId)
+            call.respond(postsPage.toDto())
         }
 
         get("/{id}") {
@@ -184,7 +184,7 @@ private fun Post.toDto() = PostResponseDto(
 )
 
 @OptIn(ExperimentalUuidApi::class)
-private fun Page<Post>.toDto(userId: org.nikol.roasti.features.users.UserId?) = PageResponseDto(
+private fun Page<Post>.toDto() = PageResponseDto(
     items = items.map { it.toDto() },
     pagination = PaginationResponseDto(
         currentPage = currentPage,
