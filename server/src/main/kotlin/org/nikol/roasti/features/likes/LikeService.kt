@@ -20,13 +20,26 @@ class LikeServiceImpl(private val repo: LikeRepository) : LikeService {
         } else {
             repo.create(userId, targetId, targetType)
         }
-        val info = repo.getInfo(userId, targetId, targetType)
-        return ToggleResult(isLiked = !exists, count = info.count)
+        return getInfo(userId, targetId, targetType).toToggleResult()
     }
 
     override suspend fun getInfo(userId: UserId?, targetId: Uuid, targetType: LikeTargetType): LikeInfo =
-        repo.getInfo(userId, targetId, targetType)
+        getInfoBatch(userId, listOf(targetId), targetType)[targetId] ?: LikeInfo.EMPTY
 
-    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): Map<Uuid, LikeInfo> =
-        repo.getInfoBatch(userId, targetIds, targetType)
+    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): Map<Uuid, LikeInfo> {
+        val rows = repo.getInfoBatch(userId, targetIds, targetType)
+        val grouped = rows.groupBy { it.targetId }
+        return targetIds.associateWith { id ->
+            val group = grouped[id].orEmpty()
+            LikeInfo(
+                isLiked = userId != null && group.any { it.userId == userId },
+                count = group.size
+            )
+        }
+    }
+
+    private fun LikeInfo.toToggleResult() = ToggleResult(
+        isLiked = isLiked,
+        count = count
+    )
 }

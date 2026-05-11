@@ -14,14 +14,17 @@ import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-data class LikeInfo(val isLiked: Boolean, val count: Int)
+data class LikeInfo(val isLiked: Boolean, val count: Int) {
+    companion object {
+        val EMPTY = LikeInfo(isLiked = false, count = 0)
+    }
+}
 
 interface LikeRepository {
     suspend fun create(userId: UserId, targetId: Uuid, targetType: LikeTargetType)
     suspend fun delete(userId: UserId, targetId: Uuid, targetType: LikeTargetType)
     suspend fun exists(userId: UserId, targetId: Uuid, targetType: LikeTargetType): Boolean
-    suspend fun getInfo(userId: UserId?, targetId: Uuid, targetType: LikeTargetType): LikeInfo
-    suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): Map<Uuid, LikeInfo>
+    suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): List<LikeRow>
 }
 
 class LikeRepositoryImpl : LikeRepository {
@@ -63,30 +66,13 @@ class LikeRepositoryImpl : LikeRepository {
             }
         }
 
-    override suspend fun getInfo(userId: UserId?, targetId: Uuid, targetType: LikeTargetType): LikeInfo =
+    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): List<LikeRow> =
         withContext(Dispatchers.IO) {
+            if (targetIds.isEmpty()) return@withContext emptyList()
             transaction {
-                val rows = LikeTable.selectAll()
-                    .where { (LikeTable.targetId eq targetId) and (LikeTable.targetType eq targetType) }
-                val count = rows.count().toInt()
-                val isLiked = userId != null && rows.any { it[LikeTable.userId] == userId.value }
-                LikeInfo(isLiked, count)
-            }
-        }
-
-    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): Map<Uuid, LikeInfo> =
-        withContext(Dispatchers.IO) {
-            if (targetIds.isEmpty()) return@withContext emptyMap()
-            transaction {
-                val rows = LikeTable.selectAll()
+                LikeTable.selectAll()
                     .where { (LikeTable.targetId inList targetIds) and (LikeTable.targetType eq targetType) }
-
-                val grouped = rows.groupBy { it[LikeTable.targetId] }
-                targetIds.associateWith { id ->
-                    val group = grouped[id] ?: emptyList()
-                    val isLiked = userId != null && group.any { it[LikeTable.userId] == userId.value }
-                    LikeInfo(isLiked, group.size)
-                }
+                    .map { it.toLikeRow() }
             }
         }
 }

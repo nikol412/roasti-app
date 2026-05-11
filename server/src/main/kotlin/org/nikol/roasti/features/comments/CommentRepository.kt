@@ -47,7 +47,6 @@ class CommentRepositoryImpl : CommentRepository {
         val id = Uuid.random()
         val now = Clock.System.now()
         transaction {
-            addLogger(StdOutSqlLogger)
             CommentTable.insert {
                 it[CommentTable.id] = org.jetbrains.exposed.v1.core.dao.id.EntityID(id, CommentTable)
                 it[targetId] = input.targetId
