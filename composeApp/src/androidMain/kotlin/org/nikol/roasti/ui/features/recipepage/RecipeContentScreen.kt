@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,9 +19,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -69,10 +69,9 @@ import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ActionButtonPrimary
 import org.nikol.roasti.ui.uikit.AppIcons
 import org.nikol.roasti.ui.uikit.AsyncImagePreviewProvider
-import org.nikol.roasti.ui.uikit.ErrorStub
-import org.nikol.roasti.ui.uikit.LoadingStub
+import org.nikol.roasti.ui.uikit.state.ContentScaffold
+import org.nikol.roasti.ui.util.recipeImageSharedElementModifier
 
-private const val RecipeScreenKeyPrefix = "recipe_screen_"
 private val HeaderHeight = 260.dp
 private val HeaderOverlap = 40.dp
 private val MetaChipShape = RoundedCornerShape(18.dp)
@@ -99,8 +98,6 @@ fun RecipeContentRoute(
 
     val viewModel: RecipeContentViewModel = koinViewModel(parameters = { parametersOf(id) })
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-
     var showRemoveDialogConfirmation: Boolean by remember { mutableStateOf(false) }
 
     if (showRemoveDialogConfirmation) {
@@ -113,19 +110,20 @@ fun RecipeContentRoute(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.eventFlow.collectLatest { event ->
+        viewModel.navEvents.collectLatest { event ->
             when (event) {
-                RecipeContentEvent.NavigateBack -> onBackClick()
+                RecipeContentNavEvent.NavigateBack -> onBackClick()
             }
         }
     }
 
-    when (state) {
-        RecipeContentState.Loading -> LoadingStub()
-        RecipeContentState.Error -> ErrorStub(stringResource(R.string.error_generic))
-        RecipeContentState.NotFound -> ErrorStub(stringResource(R.string.recipe_not_found))
-        is RecipeContentState.Content -> RecipeContentScreen(
-            state = state as RecipeContentState.Content,
+    ContentScaffold(
+        state = state,
+        onRetry = viewModel::retry,
+        events = viewModel.events,
+    ) { recipe ->
+        RecipeContentBody(
+            recipe = recipe,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             onBackClick = onBackClick,
@@ -139,8 +137,8 @@ fun RecipeContentRoute(
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun RecipeContentScreen(
-    state: RecipeContentState.Content,
+private fun RecipeContentBody(
+    recipe: RecipeDetailsUiModel,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onBackClick: () -> Unit = {},
@@ -149,13 +147,6 @@ private fun RecipeContentScreen(
     onLikeClick: () -> Unit = {},
     onStepClick: (stepIndex: Int) -> Unit = {},
 ) {
-    val recipe = state.recipe
-    val recipeScreenModifier = recipeScreenSharedBoundsModifier(
-        recipeId = recipe.id,
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
-    )
-
     val stepModifiers = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         recipe.steps.indices.map { index ->
             with(sharedTransitionScope) {
@@ -173,29 +164,30 @@ private fun RecipeContentScreen(
         bottomBar = {
             RecipeBottomBar(
                 enabled = recipe.steps.isNotEmpty(),
-                onClick = {
-                    if (recipe.steps.isNotEmpty()) {
-                        onStepClick(0)
-                    }
-                },
+                onClick = { onStepClick(0) },
             )
         },
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = recipeScreenModifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                RecipeHeaderImage(imageUrl = recipe.imageUrl)
-                RecipeContentList(
-                    recipe = recipe,
-                    stepModifiers = stepModifiers,
-                    onLikeClick = onLikeClick,
-                    bottomContentPadding = innerPadding.calculateBottomPadding(),
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            RecipeHeaderImage(
+                imageUrl = recipe.imageUrl,
+                imageModifier = recipeImageSharedElementModifier(
+                    recipeId = recipe.id,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                ),
+            )
+            RecipeContentList(
+                recipe = recipe,
+                stepModifiers = stepModifiers,
+                onLikeClick = onLikeClick,
+                bottomContentPadding = innerPadding.calculateBottomPadding(),
+                modifier = Modifier.fillMaxSize(),
+            )
             RecipeTopBar(
                 onBackClick = onBackClick,
                 onEditClick = onEditClick,
@@ -210,6 +202,7 @@ private fun RecipeContentScreen(
 private fun RecipeHeaderImage(
     imageUrl: String?,
     modifier: Modifier = Modifier,
+    imageModifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
@@ -220,7 +213,7 @@ private fun RecipeHeaderImage(
             model = imageUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
+            modifier = imageModifier.fillMaxSize(),
         )
         Box(
             modifier = Modifier
@@ -246,68 +239,50 @@ private fun RecipeContentList(
     bottomContentPadding: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(bottom = Spacing.xxxl + bottomContentPadding),
-        verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-    ) {
-        item {
-            Spacer(modifier = Modifier.height(HeaderHeight - HeaderOverlap))
-        }
-        item {
-            RecipeMainContent(
-                recipe = recipe,
-                stepModifiers = stepModifiers,
-                onLikeClick = onLikeClick,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RecipeMainContent(
-    recipe: RecipeDetailsUiModel,
-    stepModifiers: List<Modifier> = emptyList(),
-    onLikeClick: () -> Unit = {},
-) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(ContentShape)
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = Spacing.xxl, vertical = Spacing.xxl),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xl),
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(top = HeaderHeight - HeaderOverlap, bottom = Spacing.xxxl + bottomContentPadding),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(ContentShape)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = Spacing.xxl, vertical = Spacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xl),
         ) {
-            Text(
-                text = recipe.title,
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = recipe.title,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
 
-            LikeButton(
-                isLiked = recipe.isLiked,
-                likesCount = recipe.likesCount,
-                onClick = onLikeClick,
+                LikeButton(
+                    isLiked = recipe.isLiked,
+                    likesCount = recipe.likesCount,
+                    onClick = onLikeClick,
+                )
+            }
+            Text(
+                text = recipe.description,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            RecipeMetaSection(recipe = recipe)
+            RecipeStepsSection(
+                steps = recipe.steps,
+                stepModifiers = stepModifiers,
             )
         }
-        Text(
-            text = recipe.description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        RecipeMetaSection(recipe = recipe)
-        RecipeStepsSection(
-            steps = recipe.steps,
-            stepModifiers = stepModifiers,
-        )
     }
 }
 
@@ -452,25 +427,6 @@ private fun RecipeMetaChip(
             text = item.value,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-private fun recipeScreenSharedBoundsModifier(
-    recipeId: String,
-    sharedTransitionScope: SharedTransitionScope?,
-    animatedVisibilityScope: AnimatedVisibilityScope?,
-): Modifier {
-    if (sharedTransitionScope == null || animatedVisibilityScope == null) {
-        return Modifier
-    }
-
-    return with(sharedTransitionScope) {
-        Modifier.sharedBounds(
-            sharedContentState = rememberSharedContentState(key = "$RecipeScreenKeyPrefix$recipeId"),
-            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 }
@@ -635,9 +591,8 @@ private fun formatStepDuration(totalSeconds: Int): String {
 private fun RecipeContentScreenPreview() {
     RoastiTheme {
         AsyncImagePreviewProvider {
-            RecipeContentScreen(
-                RecipeContentState.Content(
-                    recipe = RecipeDetailsUiModel(
+            RecipeContentBody(
+                recipe = RecipeDetailsUiModel(
                         id = "aeropress-inverted",
                         title = "Aeropress Inverted",
                         description = "Clean and sweet cup with balanced acidity and a compact recipe flow that stays readable even with multiple brewing steps.",
@@ -687,7 +642,6 @@ private fun RecipeContentScreenPreview() {
                             ),
                         ),
                     )
-                )
             )
         }
     }

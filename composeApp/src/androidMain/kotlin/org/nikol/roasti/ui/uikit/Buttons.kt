@@ -26,7 +26,7 @@ fun ActionButtonPrimary(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ),
-        shape = ShapeXxl,
+        shape = MaterialTheme.shapes.medium,
         enabled = enabled,
     ) {
         Text(

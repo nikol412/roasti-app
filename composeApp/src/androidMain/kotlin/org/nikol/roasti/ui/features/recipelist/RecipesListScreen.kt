@@ -47,17 +47,20 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Bold
+import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.bold.Plus
+import com.adamglin.phosphoricons.regular.ArrowRight
 import org.koin.compose.viewmodel.koinViewModel
 import org.nikol.roasti.R
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterState
+import org.nikol.roasti.ui.features.favorites.model.FavoritesPreviewState
+import org.nikol.roasti.ui.features.favorites.widgets.FavoritesPreviewRow
 import org.nikol.roasti.ui.features.recipelist.components.BrewMethodFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.DifficultyFilterChip
 import org.nikol.roasti.ui.features.recipelist.components.RecipeCard
-import org.nikol.roasti.ui.features.recipelist.components.RecipeCompactCard
 import org.nikol.roasti.ui.features.recipelist.components.RecipeSearchBar
 import org.nikol.roasti.ui.features.recipelist.components.RoastLevelFilterChip
 import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
@@ -65,19 +68,17 @@ import org.nikol.roasti.ui.theme.RoastiTheme
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.ErrorStub
 import org.nikol.roasti.ui.uikit.LoadingStub
-import org.nikol.roasti.ui.uikit.TextCard
+import org.nikol.roasti.ui.util.recipeImageSharedElementModifier
 
 private const val FavoritesSectionKey = "favorite_recipes_section"
-private const val RecipeScreenKeyPrefix = "recipe_screen_"
-private val FavoriteCardWidth = 200.dp
 private val RecipeCardHeight = 130.dp
-private val FavoriteCardHeight = 150.dp
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun RecipesListScreen(
     onRecipeClick: (String) -> Unit = {},
     onCreateClick: () -> Unit = {},
+    onSeeAllFavorites: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     contentPadding: PaddingValues,
@@ -90,14 +91,13 @@ internal fun RecipesListScreen(
     val isDefaultFeedMode by viewModel.isDefaultFeedMode.collectAsStateWithLifecycle()
     val isManualRefresh by viewModel.isManualRefresh.collectAsStateWithLifecycle()
     val recipes = viewModel.pagingRecipesState.collectAsLazyPagingItems()
-    val favorites = viewModel.pagingFavoritesState.collectAsLazyPagingItems()
+    val favoritesPreviewState by viewModel.favoritesPreviewState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(isManualRefresh, recipes.loadState.refresh, favorites.loadState.refresh) {
+    LaunchedEffect(isManualRefresh, recipes.loadState.refresh) {
         val recipesDone = recipes.loadState.refresh !is LoadState.Loading
-        val favoritesDone = favorites.loadState.refresh !is LoadState.Loading
-        if (isManualRefresh && recipesDone && favoritesDone) {
+        if (isManualRefresh && recipesDone) {
             viewModel.finishManualRefresh()
         }
     }
@@ -130,15 +130,15 @@ internal fun RecipesListScreen(
                 searchQuery = searchQuery,
                 filtersState = filtersState,
                 recipes = recipes,
-                favorites = favorites,
+                favoritesPreviewState = favoritesPreviewState,
                 onClick = onRecipeClick,
                 onLikeClick = viewModel::likeRecipe,
                 onSearch = viewModel::search,
                 onRefresh = {
                     viewModel.startManualRefresh()
                     recipes.refresh()
-                    favorites.refresh()
                 },
+                onSeeAllFavorites = onSeeAllFavorites,
                 isManualRefresh = isManualRefresh,
                 onBrewMethodSelected = viewModel::filterByBrewMethod,
                 onDifficultySelected = viewModel::filterByDifficulty,
@@ -183,11 +183,12 @@ private fun Content(
     searchQuery: String,
     filtersState: RecipeFilterState,
     recipes: LazyPagingItems<RecipeListItemUiModel>,
-    favorites: LazyPagingItems<RecipeListItemUiModel>,
+    favoritesPreviewState: FavoritesPreviewState,
     onClick: (String) -> Unit,
     onLikeClick: (RecipeListItemUiModel) -> Unit,
     onSearch: (String) -> Unit,
     onRefresh: () -> Unit,
+    onSeeAllFavorites: () -> Unit,
     isManualRefresh: Boolean,
     onBrewMethodSelected: (BrewMethod) -> Unit,
     onDifficultySelected: (Difficulty?) -> Unit,
@@ -221,17 +222,40 @@ private fun Content(
             }
 
             item(FavoritesSectionKey) {
-                FavoritesSection(
-                    favorites = favorites,
-                    onClick = onClick,
-                    onLikeClick = onLikeClick,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onSeeAllFavorites)
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                    ) {
+                        Text(
+                            stringResource(R.string.recipe_list_favorite_section_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.ArrowRight,
+                            contentDescription = stringResource(R.string.favorites_see_all),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    FavoritesPreviewRow(
+                        state = favoritesPreviewState,
+                        onItemClick = { onClick(it.id) },
+                        onLikeClick = onLikeClick,
+                        onSeeAllClick = onSeeAllFavorites,
+                    )
+                }
             }
 
             item("all_recipes_title") {
                 Text(
                     stringResource(R.string.recipe_list_all_section_title),
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     modifier = Modifier.padding(start = Spacing.lg)
                 )
@@ -248,15 +272,13 @@ private fun Content(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = Spacing.lg)
-                        .then(
-                            recipeSharedBoundsModifier(
-                                recipeId = recipe.id,
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-                        )
                         .clickable { onClick(recipe.id) }
                         .animateItem(),
+                    imageModifier = recipeImageSharedElementModifier(
+                        recipeId = recipe.id,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    ),
                 )
             }
 
@@ -284,77 +306,6 @@ private fun Content(
                             modifier = Modifier
                                 .size(32.dp)
                                 .animateItem(),
-                            color = MaterialTheme.colorScheme.secondary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FavoritesSection(
-    favorites: LazyPagingItems<RecipeListItemUiModel>,
-    onClick: (String) -> Unit,
-    onLikeClick: (RecipeListItemUiModel) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val favoritesListState = rememberLazyListState()
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-        modifier = modifier,
-    ) {
-        Text(
-            stringResource(R.string.recipe_list_favorite_section_title),
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            modifier = Modifier.padding(start = Spacing.lg)
-        )
-        LazyRow(
-            state = favoritesListState,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            contentPadding = PaddingValues(horizontal = Spacing.lg),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (favorites.itemCount == 0 && favorites.loadState.refresh is LoadState.NotLoading) {
-                item(key = "favorite_empty_placeholder") {
-                    TextCard(
-                        text = stringResource(R.string.recipe_list_favorite_empty_state),
-                        modifier = Modifier
-                            .size(width = 200.dp, height = 150.dp)
-                            .animateItem()
-                    )
-                }
-            }
-
-            items(
-                count = favorites.itemCount,
-                key = { index -> favorites[index]?.id ?: "favorite_$index" },
-            ) { index ->
-                val item = favorites[index] ?: return@items
-                RecipeCompactCard(
-                    item = item,
-                    modifier = Modifier
-                        .width(FavoriteCardWidth)
-                        .animateItem(),
-                    onClick = { onClick(item.id) },
-                    onLikeClick = { onLikeClick(item) },
-                )
-            }
-
-            if (favorites.loadState.append is LoadState.Loading) {
-                item(key = "favorite_append_loading") {
-                    Box(
-                        modifier = Modifier
-                            .width(FavoriteCardWidth)
-                            .padding(vertical = Spacing.lg),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
                             color = MaterialTheme.colorScheme.secondary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
@@ -435,34 +386,6 @@ private fun FilterHeader(
                 )
             }
         }
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-private fun recipeSharedBoundsModifier(
-    recipeId: String,
-    sharedTransitionScope: SharedTransitionScope?,
-    animatedVisibilityScope: AnimatedVisibilityScope?,
-): Modifier {
-    if (sharedTransitionScope == null || animatedVisibilityScope == null) return Modifier
-
-    return with(sharedTransitionScope) {
-        Modifier.sharedBounds(
-            sharedContentState = rememberSharedContentState(key = "$RecipeScreenKeyPrefix$recipeId"),
-            animatedVisibilityScope = animatedVisibilityScope,
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun FavoritesEmptyPlaceholderCardPreview() {
-    RoastiTheme {
-        TextCard(
-            text = stringResource(R.string.recipe_list_favorite_empty_state),
-            modifier = Modifier.size(width = 200.dp, height = 150.dp)
-        )
     }
 }
 

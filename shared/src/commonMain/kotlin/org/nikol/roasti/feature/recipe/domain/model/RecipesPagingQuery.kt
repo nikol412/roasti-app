@@ -1,8 +1,4 @@
-package org.nikol.roasti.feature.recipe.data.paging
-
-import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
-import org.nikol.roasti.feature.recipe.domain.model.Difficulty
-import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
+package org.nikol.roasti.feature.recipe.domain.model
 
 data class RecipesPagingQuery(
     val query: String = "",

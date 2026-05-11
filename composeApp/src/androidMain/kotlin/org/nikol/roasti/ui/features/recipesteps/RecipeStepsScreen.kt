@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -42,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,8 +53,7 @@ import org.koin.core.parameter.parametersOf
 import org.nikol.roasti.R
 import org.nikol.roasti.ui.theme.ShapeXxl
 import org.nikol.roasti.ui.theme.Spacing
-import org.nikol.roasti.ui.uikit.ErrorStub
-import org.nikol.roasti.ui.uikit.LoadingStub
+import org.nikol.roasti.ui.uikit.state.ContentScaffold
 
 private const val TimerAnimationDurationMillis = 100
 
@@ -69,19 +70,20 @@ internal fun RecipeStepsRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+        viewModel.navEvents.collect { event ->
             when (event) {
-                RecipeStepsEvent.NavigateBack -> onBackClick()
+                RecipeStepsNavEvent.NavigateBack -> onBackClick()
             }
         }
     }
 
-
-    when (val s = state) {
-        RecipeStepsUiState.Loading -> LoadingStub()
-        RecipeStepsUiState.Error -> ErrorStub(stringResource(R.string.recipe_not_found))
-        is RecipeStepsUiState.Content -> RecipeStepsScreen(
-            session = s.session,
+    ContentScaffold(
+        state = state,
+        onRetry = viewModel::retry,
+        events = viewModel.events,
+    ) { session ->
+        RecipeStepsScreen(
+            session = session,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             onBackClick = onBackClick,
@@ -107,14 +109,15 @@ private fun RecipeStepsScreen(
     onResumeTimer: () -> Unit,
     onFinish: () -> Unit,
 ) {
-    val sharedElementModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-        with(sharedTransitionScope) {
-            Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = "brew_step_${session.currentStepIndex}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-            )
-        }
-    } else Modifier
+    val sharedElementModifier =
+        if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+            with(sharedTransitionScope) {
+                Modifier.sharedBounds(
+                    sharedContentState = rememberSharedContentState(key = "brew_step_${session.currentStepIndex}"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
+            }
+        } else Modifier
 
     Box(
         modifier = sharedElementModifier
@@ -125,7 +128,7 @@ private fun RecipeStepsScreen(
             targetState = session.isFinished,
             transitionSpec = {
                 fadeIn(tween(400)) + scaleIn(tween(400), initialScale = 0.92f) togetherWith
-                    fadeOut(tween(200))
+                        fadeOut(tween(200))
             },
             label = "brewing_completion",
         ) { finished ->
@@ -171,10 +174,10 @@ private fun StepContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackClick) {
-                Text(
-                    text = "←",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                Icon(
+                    painter = painterResource(R.drawable.ic_arrow_left),
+                    contentDescription = "navigate back button",
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Text(
@@ -213,10 +216,10 @@ private fun StepContent(
                 transitionSpec = {
                     if (targetState > initialState) {
                         slideInHorizontally { it } + fadeIn(tween(300)) togetherWith
-                            slideOutHorizontally { -it } + fadeOut(tween(200))
+                                slideOutHorizontally { -it } + fadeOut(tween(200))
                     } else {
                         slideInHorizontally { -it } + fadeIn(tween(300)) togetherWith
-                            slideOutHorizontally { it } + fadeOut(tween(200))
+                                slideOutHorizontally { it } + fadeOut(tween(200))
                     }
                 },
                 label = "step_content",
@@ -334,11 +337,14 @@ private fun BottomControls(
             enabled = !isFirstStep,
             modifier = Modifier.size(56.dp),
         ) {
-            Text(
-                text = "←",
-                style = MaterialTheme.typography.headlineMedium,
-                color = if (isFirstStep) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                        else MaterialTheme.colorScheme.onSurface,
+            Icon(
+                painter = painterResource(R.drawable.ic_arrow_left),
+                contentDescription = "previous step button",
+                tint = if (isFirstStep) {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
             )
         }
 
@@ -358,11 +364,20 @@ private fun BottomControls(
                     },
                     label = "pause_resume_icon",
                 ) { running ->
-                    Text(
-                        text = if (running) "⏸" else "▶",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
+
+                    if(running) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_pause),
+                            contentDescription = "pause button",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_play_arrow),
+                            contentDescription = "resume button",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
                 }
             }
         } else {
@@ -373,10 +388,10 @@ private fun BottomControls(
             onClick = onNextStep,
             modifier = Modifier.size(56.dp),
         ) {
-            Text(
-                text = "→",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+            Icon(
+                painter = painterResource(R.drawable.ic_arrow_right),
+                contentDescription = "previous step button",
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -393,9 +408,10 @@ private fun CompletionContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = "☕",
-            style = MaterialTheme.typography.displayLarge,
+        Icon(
+            painter = painterResource(R.drawable.ic_coffee),
+            contentDescription = "coffee cup icon",
+            tint = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(Spacing.xl))
         Text(

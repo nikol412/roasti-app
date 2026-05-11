@@ -16,28 +16,41 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.nikol.roasti.feature.recipe.data.paging.PagingRecipeRepository
-import org.nikol.roasti.feature.recipe.data.paging.RecipesPagingQuery
+import org.nikol.roasti.feature.auth.domain.repository.AuthRepository
+import org.nikol.roasti.feature.likes.data.LikesApiClient
+import org.nikol.roasti.feature.likes.data.toDomain
+import org.nikol.roasti.feature.recipe.domain.RecipeListsRepository
+import org.nikol.roasti.feature.recipe.domain.RecipeRepository
 import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
+import org.nikol.roasti.feature.recipe.domain.model.RecipesPagingQuery
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterState
 import org.nikol.roasti.feature.recipe.presentation.filter.RecipeFilterStore
+import org.nikol.roasti.ui.features.favorites.model.FavoritesPreviewState
 import org.nikol.roasti.ui.features.recipelist.mapper.toUiModel
 import org.nikol.roasti.ui.features.recipelist.model.RecipeListItemUiModel
+import org.nikol.roasti.utils.stateInWhileSubscribe
 
 private const val SearchQueryDebounceMillis = 300L
+private const val FavoritesPreviewLimit = 20
+private const val FavoritesPreviewVisibleLimit = FavoritesPreviewLimit - 1
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class RecipesListViewModel(
     private val filterStore: RecipeFilterStore,
-    private val pagingRepository: PagingRecipeRepository,
+    private val recipeListsRepository: RecipeListsRepository,
+    private val recipeRepository: RecipeRepository,
+    private val authRepository: AuthRepository,
+    private val likesApiClient: LikesApiClient,
 ) : ViewModel() {
     val hasCachedRecipes: StateFlow<Boolean> =
-        pagingRepository.observeHasCachedRecipes()
+        recipeListsRepository.observeHasCachedFeed()
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
@@ -87,19 +100,45 @@ class RecipesListViewModel(
         recipesQuery
             .flatMapLatest { query ->
                 if (query.isDefaultFeed) {
-                    pagingRepository.getOfflineFirstAllRecipesPager()
-                        .map { pagingData -> pagingData.map { it.toUiModel() } }
+                    recipeListsRepository.observeFeed()
                 } else {
-                    pagingRepository.getRemoteSearchPager(query)
-                        .map { pagingData -> pagingData.map { it.toUiModel() } }
+                    recipeListsRepository.observeSearch(query)
                 }
             }
-            .cachedIn(viewModelScope)
-
-    val pagingFavoritesState: Flow<PagingData<RecipeListItemUiModel>> =
-        pagingRepository.getFavoritesPager()
             .map { pagingData -> pagingData.map { it.toUiModel() } }
             .cachedIn(viewModelScope)
+
+    private val favoritesRefreshTrigger = MutableStateFlow(0)
+
+    val favoritesPreviewState: StateFlow<FavoritesPreviewState> = combine(
+        authRepository.getUser(),
+        favoritesRefreshTrigger,
+    ) { user, _ -> user?.id }
+        .flatMapLatest { userId -> favoritesPreviewFlow(userId) }
+        .stateInWhileSubscribe(FavoritesPreviewState.Loading)
+
+    private fun favoritesPreviewFlow(userId: String?) = flow {
+        if (userId == null) {
+            emit(FavoritesPreviewState.Empty)
+            return@flow
+        }
+        val result = likesApiClient.getLikedRecipes(
+            userId = userId,
+            limit = FavoritesPreviewLimit,
+            page = 1,
+        ).map { it.toDomain() }
+        val likes = result.getOrNull()
+        if (likes?.items.isNullOrEmpty()) {
+            emit(FavoritesPreviewState.Empty)
+        } else {
+            emit(
+                FavoritesPreviewState.Content(
+                    items = likes.items.map { it.recipe.toUiModel() }.take(FavoritesPreviewVisibleLimit),
+                    hasMore = likes.items.size > FavoritesPreviewVisibleLimit,
+                )
+            )
+        }
+    }
 
     fun search(query: String) {
         searchQueryMutable.value = query
@@ -119,12 +158,13 @@ class RecipesListViewModel(
 
     fun likeRecipe(recipe: RecipeListItemUiModel) {
         viewModelScope.launch {
-            pagingRepository.toggleLike(recipe.id)
+            recipeRepository.toggleLike(recipe.id)
         }
     }
 
     fun startManualRefresh() {
         manualRefreshMutable.value = true
+        favoritesRefreshTrigger.update { it + 1 }
     }
 
     fun finishManualRefresh() {

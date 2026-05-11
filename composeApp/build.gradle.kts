@@ -110,4 +110,12 @@ dependencies {
     implementation(libs.paging.compose)
     implementation(libs.phosphor.icons)
     debugImplementation(libs.compose.uiTooling)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlin.testJunit)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.sqldelight.jdbc)
+    testImplementation(libs.sqldelight.coroutines)
 }

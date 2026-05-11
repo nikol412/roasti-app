@@ -85,6 +85,7 @@ import org.nikol.roasti.ui.features.recipeform.model.RecipeFormStepUiModel
 import org.nikol.roasti.ui.theme.ShapeXxl
 import org.nikol.roasti.ui.theme.Spacing
 import org.nikol.roasti.ui.uikit.AppIcons
+import org.nikol.roasti.ui.uikit.RoastiBottomSheet
 import org.nikol.roasti.utils.compressImage
 import java.util.UUID
 
@@ -863,49 +864,41 @@ internal fun <T> OptionPickerBottomSheet(
     onSelect: (T) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
+    RoastiBottomSheet(
+        onDismiss = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = Spacing.xxl, vertical = Spacing.lg),
-            )
-            options.forEach { (value, label) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelect(value) }
-                        .padding(horizontal = Spacing.xxl, vertical = Spacing.md),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (value == selected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = Spacing.xxl, vertical = Spacing.lg),
+        )
+        options.forEach { (value, label) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSelect(value) }
+                    .padding(horizontal = Spacing.xxl, vertical = Spacing.md),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (value == selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
+                if (value == selected) {
+                    Icon(
+                        imageVector = AppIcons.Regular.Check,
+                        contentDescription = "checked",
+                        modifier = Modifier.size(22.dp),
                     )
-                    if (value == selected) {
-                        Icon(
-                            imageVector = AppIcons.Regular.Check,
-                            contentDescription = "checked",
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
                 }
             }
-            Spacer(Modifier.height(Spacing.lg))
         }
     }
 }

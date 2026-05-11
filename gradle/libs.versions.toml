@@ -23,6 +23,7 @@ ktor = "3.4.3"
 sqldelight = "2.3.2"
 paging = "3.4.2"
 phosphor-icon = "1.0.0"
+turbine = "1.1.0"
 
 logback = "1.5.32"
 arrow = "2.2.2.1"
@@ -71,6 +72,9 @@ paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pag
 paging-common = { module = "androidx.paging:paging-common", version.ref = "paging" }
 paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
 sqldelight-paging = { module = "app.cash.sqldelight:androidx-paging3-extensions", version.ref = "sqldelight" }
+sqldelight-jdbc = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 phosphor-icons = { module = "com.adamglin:phosphor-icon", version.ref = "phosphor-icon" }
 

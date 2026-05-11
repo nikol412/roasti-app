@@ -16,6 +16,6 @@ fun RoastiDatabaseCache.clearAllUserScopedData() {
         recipeQueries.clearAllRecipes()
         recipeStepQueries.clearAllRecipeSteps()
         recipeRemoteKeyQueries.clearAllRemoteKeys()
-        favoriteRecipeQueries.clearAllFavoriteRecipes()
+        recipeListMembershipQueries.clearAllMemberships()
     }
 }

@@ -23,6 +23,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -76,6 +78,7 @@ fun FeedScreen(
     val viewModel: FeedViewModel = koinViewModel()
 
     val isManualRefresh by viewModel.isManualRefresh.collectAsStateWithLifecycle()
+    val hasCachedPosts by viewModel.hasCachedPosts.collectAsStateWithLifecycle()
     val posts = viewModel.pagingPostsState.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
 
@@ -86,11 +89,41 @@ fun FeedScreen(
     }
 
     val refreshState = posts.loadState.refresh
+    val appendState = posts.loadState.append
+
+    // PagingData is cached in viewModelScope, so a stale Error from a previous attempt
+    // is visible immediately on re-entry. Auto-retry once on entry, and suppress the
+    // fullscreen error until we've actually observed a Loading transition.
+    var hasObservedLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(refreshState) {
+        if (refreshState is LoadState.Loading) hasObservedLoading = true
+    }
+    LaunchedEffect(Unit) {
+        if (posts.loadState.refresh is LoadState.Error) posts.retry()
+    }
+
     val isInitialIdle = refreshState is LoadState.NotLoading && !refreshState.endOfPaginationReached
-    val hasItems = posts.itemCount > 0
-    val showFullScreenLoader =
-        !hasItems && (refreshState is LoadState.Loading || isInitialIdle)
-    val showFullScreenError = !hasItems && refreshState is LoadState.Error
+    val showFullScreenLoader = !hasCachedPosts && (
+        refreshState is LoadState.Loading ||
+            isInitialIdle ||
+            (refreshState is LoadState.Error && !hasObservedLoading)
+        )
+    val showFullScreenError = !hasCachedPosts &&
+        refreshState is LoadState.Error &&
+        hasObservedLoading
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val refreshErrorMessage = stringResource(R.string.feed_refresh_error)
+    LaunchedEffect(refreshState, hasCachedPosts) {
+        if (hasCachedPosts && refreshState is LoadState.Error) {
+            snackbarHostState.showSnackbar(refreshErrorMessage)
+        }
+    }
+    LaunchedEffect(appendState) {
+        if (appendState is LoadState.Error) {
+            snackbarHostState.showSnackbar(refreshErrorMessage)
+        }
+    }
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
@@ -106,6 +139,7 @@ fun FeedScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets(0),
         topBar = { FeedTopBar(scrollBehavior = scrollBehavior) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreatePost,
@@ -143,7 +177,7 @@ fun FeedScreen(
                     .padding(top = innerPadding.calculateTopPadding()),
             ) {
                 ErrorStub(
-                    text = "Failed to load feed",
+                    text = stringResource(R.string.feed_load_error),
                     modifier = Modifier.align(Alignment.Center),
                 )
             }

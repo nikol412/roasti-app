@@ -15,6 +15,9 @@ import org.nikol.roasti.feature.recipe.domain.model.Recipe
 import org.nikol.roasti.feature.recipe.domain.session.BrewingSession
 import org.nikol.roasti.feature.recipe.domain.session.BrewingTimer
 import org.nikol.roasti.ui.features.recipesteps.mapper.toUiState
+import org.nikol.roasti.ui.uikit.state.ContentUiState
+import org.nikol.roasti.ui.uikit.state.UiError
+import org.nikol.roasti.ui.uikit.state.UiEvent
 
 internal class RecipeStepsViewModel(
     private val recipeId: String,
@@ -23,21 +26,29 @@ internal class RecipeStepsViewModel(
     private val timer: BrewingTimer,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<RecipeStepsUiState>(RecipeStepsUiState.Loading)
-    val state: StateFlow<RecipeStepsUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow<ContentUiState<SessionState>>(ContentUiState.Loading)
+    val state: StateFlow<ContentUiState<SessionState>> = _state.asStateFlow()
 
-    private val _events = MutableSharedFlow<RecipeStepsEvent>(extraBufferCapacity = 1)
-    val events: SharedFlow<RecipeStepsEvent> = _events.asSharedFlow()
+    private val _events = MutableSharedFlow<UiEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<UiEvent> = _events.asSharedFlow()
+
+    private val _navEvents = MutableSharedFlow<RecipeStepsNavEvent>(extraBufferCapacity = 1)
+    val navEvents: SharedFlow<RecipeStepsNavEvent> = _navEvents.asSharedFlow()
 
     private var timerJob: Job? = null
     private var currentBrewingSession: BrewingSession? = null
     private var currentTimerState: StepTimerState? = null
 
     init {
+        retry()
+    }
+
+    fun retry() {
+        _state.value = ContentUiState.Loading
         viewModelScope.launch {
             repository.getById(recipeId)
                 .onSuccess { startSession(it) }
-                .onFailure { _state.value = RecipeStepsUiState.Error }
+                .onFailure { _state.value = ContentUiState.FullscreenError(UiError.Generic) }
         }
     }
 
@@ -72,7 +83,7 @@ internal class RecipeStepsViewModel(
     }
 
     fun finish() {
-        _events.tryEmit(RecipeStepsEvent.NavigateBack)
+        _navEvents.tryEmit(RecipeStepsNavEvent.NavigateBack)
     }
 
     private fun startSession(recipe: Recipe) {
@@ -94,13 +105,13 @@ internal class RecipeStepsViewModel(
 
     private fun startTicker() {
         stopTicker()
-        val content = currentContent() ?: return
-        if (!content.session.isTimerRunning || content.session.isFinished) return
+        val session = currentSession() ?: return
+        if (!session.isTimerRunning || session.isFinished) return
 
         timerJob = viewModelScope.launch {
             timer.ticker(TICK_INTERVAL_MILLIS).collect { nowMillis ->
-                val current = currentContent() ?: return@collect
-                if (!current.session.isTimerRunning) return@collect
+                val current = currentSession() ?: return@collect
+                if (!current.isTimerRunning) return@collect
 
                 val updatedTimer = currentTimerState?.advance(nowMillis) ?: return@collect
                 if (updatedTimer.remainingMillis <= 0L) {
@@ -145,7 +156,8 @@ internal class RecipeStepsViewModel(
         return !brew.isFinished && durationSeconds > 0
     }
 
-    private fun currentContent() = _state.value as? RecipeStepsUiState.Content
+    private fun currentSession(): SessionState? =
+        (_state.value as? ContentUiState.Content<SessionState>)?.data
 
     private fun updateTimer(update: (StepTimerState) -> StepTimerState) {
         val timerState = currentTimerState ?: return
@@ -156,8 +168,8 @@ internal class RecipeStepsViewModel(
     private fun emitContent() {
         val brew = currentBrewingSession ?: return
         val timerState = currentTimerState ?: return
-        _state.value = RecipeStepsUiState.Content(
-            session = brew.toUiState(timer = timerState),
+        _state.value = ContentUiState.Content(
+            data = brew.toUiState(timer = timerState),
         )
     }
 
@@ -171,6 +183,6 @@ internal class RecipeStepsViewModel(
     }
 }
 
-internal sealed interface RecipeStepsEvent {
-    data object NavigateBack : RecipeStepsEvent
+internal sealed interface RecipeStepsNavEvent {
+    data object NavigateBack : RecipeStepsNavEvent
 }

@@ -18,6 +18,7 @@ fun RecipesRoute(
     contentPadding: PaddingValues = PaddingValues(),
     onRecipeClick: (String) -> Unit = {},
     onCreateClick: () -> Unit = {},
+    onSeeAllFavorites: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
@@ -30,6 +31,7 @@ fun RecipesRoute(
         RecipesListScreen(
             onRecipeClick = onRecipeClick,
             onCreateClick = onCreateClick,
+            onSeeAllFavorites = onSeeAllFavorites,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
             contentPadding = contentPadding,

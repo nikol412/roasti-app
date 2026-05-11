@@ -73,18 +73,20 @@ KMP-приложение для энтузиастов кофе: трекинг 
 
 Структура в `shared/commonMain/feature/<name>/`:
 
-      domain/                                                                                                                                                                                           
+      domain/
         model/Foo.kt                    — чистый data class, без android/ktor импортов
-        repository/FooRepository.kt     — только интерфейс                                                                                                                                              
-      data/                                                                                                                                                                                             
-        network/FooApiClient.kt         — интерфейс + FooApiClientImpl                                                                                                                                  
-        remote/model/FooResponseDto.kt  — @Serializable                                                                                                                                                 
-        mapper/FooMapper.kt             — Dto → domain model                                                                                                                                            
-        FooRepositoryImpl.kt                                                                                                                                                                            
-      di/                                                                                                                                                                                               
-        FooModule.kt                    — Koin: single<FooRepository> { FooRepositoryImpl(get()) }
+        FooRepository.kt                — интерфейс (если у фичи есть domain-state или use-case'ы)
+      data/
+        network/FooApiClient.kt         — интерфейс + FooApiClientImpl
+        remote/model/FooResponseDto.kt  — @Serializable
+        mapper/FooMapper.kt             — Dto → domain model + SqlEntity → domain
+        FooRepositoryImpl.kt
+      di/
+        FooModule.kt                    — Koin: single<FooRepository> { FooRepositoryImpl(get()) } bind FooRepository::class
 
-    Все слои обязательны. Не пропускать интерфейс репозитория.
+    Не пропускать интерфейс репозитория, если фича имеет domain-state, use-case'ы или
+    подменяемые реализации (mock vs rest). Для cross-cutting примитивов без domain-state
+    (например, `LikesApiClient`) хватает интерфейса API-клиента — domain-репозиторий не нужен.
 
 ## DI
 
@@ -206,6 +208,139 @@ class FooViewModel(private val fooRepository: FooRepository) : ViewModel() {
       форматированные значения, display-флаги.
 
   Референс: `composeApp/.../ui/features/profile/ProfileViewModel.kt`
+
+## Стратегия загрузки данных (единая для всех экранов)
+
+**Поток на каждом экране:**
+заход на экран → подписка на кэш (Flow из репозитория) → параллельно `refresh()` в API
+→ ответ пишется в кэш → UI реактивно обновляется.
+
+Кэш — единственный источник правды для UI. ViewModel/Composable никогда не читают данные
+напрямую из API; репозиторий сам решает, когда сходить в сеть и когда отдать кэш.
+
+### Состояния UI
+
+| Сценарий                                | Поведение                                                |
+|-----------------------------------------|----------------------------------------------------------|
+| Кэша нет, идёт загрузка                 | fullscreen `LoadingStub`                                 |
+| Кэша нет, ошибка от API                 | fullscreen `ErrorStub` с retry                           |
+| Кэш есть, идёт фоновое обновление       | контент + `isRefreshing = true` (pull-to-refresh-indicator) |
+| Кэш есть, ошибка (обычный экран)        | контент остаётся + snackbar через `UiEvent.ShowError`    |
+| Кэш есть, ошибка (пагинированный экран) | контент + error-item в конце списка с retry              |
+
+Общий sealed для большинства экранов:
+`ContentUiState<T> = Loading | FullscreenError(error) | Content(data, isRefreshing)`.
+Живёт в `ui/uikit/state/`.
+
+Для пагинации: ошибка `LoadState.Append.Error` → отдельный composable `PagingErrorItem`
+в `LazyColumn`/`LazyVerticalGrid` через `items.loadState.append`.
+
+### Optimistic update
+
+Пишем сразу в локальный кэш (БД) → API-вызов → на ошибке откатываем кэш и показываем
+snackbar. Никогда не обновляем UI «в обход кэша» — оба пути должны идти через одну
+точку (`*RepositoryImpl` + БД), чтобы все подписчики реагировали одинаково.
+
+### Исключение: поисковые фичи
+
+Поиск рецептов, поиск постов и подобные query-driven фичи **не кэшируются** — данные
+отображаются строго из сети. Кэш бесполезен: каждый запрос уникален, результаты быстро
+устаревают, хранить нечего.
+
+Состояния для поиска:
+
+| Сценарий            | Поведение                                |
+|---------------------|------------------------------------------|
+| Идёт загрузка       | inline-`LoadingStub` в области результатов |
+| Ошибка от API       | inline-`ErrorStub` с retry в области результатов |
+| Пустой результат    | inline empty-state                       |
+
+Для пагинированного поиска — `RemoteRecipesPagingSource` без `RemoteMediator` и без
+записи в БД. Референс: `PagingRecipeRepository.getRemoteSearchPager`.
+
+## Фича: Рецепты (центральная фича приложения)
+
+Объединяет три use-case'а — feed, favorites, recipe details — поверх **одной сущности и одного кэша**.
+
+### Архитектура
+
+```
+shared/commonMain/feature/recipe/
+  domain/
+    RecipeRepository                — single recipe: observeById/refresh/CRUD/toggleLike
+    model/Recipe, RecipeDraft, RecipesPagingQuery, ...
+  data/
+    network/RecipesApiClient        — interface + Impl
+    remote/model/*Dto
+    mapper/                         — Dto → domain, SqlEntity → domain
+    RecipeRepositoryImpl(api, db, likesApi)
+    RecipeListType                  — константы 'feed' | 'favorites'
+
+shared/commonMain/feature/likes/
+  data/network/LikesApiClient       — interface + Impl, примитив для /likes endpoints
+  data/*Dto, *Mappers
+  domain/model/                     — LikedRecipe, RecipeLike
+  ⛔ нет LikesRepository — для thin HTTP-обёртки domain-репо не нужен
+
+shared/androidMain/feature/recipe/
+  domain/RecipeListsRepository      — все ленты: observeFeed/Favorites/Search + observeHasCachedFeed
+  data/RecipeListsRepositoryImpl(db, recipesApi, auth, favMediator)
+  data/paging/
+    AllRecipesRemoteMediator        — feed
+    FavoritesRemoteMediator         — favorites (через LikesApiClient)
+    RemoteRecipesPagingSource       — search (без кэша)
+
+shared/commonMain/sqldelight/
+  Recipe.sq                         — сущность (id, title, is_liked, likes_count, ...)
+  RecipeStep.sq                     — шаги, связаны через recipe_id
+  RecipeListMembership.sq           — junction (list_type, recipe_id, position)
+  RecipeRemoteKey.sq                — пагинация (по list_type)
+```
+
+### Ключевая идея: один Recipe + membership на каждую ленту
+
+`Recipe` — единственная entity-таблица. `RecipeListMembership(list_type, recipe_id, position)` —
+кто в каком списке и в каком порядке (`position` берётся со стороны сервера). Каждая лента
+живёт в своём срезе membership, обе JOIN'ятся к одной `Recipe`-таблице.
+
+- **Изоляция**: REFRESH `'feed'` не трогает membership('favorites') и наоборот.
+- **Реактивная согласованность**: `is_liked` хранится один раз. Лайк → один UPDATE на Recipe →
+  оба списка перерисуются автоматически через Flow.
+- **Никакого дубля данных** между лентами.
+
+Новая лента — это новый `list_type` + новый mediator. Без новой таблицы.
+
+### toggleLike (optimistic, единственная точка)
+
+`RecipeRepository.toggleLike(id)` — только тут можно лайкать. В одной транзакции:
+
+1. `Recipe.toggleLike` (`is_liked = 1 - is_liked`, `±likes_count`)
+2. `RecipeListMembership('favorites', id, ...)` — insert at top (position = MIN−1) или delete
+3. `LikesApiClient.toggleLikeOnRecipe` — сетевой вызов
+4. На ошибке откат обоих шагов (`applyLikeToggle(!wasLiked)`) и `Result.failure`
+
+Подписчики обоих списков (feed + favorites) видят и оптимистичный apply, и revert через одну
+Flow-цепочку — без events/eventbus между экранами.
+
+### Кто за что отвечает
+
+| Класс                       | Source set | Ответственность                                                  |
+|-----------------------------|------------|------------------------------------------------------------------|
+| `RecipeRepository`          | commonMain | Единичный рецепт + toggleLike                                    |
+| `RecipeListsRepository`     | androidMain | Pager-flow'ы для feed / favorites / search                      |
+| `LikesApiClient`            | commonMain | HTTP-обёртка `/likes` endpoints (примитив, без domain)           |
+| `AllRecipesRemoteMediator`  | androidMain | feed → `/recipes` → Recipe + membership('feed')                 |
+| `FavoritesRemoteMediator`   | androidMain | favorites → `/users/{id}/likes` → Recipe + membership('favorites') |
+| `RemoteRecipesPagingSource` | androidMain | search — без кэша, без mediator                                 |
+
+### Что нельзя
+
+- Создавать ещё одну entity-таблицу для нового списка рецептов. Новая лента = новый `list_type`
+  в membership.
+- Писать в `Recipe`-таблицу из ViewModel или UI напрямую — только через `RecipeRepository`.
+- Дублировать toggleLike-логику. Любое место, которое лайкает рецепт, идёт через
+  `RecipeRepository.toggleLike`.
+- Кэшировать поиск (см. «Стратегия загрузки данных → Исключение»).
 
 ## Локализация
 
