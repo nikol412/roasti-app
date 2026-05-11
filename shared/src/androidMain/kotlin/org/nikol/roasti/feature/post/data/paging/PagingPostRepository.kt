@@ -19,6 +19,7 @@ import org.nikol.roasti.feature.post.data.mapper.toVoteDirection
 import org.nikol.roasti.feature.post.data.mapper.toWireString
 import org.nikol.roasti.feature.post.data.mapper.upsertPost
 import org.nikol.roasti.feature.post.data.network.PostsApiClient
+import org.nikol.roasti.feature.post.data.remote.model.VoteDirectionDto
 import org.nikol.roasti.feature.post.data.remote.model.request.CreatePostRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.request.UpdatePostRequestDto
 import org.nikol.roasti.feature.post.data.remote.model.request.VoteRequestDto
@@ -93,7 +94,7 @@ class PagingPostRepository(
                 db.transaction {
                     db.postQueries.applyVote(
                         rating = dto.rating.toLong(),
-                        user_vote = dto.userVote.toDomain().toWireString(),
+                        user_vote = (dto.userVote ?: VoteDirectionDto.NONE).toDomain().toWireString(),
                         id = postId,
                     )
                 }
