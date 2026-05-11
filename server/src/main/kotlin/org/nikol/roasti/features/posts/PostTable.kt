@@ -11,7 +11,8 @@ import org.nikol.roasti.features.users.toUserPreview
 import kotlin.uuid.ExperimentalUuidApi
 
 object PostTable : UuidTable("posts") {
-    val authorId = varchar("author_id", 128).references(UserTable.id, onDelete = ReferenceOption.CASCADE)
+    @OptIn(ExperimentalUuidApi::class)
+    val authorId = reference("author_id", UserTable, onDelete = ReferenceOption.CASCADE)
     val title = varchar("title", 500).nullable()
     val text = text("text").nullable()
     val images = array<String>("images")

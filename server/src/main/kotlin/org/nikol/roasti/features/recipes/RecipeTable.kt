@@ -15,7 +15,8 @@ import org.nikol.roasti.features.users.toUserPreview
 import kotlin.uuid.ExperimentalUuidApi
 
 object RecipeTable : UuidTable("recipes") {
-    val authorId = varchar("author_id", 128).references(UserTable.id, onDelete = ReferenceOption.CASCADE)
+    @OptIn(ExperimentalUuidApi::class)
+    val authorId = reference("author_id", UserTable, onDelete = ReferenceOption.CASCADE)
     val title = varchar("title", 255)
     val description = text("description")
     val note = text("note").nullable()

@@ -5,21 +5,24 @@ import arrow.core.left
 import arrow.core.right
 import org.nikol.roasti.common.domain.Page
 import org.nikol.roasti.features.users.UserId
+import kotlin.uuid.Uuid
 
-private const val TEXT_MAX_LENGTH = 1000
+const val TEXT_MAX_LENGTH = 1000
 
 interface CommentService {
-    suspend fun create(userId: UserId, targetId: String, targetType: CommentTargetType, text: String, parentId: CommentId?): Comment
+    suspend fun create(userId: UserId, targetId: Uuid, targetType: CommentTargetType, text: String, parentId: CommentId?): Comment
     suspend fun update(userId: UserId, commentId: CommentId, text: String): Either<CommentErrorCode, Comment>
     suspend fun delete(userId: UserId, commentId: CommentId): Either<CommentErrorCode, Unit>
-    suspend fun list(targetId: String, targetType: CommentTargetType, page: Int, limit: Int): Page<CommentThread>
+    suspend fun list(targetId: Uuid, targetType: CommentTargetType, page: Int, limit: Int): Page<CommentThread>
+    suspend fun countForTarget(targetId: Uuid, targetType: CommentTargetType): Int
+    suspend fun countForTargetBatch(targetIds: List<Uuid>, targetType: CommentTargetType): Map<Uuid, Int>
 }
 
 class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
 
     override suspend fun create(
         userId: UserId,
-        targetId: String,
+        targetId: Uuid,
         targetType: CommentTargetType,
         text: String,
         parentId: CommentId?,
@@ -60,8 +63,22 @@ class CommentServiceImpl(private val repo: CommentRepository) : CommentService {
         return Unit.right()
     }
 
-    override suspend fun list(targetId: String, targetType: CommentTargetType, page: Int, limit: Int): Page<CommentThread> {
+    override suspend fun list(targetId: Uuid, targetType: CommentTargetType, page: Int, limit: Int): Page<CommentThread> {
         val (items, total) = repo.listForTarget(targetId, targetType, page, limit)
         return Page.of(items, page, total, limit)
+    }
+
+    override suspend fun countForTarget(
+        targetId: Uuid,
+        targetType: CommentTargetType
+    ): Int {
+        return repo.countForTargetBatch(listOf(targetId), targetType)[targetId] ?: 0
+    }
+
+    override suspend fun countForTargetBatch(
+        targetIds: List<Uuid>,
+        targetType: CommentTargetType
+    ): Map<Uuid, Int> {
+        return repo.countForTargetBatch(targetIds, targetType)
     }
 }

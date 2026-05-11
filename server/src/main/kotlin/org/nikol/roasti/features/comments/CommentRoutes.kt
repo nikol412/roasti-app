@@ -28,7 +28,7 @@ fun Route.commentRoutes() {
             patch {
                 val id = call.parameters["id"]?.let { CommentId(Uuid.parse(it)) }
                     ?: return@patch call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<UpdateCommentRequestDto>()
                 commentService.update(userId, id, body.text).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
@@ -39,7 +39,7 @@ fun Route.commentRoutes() {
             delete {
                 val id = call.parameters["id"]?.let { CommentId(Uuid.parse(it)) }
                     ?: return@delete call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 commentService.delete(userId, id).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                     ifRight = { call.respond(HttpStatusCode.NoContent) },
@@ -54,7 +54,7 @@ internal fun Comment.toDto() = when (this) {
     is Comment.Active -> CommentResponseDto(
         id = id.value.toString(),
         isDeleted = false,
-        author = CommentAuthorDto(author.id.value, author.username, author.name, author.avatarId),
+        author = CommentAuthorDto(author.id.value.toString(), author.username, author.name, author.avatarId),
         text = text,
         parentId = parentId?.value?.toString(),
         createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt.toEpochMilliseconds()),

@@ -44,49 +44,50 @@ fun Route.postRoutes() {
     val commentService by inject<CommentService>()
 
     route("/posts") {
-        get {
-            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val authorId = call.request.queryParameters["author_id"]
-                ?.let { org.nikol.roasti.features.users.UserId(it) }
-            val userId = call.principal<FirebasePrincipal>()?.uid
-            val postsPage = postService.list(page, limit, authorId, userId)
-            call.respond(postsPage.toDto())
-        }
-
-        get("/{id}") {
-            val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
-                ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val userId = call.principal<FirebasePrincipal>()?.uid
-            postService.getById(id, userId).fold(
-                ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
-                ifRight = { call.respond(it.toDto()) },
-            )
-        }
-
-        get("/{id}/comments") {
-            val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val result = commentService.list(id, CommentTargetType.POST, page, limit)
-            call.respond(
-                PageResponseDto(
-                    items = result.items.map { it.toDto() },
-                    pagination = PaginationResponseDto(
-                        currentPage = result.currentPage,
-                        itemsCount = result.itemsCount,
-                        lastPage = result.lastPage,
-                        nextPage = result.nextPage,
-                    ),
-                )
-            )
-        }
-
         authenticate(FIREBASE_AUTH) {
+            get {
+                val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val authorId = call.request.queryParameters["author_id"]
+                    ?.let { org.nikol.roasti.features.users.UserId(Uuid.parse(it)) }
+                val userId = call.principal<FirebasePrincipal>()?.id
+                val postsPage = postService.list(page, limit, authorId, userId)
+                call.respond(postsPage.toDto())
+            }
+
+            get("/{id}") {
+                val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
+                    ?: return@get call.respond(HttpStatusCode.BadRequest)
+                val userId = call.principal<FirebasePrincipal>()?.id
+                postService.getById(id, userId).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(it.toDto()) },
+                )
+            }
+
+            get("/{id}/comments") {
+                val id = call.parameters["id"]?.let { Uuid.parse(it) }
+                    ?: return@get call.respond(HttpStatusCode.BadRequest)
+                val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+                val result = commentService.list(id, CommentTargetType.POST, page, limit)
+                call.respond(
+                    PageResponseDto(
+                        items = result.items.map { it.toDto() },
+                        pagination = PaginationResponseDto(
+                            currentPage = result.currentPage,
+                            itemsCount = result.itemsCount,
+                            lastPage = result.lastPage,
+                            nextPage = result.nextPage,
+                        ),
+                    )
+                )
+            }
+
             post {
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<CreatePostRequestDto>()
-                val post = postService.create(
+                postService.create(
                     userId,
                     CreatePostInput(
                         title = body.title,
@@ -94,14 +95,16 @@ fun Route.postRoutes() {
                         images = body.images,
                         recipeId = body.recipeId?.let { Uuid.parse(it) },
                     ),
+                ).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.Created, it.toDto()) },
                 )
-                call.respond(HttpStatusCode.Created, post.toDto())
             }
 
             put("/{id}") {
                 val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
                     ?: return@put call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<UpdatePostRequestDto>()
                 postService.update(
                     userId, id,
@@ -120,7 +123,7 @@ fun Route.postRoutes() {
             delete("/{id}") {
                 val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
                     ?: return@delete call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 postService.delete(userId, id).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                     ifRight = { call.respond(HttpStatusCode.NoContent) },
@@ -130,22 +133,32 @@ fun Route.postRoutes() {
             put("/{id}/vote") {
                 val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
                     ?: return@put call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<VoteRequestDto>()
                 val direction = body.type.toDomain()
                 postService.vote(userId, id, direction).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
-                    ifRight = { call.respond(PostVoteResponseDto(rating = it.rating, userVote = it.userVote.toDto())) },
+                    ifRight = {
+                        call.respond(
+                            PostVoteResponseDto(
+                                rating = it.rating,
+                                userVote = it.userVote.toDto()
+                            )
+                        )
+                    },
                 )
             }
 
             post("/{id}/comments") {
-                val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val id = call.parameters["id"]?.let { PostId(Uuid.parse(it)) }
+                    ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<CreateCommentRequestDto>()
                 val parentId = body.parentId?.let { CommentId(Uuid.parse(it)) }
-                val comment = commentService.create(userId, id, CommentTargetType.POST, body.text, parentId)
-                call.respond(HttpStatusCode.Created, comment.toDto())
+                postService.createComment(userId, id, body.text, parentId).fold(
+                    ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
+                    ifRight = { call.respond(HttpStatusCode.Created, it.toDto()) },
+                )
             }
         }
     }
@@ -167,7 +180,7 @@ private fun VoteDirection.toDto() = when (this) {
 private fun Post.toDto() = PostResponseDto(
     id = id.value.toString(),
     author = PostAuthorDto(
-        id = author.id.value,
+        id = author.id.value.toString(),
         username = author.username,
         name = author.name,
         avatarId = author.avatarId,
@@ -184,7 +197,6 @@ private fun Post.toDto() = PostResponseDto(
     updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt.toEpochMilliseconds()),
 )
 
-@OptIn(ExperimentalUuidApi::class)
 private fun Page<Post>.toDto() = PageResponseDto(
     items = items.map { it.toDto() },
     pagination = PaginationResponseDto(

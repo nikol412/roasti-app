@@ -11,14 +11,14 @@ data class UserPreview(
 )
 
 fun ResultRow.toUserPreview() = UserPreview(
-    id = UserId(this[UserTable.id]),
+    id = UserId(this[UserTable.id].value),
     username = this[UserTable.username],
     name = this[UserTable.name],
     avatarId = this[UserTable.avatarId],
 )
 
 fun ResultRow.toUserPreview(alias: Alias<UserTable>) = UserPreview(
-    id = UserId(this[alias[UserTable.id]]),
+    id = UserId(this[alias[UserTable.id]].value),
     username = this[alias[UserTable.username]],
     name = this[alias[UserTable.name]],
     avatarId = this[alias[UserTable.avatarId]],

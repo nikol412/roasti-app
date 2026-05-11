@@ -8,6 +8,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
 
 interface UserRepository {
     suspend fun findById(id: UserId): User?
@@ -18,6 +19,7 @@ interface UserRepository {
     suspend fun existsByEmail(email: String): Boolean
 }
 
+@OptIn(ExperimentalUuidApi::class)
 class UserRepositoryImpl : UserRepository {
 
     override suspend fun findById(id: UserId): User? = withContext(Dispatchers.IO) {
@@ -42,6 +44,7 @@ class UserRepositoryImpl : UserRepository {
         transaction {
             UserTable.insert {
                 it[id] = input.id.value
+                it[firebaseId] = input.firebaseId.value
                 it[email] = input.email
                 it[username] = input.username
                 it[name] = input.name
@@ -86,6 +89,7 @@ class UserRepositoryImpl : UserRepository {
 
 data class CreateUserInput(
     val id: UserId,
+    val firebaseId: FirebaseId,
     val email: String,
     val username: String,
     val name: String? = null,

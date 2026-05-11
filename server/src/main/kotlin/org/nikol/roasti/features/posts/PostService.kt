@@ -6,6 +6,11 @@ import arrow.core.right
 import org.nikol.roasti.features.comments.CommentRepository
 import org.nikol.roasti.features.comments.CommentTargetType
 import org.nikol.roasti.common.domain.Page
+import org.nikol.roasti.features.comments.Comment
+import org.nikol.roasti.features.comments.CommentId
+import org.nikol.roasti.features.comments.CommentService
+import org.nikol.roasti.features.recipes.RecipeErrorCode
+import org.nikol.roasti.features.recipes.RecipeId
 import org.nikol.roasti.features.users.UserId
 import org.nikol.roasti.features.votes.VoteDirection
 import org.nikol.roasti.features.votes.VoteService
@@ -17,17 +22,18 @@ data class PostVoteResult(val rating: Int, val userVote: VoteDirection)
 interface PostService {
     suspend fun getById(id: PostId, userId: UserId?): Either<PostErrorCode, Post>
     suspend fun list(page: Int, limit: Int, authorId: UserId?, userId: UserId?): Page<Post>
-    suspend fun create(userId: UserId, input: CreatePostInput): Post
+    suspend fun create(userId: UserId, input: CreatePostInput): Either<PostErrorCode, Post>
     suspend fun update(userId: UserId, id: PostId, input: UpdatePostInput): Either<PostErrorCode, Post>
     suspend fun delete(userId: UserId, id: PostId): Either<PostErrorCode, Unit>
     suspend fun vote(userId: UserId, id: PostId, direction: VoteDirection): Either<PostErrorCode, PostVoteResult>
+    suspend fun createComment(userId: UserId, id: PostId, text: String, parentId: CommentId?): Either<PostErrorCode, Comment>
 }
 
 @OptIn(ExperimentalUuidApi::class)
 class PostServiceImpl(
     private val repo: PostRepository,
     private val voteService: VoteService,
-    private val commentRepo: CommentRepository,
+    private val commentService: CommentService,
 ) : PostService {
 
     override suspend fun getById(id: PostId, userId: UserId?): Either<PostErrorCode, Post> {
@@ -37,12 +43,12 @@ class PostServiceImpl(
 
     override suspend fun list(page: Int, limit: Int, authorId: UserId?, userId: UserId?): Page<Post> {
         val (rows, total) = repo.list(page, limit, authorId)
-        val postIds = rows.map { it.id.value.toString() }
+        val postIds = rows.map { it.id.value }
         val voteInfos = voteService.getInfoBatch(userId, postIds, VoteTargetType.POST)
-        val commentCounts = commentRepo.countForTargetBatch(postIds, CommentTargetType.POST)
+        val commentCounts = commentService.countForTargetBatch(postIds, CommentTargetType.POST)
 
         val posts = rows.map { row ->
-            val id = row.id.value.toString()
+            val id = row.id.value
             val voteInfo = voteInfos.getValue(id)
             row.toPost(
                 rating = voteInfo.rating,
@@ -54,9 +60,12 @@ class PostServiceImpl(
         return Page.of(posts, page, total, limit)
     }
 
-    override suspend fun create(userId: UserId, input: CreatePostInput): Post {
+    override suspend fun create(userId: UserId, input: CreatePostInput): Either<PostErrorCode, Post> {
+        if (input.title.isNullOrBlank() && input.text.isNullOrBlank() && input.images.isEmpty()) {
+            return PostErrorCode.INVALID_INPUT.left()
+        }
         val row = repo.create(userId, input)
-        return row.enrich(userId)
+        return row.enrich(userId).right()
     }
 
     override suspend fun update(userId: UserId, id: PostId, input: UpdatePostInput): Either<PostErrorCode, Post> {
@@ -75,18 +84,26 @@ class PostServiceImpl(
 
     override suspend fun vote(userId: UserId, id: PostId, direction: VoteDirection): Either<PostErrorCode, PostVoteResult> {
         repo.findById(id) ?: return PostErrorCode.NOT_FOUND.left()
-        val targetId = id.value.toString()
         val voteInfo = when (direction) {
-            VoteDirection.UP, VoteDirection.DOWN -> voteService.put(userId, targetId, VoteTargetType.POST, direction)
-            VoteDirection.NONE -> voteService.remove(userId, targetId, VoteTargetType.POST)
+            VoteDirection.UP, VoteDirection.DOWN -> voteService.put(userId, id.value, VoteTargetType.POST, direction)
+            VoteDirection.NONE -> voteService.remove(userId, id.value, VoteTargetType.POST)
         }
         return PostVoteResult(voteInfo.rating, voteInfo.userVote).right()
     }
 
+    override suspend fun createComment(
+        userId: UserId,
+        id: PostId,
+        text: String,
+        parentId: CommentId?
+    ): Either<PostErrorCode, Comment> {
+        repo.findById(id) ?: return PostErrorCode.NOT_FOUND.left()
+        return commentService.create(userId, id.value, CommentTargetType.POST, text, parentId).right()
+    }
+
     private suspend fun PostRow.enrich(userId: UserId?): Post {
-        val targetId = id.value.toString()
-        val voteInfo = voteService.getInfo(userId, targetId, VoteTargetType.POST)
-        val commentsCount = commentRepo.countForTarget(targetId, CommentTargetType.POST)
+        val voteInfo = voteService.getInfo(userId, id.value, VoteTargetType.POST)
+        val commentsCount = commentService.countForTarget(id.value, CommentTargetType.POST)
         return toPost(voteInfo.rating, voteInfo.userVote, commentsCount)
     }
 }

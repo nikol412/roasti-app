@@ -39,6 +39,10 @@ dependencies {
 
 kotlin {
     jvmToolchain(21)
+    compilerOptions {
+        // TODO: Remove when kotlin.uuid.Uuid is no longer experimental.
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+    }
 }
 
 val firebaseEmulatorEnv = mapOf(
@@ -63,6 +67,16 @@ tasks.named<JavaExec>("run") {
 
 tasks.named<Test>("test") {
     environment(firebaseEmulatorEnv)
+
+    testLogging {
+        events("failed")
+
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
 }
 
 tasks.register("serverDev") {

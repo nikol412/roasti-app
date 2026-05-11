@@ -17,6 +17,7 @@ import org.nikol.roasti.feature.auth.data.network.model.response.UserDto
 import org.nikol.roasti.FIREBASE_AUTH
 import org.nikol.roasti.FirebasePrincipal
 import org.nikol.roasti.common.api.respondError
+import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable
 data class UsernameAvailabilityResponse(
@@ -29,7 +30,7 @@ fun Route.userRoutes() {
     route("/users") {
         authenticate(FIREBASE_AUTH) {
             get("/me") {
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 userService.getById(userId).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                     ifRight = { call.respond(it.toDto()) },
@@ -37,7 +38,7 @@ fun Route.userRoutes() {
             }
 
             patch("/me") {
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 // TODO: support explicit null to clear nullable fields (name, bio, avatarId)
                 val body = call.receive<UpdateProfileRequest>()
                 val fields = UpdateUserFields(
@@ -70,8 +71,9 @@ fun Route.userRoutes() {
     }
 }
 
+@OptIn(ExperimentalUuidApi::class)
 fun User.toDto() = UserDto(
-    id = id.value,
+    id = id.value.toString(),
     email = email,
     username = username,
     name = name,

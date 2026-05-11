@@ -15,7 +15,10 @@ import org.nikol.roasti.features.users.UserService
 import org.nikol.roasti.feature.auth.data.network.model.request.RegisterRequestDto
 import org.nikol.roasti.feature.auth.data.network.model.response.AuthResponseDto
 import org.nikol.roasti.feature.auth.data.network.model.response.RefreshResponseDto
+import org.nikol.roasti.features.users.FirebaseId
 import org.nikol.roasti.features.users.toDto
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 private const val PASSWORD_MIN_LENGTH = 8
 private const val PASSWORD_MAX_LENGTH = 32
@@ -35,6 +38,7 @@ class AuthServiceImpl(
     private val firebaseAuth: FirebaseAuth,
 ) : AuthService {
 
+    @OptIn(ExperimentalUuidApi::class)
     override suspend fun register(request: RegisterRequestDto): Either<AuthErrorCode, AuthResponseDto> {
         validatePassword(request.password)?.let { return it.left() }
         userService.validateUsername(request.username)?.let { return it.toAuthErrorCode().left() }
@@ -55,9 +59,21 @@ class AuthServiceImpl(
             }
         }
 
+        val id = Uuid.random()
+        val customClaims = mapOf("id" to id.toString())
+        try {
+            firebaseAuth.updateUser(firebaseUser.updateRequest().setCustomClaims(customClaims))
+        } catch (e: FirebaseAuthException) {
+            return when (e.authErrorCode) {
+                FirebaseAuthErrorCode.EMAIL_ALREADY_EXISTS -> AuthErrorCode.EMAIL_TAKEN.left()
+                else -> throw e
+            }
+        }
+
         val user = userRepo.create(
             CreateUserInput(
-                id = UserId(firebaseUser.uid),
+                id = UserId(id),
+                firebaseId = FirebaseId(firebaseUser.uid),
                 email = request.email,
                 username = request.username,
                 name = request.name,

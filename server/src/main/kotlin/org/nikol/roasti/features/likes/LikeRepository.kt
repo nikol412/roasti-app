@@ -17,17 +17,16 @@ import kotlin.uuid.Uuid
 data class LikeInfo(val isLiked: Boolean, val count: Int)
 
 interface LikeRepository {
-    suspend fun create(userId: UserId, targetId: String, targetType: LikeTargetType)
-    suspend fun delete(userId: UserId, targetId: String, targetType: LikeTargetType)
-    suspend fun exists(userId: UserId, targetId: String, targetType: LikeTargetType): Boolean
-    suspend fun getInfo(userId: UserId?, targetId: String, targetType: LikeTargetType): LikeInfo
-    suspend fun getInfoBatch(userId: UserId?, targetIds: List<String>, targetType: LikeTargetType): Map<String, LikeInfo>
+    suspend fun create(userId: UserId, targetId: Uuid, targetType: LikeTargetType)
+    suspend fun delete(userId: UserId, targetId: Uuid, targetType: LikeTargetType)
+    suspend fun exists(userId: UserId, targetId: Uuid, targetType: LikeTargetType): Boolean
+    suspend fun getInfo(userId: UserId?, targetId: Uuid, targetType: LikeTargetType): LikeInfo
+    suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): Map<Uuid, LikeInfo>
 }
 
 class LikeRepositoryImpl : LikeRepository {
 
-    @OptIn(ExperimentalUuidApi::class)
-    override suspend fun create(userId: UserId, targetId: String, targetType: LikeTargetType): Unit =
+    override suspend fun create(userId: UserId, targetId: Uuid, targetType: LikeTargetType): Unit =
         withContext(Dispatchers.IO) {
             transaction {
                 LikeTable.insert {
@@ -40,7 +39,7 @@ class LikeRepositoryImpl : LikeRepository {
             }
         }
 
-    override suspend fun delete(userId: UserId, targetId: String, targetType: LikeTargetType): Unit =
+    override suspend fun delete(userId: UserId, targetId: Uuid, targetType: LikeTargetType): Unit =
         withContext(Dispatchers.IO) {
             transaction {
                 LikeTable.deleteWhere {
@@ -51,7 +50,7 @@ class LikeRepositoryImpl : LikeRepository {
             }
         }
 
-    override suspend fun exists(userId: UserId, targetId: String, targetType: LikeTargetType): Boolean =
+    override suspend fun exists(userId: UserId, targetId: Uuid, targetType: LikeTargetType): Boolean =
         withContext(Dispatchers.IO) {
             transaction {
                 LikeTable.selectAll()
@@ -64,7 +63,7 @@ class LikeRepositoryImpl : LikeRepository {
             }
         }
 
-    override suspend fun getInfo(userId: UserId?, targetId: String, targetType: LikeTargetType): LikeInfo =
+    override suspend fun getInfo(userId: UserId?, targetId: Uuid, targetType: LikeTargetType): LikeInfo =
         withContext(Dispatchers.IO) {
             transaction {
                 val rows = LikeTable.selectAll()
@@ -75,7 +74,7 @@ class LikeRepositoryImpl : LikeRepository {
             }
         }
 
-    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<String>, targetType: LikeTargetType): Map<String, LikeInfo> =
+    override suspend fun getInfoBatch(userId: UserId?, targetIds: List<Uuid>, targetType: LikeTargetType): Map<Uuid, LikeInfo> =
         withContext(Dispatchers.IO) {
             if (targetIds.isEmpty()) return@withContext emptyMap()
             transaction {

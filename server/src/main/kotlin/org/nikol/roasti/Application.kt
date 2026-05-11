@@ -85,16 +85,21 @@ import org.slf4j.event.Level
 import java.io.ByteArrayInputStream
 import java.util.Base64
 import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 fun main(args: Array<String>) =
     io.ktor.server.netty.EngineMain.main(args)
 
+@OptIn(ExperimentalUuidApi::class)
 fun Application.module() {
     val dbUrl = environment.config.property("database.url").getString()
     val dbDriver = environment.config.property("database.driver").getString()
 
     Database.connect(url = dbUrl, driver = dbDriver)
-    transaction { SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable, PostTable, RecipeTable, BrewStepTable, UploadTable) }
+    transaction {
+        SchemaUtils.create(UserTable, RevokedTokenTable, VoteTable, LikeTable, CommentTable, PostTable, RecipeTable, BrewStepTable, UploadTable)
+    }
 
     initFirebase()
 
@@ -135,8 +140,9 @@ fun Application.module() {
             authenticate { credential ->
                 try {
                     val decoded = firebaseAuth.verifyIdToken(credential.token)
-                    FirebasePrincipal(UserId(decoded.uid))
-                } catch (e: FirebaseAuthException) {
+                    FirebasePrincipal(UserId(Uuid.parse(decoded.claims["id"]!! as String)))
+                } catch (_: FirebaseAuthException) {
+                    // TODO: handle exception
                     null
                 }
             }

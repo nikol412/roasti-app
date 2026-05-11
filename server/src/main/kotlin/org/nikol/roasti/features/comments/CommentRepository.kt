@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import org.nikol.roasti.common.domain.pageOffset
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
@@ -21,7 +22,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 data class CreateCommentInput(
-    val targetId: String,
+    val targetId: Uuid,
     val targetType: CommentTargetType,
     val authorId: UserId,
     val text: String,
@@ -34,10 +35,9 @@ interface CommentRepository {
     suspend fun getAuthorId(id: CommentId): UserId?
     suspend fun update(id: CommentId, text: String)
     suspend fun softDelete(id: CommentId)
-    suspend fun listForTarget(targetId: String, targetType: CommentTargetType, page: Int, limit: Int): Pair<List<CommentThread>, Int>
-    suspend fun existsInTarget(commentId: CommentId, targetId: String): Boolean
-    suspend fun countForTarget(targetId: String, targetType: CommentTargetType): Int
-    suspend fun countForTargetBatch(targetIds: List<String>, targetType: CommentTargetType): Map<String, Int>
+    suspend fun listForTarget(targetId: Uuid, targetType: CommentTargetType, page: Int, limit: Int): Pair<List<CommentThread>, Int>
+    suspend fun existsInTarget(commentId: CommentId, targetId: Uuid): Boolean
+    suspend fun countForTargetBatch(targetIds: List<Uuid>, targetType: CommentTargetType): Map<Uuid, Int>
 }
 
 @OptIn(ExperimentalUuidApi::class)
@@ -47,6 +47,7 @@ class CommentRepositoryImpl : CommentRepository {
         val id = Uuid.random()
         val now = Clock.System.now()
         transaction {
+            addLogger(StdOutSqlLogger)
             CommentTable.insert {
                 it[CommentTable.id] = org.jetbrains.exposed.v1.core.dao.id.EntityID(id, CommentTable)
                 it[targetId] = input.targetId
@@ -76,7 +77,7 @@ class CommentRepositoryImpl : CommentRepository {
             CommentTable.selectAll()
                 .where { (CommentTable.id eq id.value) and CommentTable.deletedAt.isNull() }
                 .singleOrNull()
-                ?.let { UserId(it[CommentTable.authorId]) }
+                ?.let { UserId(it[CommentTable.authorId].value) }
         }
     }
 
@@ -98,7 +99,7 @@ class CommentRepositoryImpl : CommentRepository {
     }
 
     override suspend fun listForTarget(
-        targetId: String,
+        targetId: Uuid,
         targetType: CommentTargetType,
         page: Int,
         limit: Int,
@@ -160,7 +161,7 @@ class CommentRepositoryImpl : CommentRepository {
         }
     }
 
-    override suspend fun existsInTarget(commentId: CommentId, targetId: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun existsInTarget(commentId: CommentId, targetId: Uuid): Boolean = withContext(Dispatchers.IO) {
         transaction {
             CommentTable.selectAll()
                 .where {
@@ -172,10 +173,7 @@ class CommentRepositoryImpl : CommentRepository {
         }
     }
 
-    override suspend fun countForTarget(targetId: String, targetType: CommentTargetType): Int =
-        countForTargetBatch(listOf(targetId), targetType)[targetId] ?: 0
-
-    override suspend fun countForTargetBatch(targetIds: List<String>, targetType: CommentTargetType): Map<String, Int> =
+    override suspend fun countForTargetBatch(targetIds: List<Uuid>, targetType: CommentTargetType): Map<Uuid, Int> =
         withContext(Dispatchers.IO) {
             if (targetIds.isEmpty()) return@withContext emptyMap()
             transaction {

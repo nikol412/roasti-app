@@ -65,11 +65,11 @@ class RecipeServiceImpl(
         val (rows, total) = repo.list(page, limit, authorId, userId, brewMethod, difficulty, roastLevel)
         val recipeIds = rows.map { it.id }
         val stepsMap = repo.getStepsBatch(recipeIds)
-        val targetIds = recipeIds.map { it.value.toString() }
+        val targetIds = recipeIds.map { it.value }
         val likeInfos = likeService.getInfoBatch(userId, targetIds, LikeTargetType.RECIPE)
 
         val recipes = rows.map { row ->
-            val id = row.id.value.toString()
+            val id = row.id.value
             val likeInfo = likeInfos[id]
             row.toRecipeWithLikes(
                 steps = stepsMap[row.id] ?: emptyList(),
@@ -108,12 +108,12 @@ class RecipeServiceImpl(
 
     override suspend fun toggleLike(userId: UserId, id: RecipeId): Either<RecipeErrorCode, ToggleResult> {
         repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
-        return likeService.toggle(userId, id.value.toString(), LikeTargetType.RECIPE).right()
+        return likeService.toggle(userId, id.value, LikeTargetType.RECIPE).right()
     }
 
     override suspend fun listComments(id: RecipeId, page: Int, limit: Int): Either<RecipeErrorCode, Page<CommentThread>> {
         repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
-        return commentService.list(id.value.toString(), CommentTargetType.RECIPE, page, limit).right()
+        return commentService.list(id.value, CommentTargetType.RECIPE, page, limit).right()
     }
 
     override suspend fun createComment(
@@ -123,7 +123,7 @@ class RecipeServiceImpl(
         parentId: CommentId?,
     ): Either<RecipeErrorCode, Comment> {
         repo.findById(id) ?: return RecipeErrorCode.NOT_FOUND.left()
-        return commentService.create(userId, id.value.toString(), CommentTargetType.RECIPE, text, parentId).right()
+        return commentService.create(userId, id.value, CommentTargetType.RECIPE, text, parentId).right()
     }
 
     override suspend fun clone(userId: UserId, id: RecipeId): Either<RecipeErrorCode, Recipe> {
@@ -159,7 +159,7 @@ class RecipeServiceImpl(
     }
 
     private suspend fun RecipeRow.toRecipe(userId: UserId?, steps: List<BrewStep>): Recipe {
-        val likeInfo = likeService.getInfo(userId, id.value.toString(), LikeTargetType.RECIPE)
+        val likeInfo = likeService.getInfo(userId, id.value, LikeTargetType.RECIPE)
         return toRecipeWithLikes(steps, likeInfo.isLiked, likeInfo.count)
     }
 

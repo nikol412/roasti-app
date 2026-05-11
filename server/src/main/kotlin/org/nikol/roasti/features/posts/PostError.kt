@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.nikol.roasti.common.api.ApiError
 
-enum class PostErrorCode { NOT_FOUND, FORBIDDEN }
+enum class PostErrorCode { NOT_FOUND, FORBIDDEN, INVALID_INPUT }
 
 @Serializable
 data class PostError(
@@ -16,9 +16,11 @@ data class PostError(
 fun PostErrorCode.toError() = when (this) {
     PostErrorCode.NOT_FOUND -> PostError(this, "Post not found")
     PostErrorCode.FORBIDDEN -> PostError(this, "Forbidden")
+    PostErrorCode.INVALID_INPUT -> PostError(this, "Invalid input")
 }
 
 fun PostErrorCode.toHttpStatus() = when (this) {
     PostErrorCode.NOT_FOUND -> HttpStatusCode.NotFound
     PostErrorCode.FORBIDDEN -> HttpStatusCode.Forbidden
+    PostErrorCode.INVALID_INPUT -> HttpStatusCode.UnprocessableEntity
 }

@@ -47,11 +47,11 @@ fun Route.recipeRoutes() {
         get {
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val authorId = call.request.queryParameters["author_id"]?.let { UserId(it) }
+            val authorId = call.request.queryParameters["author_id"]?.let { UserId(Uuid.parse(it)) }
             val brewMethod = call.request.queryParameters["brew_method"]?.let { parseBrewMethodDto(it)?.toDomain() }
             val difficulty = call.request.queryParameters["difficulty"]?.let { parseDifficultyDto(it)?.toDomain() }
             val roastLevel = call.request.queryParameters["roast_level"]?.let { parseRoastLevelDto(it)?.toDomain() }
-            val userId = call.principal<FirebasePrincipal>()?.uid
+            val userId = call.principal<FirebasePrincipal>()?.id
             val recipesPage = recipeService.list(page, limit, authorId, userId, brewMethod, difficulty, roastLevel)
             call.respond(recipesPage.toDto())
         }
@@ -59,7 +59,7 @@ fun Route.recipeRoutes() {
         get("/{id}") {
             val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                 ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val userId = call.principal<FirebasePrincipal>()?.uid
+            val userId = call.principal<FirebasePrincipal>()?.id
             recipeService.getById(id, userId).fold(
                 ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                 ifRight = { call.respond(it.toDto()) },
@@ -91,7 +91,7 @@ fun Route.recipeRoutes() {
 
         authenticate(FIREBASE_AUTH) {
             post {
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<CreateRecipeRequestDto>()
                 recipeService.create(userId, body.toInput()).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
@@ -102,7 +102,7 @@ fun Route.recipeRoutes() {
             put("/{id}") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@put call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<CreateRecipeRequestDto>()
                 recipeService.update(userId, id, body.toInput()).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
@@ -113,7 +113,7 @@ fun Route.recipeRoutes() {
             delete("/{id}") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@delete call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 recipeService.delete(userId, id).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                     ifRight = { call.respond(HttpStatusCode.NoContent) },
@@ -123,7 +123,7 @@ fun Route.recipeRoutes() {
             post("/{id}/like") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@post call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 recipeService.toggleLike(userId, id).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                     ifRight = { call.respond(RecipeLikeDto(isLiked = it.isLiked, likesCount = it.count)) },
@@ -133,7 +133,7 @@ fun Route.recipeRoutes() {
             post("/{id}/comments") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@post call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 val body = call.receive<CreateCommentRequestDto>()
                 val parentId = body.parentId?.let { CommentId(Uuid.parse(it)) }
                 recipeService.createComment(userId, id, body.text, parentId).fold(
@@ -145,7 +145,7 @@ fun Route.recipeRoutes() {
             post("/{id}/clone") {
                 val id = call.parameters["id"]?.let { RecipeId(Uuid.parse(it)) }
                     ?: return@post call.respond(HttpStatusCode.BadRequest)
-                val userId = call.principal<FirebasePrincipal>()!!.uid
+                val userId = call.principal<FirebasePrincipal>()!!.id
                 recipeService.clone(userId, id).fold(
                     ifLeft = { call.respondError(it.toHttpStatus(), it.toError()) },
                     ifRight = { call.respond(HttpStatusCode.Created, it.toDto()) },
@@ -179,9 +179,9 @@ private fun CreateRecipeRequestDto.toInput() = CreateRecipeInput(
 @OptIn(ExperimentalUuidApi::class)
 private fun Recipe.toDto() = RecipeResponseDto(
     id = id.value.toString(),
-    authorId = author.id.value,
+    authorId = author.id.value.toString(),
     author = AuthorResponseDto(
-        id = author.id.value,
+        id = author.id.value.toString(),
         username = author.username,
         avatarId = author.avatarId,
     ),
@@ -224,7 +224,7 @@ private fun BrewStep.toDto() = RecipeStepResponseDto(
 @OptIn(ExperimentalUuidApi::class)
 private fun RecipeOriginInfo.toDto() = RecipeOriginResponseDto(
     author = AuthorResponseDto(
-        id = author.id.value,
+        id = author.id.value.toString(),
         username = author.username,
         avatarId = author.avatarId,
     ),
