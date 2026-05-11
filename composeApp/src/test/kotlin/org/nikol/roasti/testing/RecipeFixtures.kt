@@ -1,13 +1,12 @@
 package org.nikol.roasti.testing
 
+import org.nikol.roasti.core.network.PageResponseDto
+import org.nikol.roasti.core.network.PaginationResponseDto
 import org.nikol.roasti.feature.likes.data.LikedRecipeItemDto
-import org.nikol.roasti.feature.likes.data.LikedRecipesPageDto
 import org.nikol.roasti.feature.recipe.data.remote.model.BrewMethodDto
 import org.nikol.roasti.feature.recipe.data.remote.model.DifficultyDto
 import org.nikol.roasti.feature.recipe.data.remote.model.RoastLevelDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeResponseDto
-import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPageResponseDto
-import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPaginationResponseDto
 
 object RecipeFixtures {
     fun dto(
@@ -41,7 +40,7 @@ object RecipeFixtures {
         ids: List<String>,
         currentPage: Int = 1,
         lastPage: Int = 1,
-    ): RecipesPageResponseDto = RecipesPageResponseDto(
+    ): PageResponseDto<RecipeResponseDto> = PageResponseDto(
         items = ids.map { dto(id = it) },
         pagination = pagination(currentPage = currentPage, lastPage = lastPage, itemsCount = ids.size),
     )
@@ -50,13 +49,13 @@ object RecipeFixtures {
         ids: List<String>,
         currentPage: Int = 1,
         lastPage: Int = 1,
-    ): LikedRecipesPageDto = LikedRecipesPageDto(
+    ): PageResponseDto<LikedRecipeItemDto> = PageResponseDto(
         items = ids.map { LikedRecipeItemDto(likedAt = "2026-05-10T00:00:00Z", recipe = dto(id = it, isLiked = true)) },
         pagination = pagination(currentPage = currentPage, lastPage = lastPage, itemsCount = ids.size),
     )
 
     private fun pagination(currentPage: Int, lastPage: Int, itemsCount: Int) =
-        RecipesPaginationResponseDto(
+        PaginationResponseDto(
             currentPage = currentPage,
             itemsCount = itemsCount,
             lastPage = lastPage,

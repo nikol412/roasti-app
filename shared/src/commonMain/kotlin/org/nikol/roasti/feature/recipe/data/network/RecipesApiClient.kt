@@ -20,7 +20,7 @@ import org.nikol.roasti.feature.recipe.data.remote.model.DifficultyDto
 import org.nikol.roasti.feature.recipe.data.remote.model.RoastLevelDto
 import org.nikol.roasti.feature.recipe.data.remote.model.request.CreateRecipeRequestDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeResponseDto
-import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPageResponseDto
+import org.nikol.roasti.core.network.PageResponseDto
 
 interface RecipesApiClient {
     suspend fun getRecipes(
@@ -31,7 +31,7 @@ interface RecipesApiClient {
         roastLevel: RoastLevelDto? = null,
         limit: Int = 50,
         page: Int = 1
-    ): Result<RecipesPageResponseDto>
+    ): Result<PageResponseDto<RecipeResponseDto>>
 
     suspend fun getRecipe(id: String): Result<RecipeResponseDto>
     suspend fun addRecipe(recipe: CreateRecipeRequestDto): Result<RecipeResponseDto>
@@ -54,7 +54,7 @@ class RecipesApiClientImpl(
         roastLevel: RoastLevelDto?,
         limit: Int,
         page: Int
-    ): Result<RecipesPageResponseDto> = authorizedRequestExecutor.execute { _ ->
+    ): Result<PageResponseDto<RecipeResponseDto>> = authorizedRequestExecutor.execute { _ ->
         httpClient.get(ApiRoutes.Recipes) {
             url {
                 authorId?.let { parameters.append("author_id", it) }
@@ -65,7 +65,7 @@ class RecipesApiClientImpl(
                 parameters.append("limit", limit.toString())
                 parameters.append("page", page.toString())
             }
-        }.body<RecipesPageResponseDto>()
+        }.body<PageResponseDto<RecipeResponseDto>>()
     }
 
     override suspend fun getRecipe(id: String): Result<RecipeResponseDto> =

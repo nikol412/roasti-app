@@ -1,17 +1,17 @@
 package org.nikol.roasti.testing
 
+import org.nikol.roasti.core.network.PageResponseDto
 import org.nikol.roasti.feature.recipe.data.network.RecipesApiClient
 import org.nikol.roasti.feature.recipe.data.remote.model.BrewMethodDto
 import org.nikol.roasti.feature.recipe.data.remote.model.DifficultyDto
 import org.nikol.roasti.feature.recipe.data.remote.model.RoastLevelDto
 import org.nikol.roasti.feature.recipe.data.remote.model.request.CreateRecipeRequestDto
 import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipeResponseDto
-import org.nikol.roasti.feature.recipe.data.remote.model.response.RecipesPageResponseDto
 
 class FakeRecipesApiClient : RecipesApiClient {
 
     val recipeById: MutableMap<String, Result<RecipeResponseDto>> = mutableMapOf()
-    val pages: MutableMap<Int, Result<RecipesPageResponseDto>> = mutableMapOf()
+    val pages: MutableMap<Int, Result<PageResponseDto<RecipeResponseDto>>> = mutableMapOf()
     var getRecipeCallCount: Int = 0
         private set
     var getRecipesCallCount: Int = 0
@@ -25,7 +25,7 @@ class FakeRecipesApiClient : RecipesApiClient {
         roastLevel: RoastLevelDto?,
         limit: Int,
         page: Int,
-    ): Result<RecipesPageResponseDto> {
+    ): Result<PageResponseDto<RecipeResponseDto>> {
         getRecipesCallCount++
         return pages[page] ?: Result.failure(NoSuchElementException("no fake page $page"))
     }

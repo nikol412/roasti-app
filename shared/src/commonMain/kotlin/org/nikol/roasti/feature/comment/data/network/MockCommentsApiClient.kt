@@ -10,8 +10,8 @@ import org.nikol.roasti.feature.comment.data.remote.model.request.UpdateCommentR
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentAuthorDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentResponseDto
 import org.nikol.roasti.feature.comment.data.remote.model.response.CommentThreadResponseDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPageResponseDto
-import org.nikol.roasti.feature.comment.data.remote.model.response.CommentsPaginationResponseDto
+import org.nikol.roasti.core.network.PageResponseDto
+import org.nikol.roasti.core.network.PaginationResponseDto
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -29,7 +29,7 @@ class MockCommentsApiClient : CommentsApiClient {
         postId: String,
         page: Int,
         limit: Int,
-    ): Result<CommentsPageResponseDto> {
+    ): Result<PageResponseDto<CommentThreadResponseDto>> {
         delay(SimulatedLatencyMillis)
         return mutex.withLock {
             val threads = storage.getOrPut(postId) { generateThreads(postId).toMutableList() }
@@ -42,9 +42,9 @@ class MockCommentsApiClient : CommentsApiClient {
             val nextPage = if (safePage < lastPage) safePage + 1 else safePage
 
             Result.success(
-                CommentsPageResponseDto(
+                PageResponseDto(
                     items = items,
-                    pagination = CommentsPaginationResponseDto(
+                    pagination = PaginationResponseDto(
                         currentPage = safePage,
                         itemsCount = total,
                         lastPage = lastPage,

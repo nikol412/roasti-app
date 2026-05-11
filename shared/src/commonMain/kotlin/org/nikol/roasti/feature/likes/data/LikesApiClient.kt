@@ -6,6 +6,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import org.nikol.roasti.core.network.ApiRoutes
 import org.nikol.roasti.core.network.AuthorizedRequestExecutor
+import org.nikol.roasti.core.network.PageResponseDto
 
 private const val LikedRecipesTypeQueryParameter = "type"
 private const val LimitQueryParameter = "limit"
@@ -17,7 +18,7 @@ interface LikesApiClient {
         userId: String,
         limit: Int = 50,
         page: Int = 1,
-    ): Result<LikedRecipesPageDto>
+    ): Result<PageResponseDto<LikedRecipeItemDto>>
 
     suspend fun toggleLikeOnRecipe(recipeId: String): Result<RecipeLikeDto>
 }
@@ -30,14 +31,14 @@ class LikesApiClientImpl(
         userId: String,
         limit: Int,
         page: Int,
-    ): Result<LikedRecipesPageDto> = authorizedRequestExecutor.execute {
+    ): Result<PageResponseDto<LikedRecipeItemDto>> = authorizedRequestExecutor.execute {
         httpClient.get(ApiRoutes.userLikedRecipes(userId)) {
             url {
                 parameters.append(LikedRecipesTypeQueryParameter, RecipeLikeType)
                 parameters.append(LimitQueryParameter, limit.toString())
                 parameters.append(PageQueryParameter, page.toString())
             }
-        }.body<LikedRecipesPageDto>()
+        }.body<PageResponseDto<LikedRecipeItemDto>>()
     }
 
     override suspend fun toggleLikeOnRecipe(recipeId: String): Result<RecipeLikeDto> =

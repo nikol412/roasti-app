@@ -11,6 +11,8 @@ data class RegisterRequestDto(
     val bio: String? = null,
     @SerialName("email")
     val email: String,
+    @SerialName("name")
+    val name: String? = null,
     @SerialName("password")
     val password: String,
     @SerialName("username")

@@ -11,6 +11,8 @@ data class UserDto(
     val bio: String? = null,
     @SerialName("id")
     val id: String,
+    @SerialName("name")
+    val name: String? = null,
     @SerialName("username")
     val username: String,
     @SerialName("email")

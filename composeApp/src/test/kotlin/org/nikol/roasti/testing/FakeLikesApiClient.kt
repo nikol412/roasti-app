@@ -1,13 +1,14 @@
 package org.nikol.roasti.testing
 
 import kotlinx.coroutines.CompletableDeferred
-import org.nikol.roasti.feature.likes.data.LikedRecipesPageDto
+import org.nikol.roasti.core.network.PageResponseDto
+import org.nikol.roasti.feature.likes.data.LikedRecipeItemDto
 import org.nikol.roasti.feature.likes.data.LikesApiClient
 import org.nikol.roasti.feature.likes.data.RecipeLikeDto
 
 class FakeLikesApiClient : LikesApiClient {
 
-    val pages: MutableMap<Int, Result<LikedRecipesPageDto>> = mutableMapOf()
+    val pages: MutableMap<Int, Result<PageResponseDto<LikedRecipeItemDto>>> = mutableMapOf()
     var getLikedRecipesCallCount: Int = 0
         private set
 
@@ -21,7 +22,7 @@ class FakeLikesApiClient : LikesApiClient {
         userId: String,
         limit: Int,
         page: Int,
-    ): Result<LikedRecipesPageDto> {
+    ): Result<PageResponseDto<LikedRecipeItemDto>> {
         getLikedRecipesCallCount++
         return pages[page] ?: Result.failure(NoSuchElementException("no fake liked page $page"))
     }

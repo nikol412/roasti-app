@@ -3,11 +3,12 @@ package org.nikol.roasti.feature.likes.data
 import org.nikol.roasti.feature.recipe.data.mapper.toDomain
 import org.nikol.roasti.feature.likes.domain.RecipeLike
 import org.nikol.roasti.feature.likes.domain.LikedRecipe
-import org.nikol.roasti.feature.likes.domain.LikedRecipesPage
+import org.nikol.roasti.core.domain.Page
+import org.nikol.roasti.core.network.PageResponseDto
 
 fun RecipeLikeDto.toDomain() = RecipeLike(isLiked, likesCount)
 
-fun LikedRecipesPageDto.toDomain() = LikedRecipesPage(
+fun PageResponseDto<LikedRecipeItemDto>.toDomain() = Page(
     items = items.map { it.toDomain() },
     currentPage = pagination.currentPage,
     itemsCount = pagination.itemsCount,

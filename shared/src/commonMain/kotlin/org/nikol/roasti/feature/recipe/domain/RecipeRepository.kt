@@ -5,7 +5,7 @@ import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.Recipe
 import org.nikol.roasti.feature.recipe.domain.model.RecipeDraft
-import org.nikol.roasti.feature.recipe.domain.model.RecipesPage
+import org.nikol.roasti.core.domain.Page
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 
 interface RecipeRepository {
@@ -17,7 +17,7 @@ interface RecipeRepository {
         roastLevel: RoastLevel? = null,
         limit: Int = 50,
         page: Int = 1
-    ): Result<RecipesPage>
+    ): Result<Page<Recipe>>
 
     suspend fun getById(id: String): Result<Recipe>
 

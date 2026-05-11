@@ -20,7 +20,7 @@ import org.nikol.roasti.feature.recipe.domain.model.BrewMethod
 import org.nikol.roasti.feature.recipe.domain.model.Difficulty
 import org.nikol.roasti.feature.recipe.domain.model.Recipe
 import org.nikol.roasti.feature.recipe.domain.model.RecipeDraft
-import org.nikol.roasti.feature.recipe.domain.model.RecipesPage
+import org.nikol.roasti.core.domain.Page
 import org.nikol.roasti.feature.recipe.domain.model.RoastLevel
 
 class RecipeRepositoryImpl(
@@ -38,7 +38,7 @@ class RecipeRepositoryImpl(
         roastLevel: RoastLevel?,
         limit: Int,
         page: Int
-    ): Result<RecipesPage> {
+    ): Result<Page<Recipe>> {
         return apiClient.getRecipes(
             authorId = authorId,
             query = query?.takeIf { it.isNotBlank() },
